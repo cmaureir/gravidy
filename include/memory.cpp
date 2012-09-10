@@ -9,7 +9,6 @@
 void init_vectors()
 {
     int d4_size = n * sizeof(double4);
-    int d1_size = n * sizeof(double);
     int f1_size = n * sizeof(float);
     int i1_size = n * sizeof(int);
 
@@ -30,22 +29,22 @@ void init_vectors()
     h_m     =   (float*) malloc(f1_size);
     h_move  =     (int*) malloc(i1_size);
 
-//    cudaMalloc((void**)&d_r,     d4_size);
-//    cudaMalloc((void**)&d_v,     d4_size);
-//    cudaMalloc((void**)&d_a,     d4_size);
-//    cudaMalloc((void**)&d_j,     d4_size);
-//    cudaMalloc((void**)&d_old_a, d4_size);
-//    cudaMalloc((void**)&d_old_j, d4_size);
-//    cudaMalloc((void**)&d_new_a, d4_size);
-//    cudaMalloc((void**)&d_new_j, d4_size);
-//    cudaMalloc((void**)&d_p_r,   d4_size);
-//    cudaMalloc((void**)&d_p_v,   d4_size);
-//    cudaMalloc((void**)&d_m,     f1_size);
-//    cudaMalloc((void**)&d_ekin,  d1_size);
-//    cudaMalloc((void**)&d_epot,  d1_size);
-//    cudaMalloc((void**)&d_t,     d1_size);
-//    cudaMalloc((void**)&d_dt,    d1_size);
-//    cudaMalloc((void**)&d_move,  i1_size);
+    cudaMalloc((void**)&d_r,     d4_size);
+    cudaMalloc((void**)&d_v,     d4_size);
+    cudaMalloc((void**)&d_a,     d4_size);
+    cudaMalloc((void**)&d_j,     d4_size);
+    cudaMalloc((void**)&d_old_a, d4_size);
+    cudaMalloc((void**)&d_old_j, d4_size);
+    cudaMalloc((void**)&d_new_a, d4_size);
+    cudaMalloc((void**)&d_new_j, d4_size);
+    cudaMalloc((void**)&d_p_r,   d4_size);
+    cudaMalloc((void**)&d_p_v,   d4_size);
+    cudaMalloc((void**)&d_m,     f1_size);
+    cudaMalloc((void**)&d_ekin,  f1_size);
+    cudaMalloc((void**)&d_epot,  f1_size);
+    cudaMalloc((void**)&d_t,     f1_size);
+    cudaMalloc((void**)&d_dt,    f1_size);
+    cudaMalloc((void**)&d_move,  i1_size);
 
     for (int i = 0; i < n; i++)
     {
@@ -57,37 +56,37 @@ void init_vectors()
         h_v[i].y = part[i].v.y;
         h_v[i].z = part[i].v.z;
 
-        h_a[i].x = 0.0f;
-        h_a[i].y = 0.0f;
-        h_a[i].z = 0.0f;
+        h_a[i].x = 0;
+        h_a[i].y = 0;
+        h_a[i].z = 0;
 
-        h_j[i].x = 0.0f;
-        h_j[i].y = 0.0f;
-        h_j[i].z = 0.0f;
+        h_j[i].x = 0;
+        h_j[i].y = 0;
+        h_j[i].z = 0;
 
-        h_old_a[i].x = 0.0f;
-        h_old_a[i].y = 0.0f;
-        h_old_a[i].z = 0.0f;
+        h_old_a[i].x = 0;
+        h_old_a[i].y = 0;
+        h_old_a[i].z = 0;
 
-        h_new_a[i].x = 0.0f;
-        h_new_a[i].y = 0.0f;
-        h_new_a[i].z = 0.0f;
+        h_new_a[i].x = 0;
+        h_new_a[i].y = 0;
+        h_new_a[i].z = 0;
 
-        h_old_j[i].x = 0.0f;
-        h_old_j[i].y = 0.0f;
-        h_old_j[i].z = 0.0f;
+        h_old_j[i].x = 0;
+        h_old_j[i].y = 0;
+        h_old_j[i].z = 0;
 
-        h_new_j[i].x = 0.0f;
-        h_new_j[i].y = 0.0f;
-        h_new_j[i].z = 0.0f;
+        h_new_j[i].x = 0;
+        h_new_j[i].y = 0;
+        h_new_j[i].z = 0;
 
-        h_p_r[i].x = 0.0f;
-        h_p_r[i].y = 0.0f;
-        h_p_r[i].z = 0.0f;
+        h_p_r[i].x = 0;
+        h_p_r[i].y = 0;
+        h_p_r[i].z = 0;
 
-        h_p_v[i].x = 0.0f;
-        h_p_v[i].y = 0.0f;
-        h_p_v[i].z = 0.0f;
+        h_p_v[i].x = 0;
+        h_p_v[i].y = 0;
+        h_p_v[i].z = 0;
 
         h_t[i]  = 0.0f;
         h_dt[i] = 0.0f;
@@ -101,7 +100,7 @@ void init_vectors()
     // The mass is always the same, so to avoid copying it every
     //  function, we copy it at the begining.
 
-    //cudaMemcpy(d_m, h_m, f1_size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_m, h_m, f1_size, cudaMemcpyHostToDevice);
 }
 
 
@@ -131,20 +130,20 @@ void clean_vectors()
     free(h_epot);
     free(h_move);
 
-    //cudaFree(d_r);
-    //cudaFree(d_v);
-    //cudaFree(d_a);
-    //cudaFree(d_j);
-    //cudaFree(d_m);
-    //cudaFree(d_t);
-    //cudaFree(d_old_a);
-    //cudaFree(d_old_j);
-    //cudaFree(d_new_a);
-    //cudaFree(d_new_j);
-    //cudaFree(d_p_r);
-    //cudaFree(d_p_v);
-    //cudaFree(d_dt);
-    //cudaFree(d_ekin);
-    //cudaFree(d_epot);
-    //cudaFree(d_move);
+    cudaFree(d_r);
+    cudaFree(d_v);
+    cudaFree(d_a);
+    cudaFree(d_j);
+    cudaFree(d_m);
+    cudaFree(d_t);
+    cudaFree(d_old_a);
+    cudaFree(d_old_j);
+    cudaFree(d_new_a);
+    cudaFree(d_new_j);
+    cudaFree(d_p_r);
+    cudaFree(d_p_v);
+    cudaFree(d_dt);
+    cudaFree(d_ekin);
+    cudaFree(d_epot);
+    cudaFree(d_move);
 }

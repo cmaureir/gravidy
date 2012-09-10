@@ -36,46 +36,23 @@ void print_all(int limit)
 
 void print_positions(int limit)
 {
-    cout << left;
-//    cout << setw(10)  << "id";
-//    cout << setw(22) << "rx";
-//    cout << setw(22) << "ry";
-//    cout << setw(22) << "rz" << endl;
     for (int i = 0; i < limit; i++) {
-        cout << setw(10)  << i;
-        cout << setw(22) << h_r[i].x;
-        cout << setw(22) << h_r[i].y;
-        cout << setw(22) << h_r[i].z << endl;
+        printf("%6d %.15f %.15f %.15f\n", i, h_r[i].x, h_r[i].y, h_r[i].z );
     }
 }
 
 void print_velocities(int limit)
 {
-    cout << left;
-    cout << setw(10)  << "id";
-    cout << setw(22) << "vx";
-    cout << setw(22) << "vy";
-    cout << setw(22) << "vz" << endl;
     for (int i = 0; i < limit; i++) {
-        cout << setw(10)  << i;
-        cout << setw(22) << h_v[i].x;
-        cout << setw(22) << h_v[i].y;
-        cout << setw(22) << h_v[i].z << endl;
+        printf("%6d %.15f %.15f %.15f\n", i, h_v[i].x, h_v[i].y, h_v[i].z );
     }
 }
 void print_accelerations(int limit)
 {
-    cout << left;
-    cout << setw(10)  << "id";
-    cout << setw(22) << "ax";
-    cout << setw(22) << "ay";
-    cout << setw(22) << "az" << endl;
     for (int i = 0; i < limit; i++) {
-        cout << setw(10)  << i;
-        cout << setw(22) << h_a[i].x;
-        cout << setw(22) << h_a[i].y;
-        cout << setw(22) << h_a[i].z << endl;
+        printf("%6d %.15f %.15f %.15f\n", i, h_a[i].x, h_a[i].y, h_a[i].z );
     }
+
 }
 void print_jerks(int limit)
 {

@@ -67,8 +67,8 @@ main(int argc, char *argv[])
 
     if(run == "cpu")
         integrate_cpu();
-//    else if(run == "gpu")
-//        integrate_gpu();
+    else if(run == "gpu")
+        integrate_gpu();
 
     end_time = omp_get_wtime();  // Get final execution time
 

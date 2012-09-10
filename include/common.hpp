@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <vector>
 #include <string>
-//#include <thrust/host_vector.h>
+#include <thrust/host_vector.h>
 #include <omp.h>
 
 // Initial time step factor
@@ -12,7 +12,7 @@
 // Softening parameter
 #define E 1e-4
 // Block time steps minimum and maximum
-#define D_TIME_MIN (3 * 10e-8)
+#define D_TIME_MIN (10e-8)
 #define D_TIME_MAX (0.125)
 
 // Gravitational constant in nbu
@@ -29,10 +29,10 @@
 #define MIN_PART_TO_MOVE 10
 
 
-typedef struct double4
-{
-    double x,y,z,w;
-} double4;
+//typedef struct float4
+//{
+//    float x,y,z,w;
+//} float4;
 // Particle structure to read input file
 typedef struct particle
 {

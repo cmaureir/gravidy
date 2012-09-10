@@ -35,12 +35,6 @@ void read_input_file(std::string path)
 
     file.close();
     n = (int)part.size();
-
-    // Printing with double precision
-    std::cout << std::setprecision(std::numeric_limits<double>::digits10);
-    //std::cout << fixed;
-
-
 }
 
 
@@ -73,7 +67,7 @@ void write_output_file(std::string path)
 
     std::ofstream file(path.c_str());
     std::stringstream sline;
-    sline.precision(std::numeric_limits<long double>::digits10);
+    sline.precision(std::numeric_limits<long float>::digits10);
 
     sline << "Run mode: " << run;
     file << sline.str(); sline.str("");
