@@ -106,42 +106,32 @@ init_acc_jerk()
     int i, j;
 
 
-    // Cleanning accelerations and jerk
-    for (i = 0; i < n; i++)
-    {
-        h_a[i].x = h_a[i].y = h_a[i].z = 0;
-        h_j[i].x = h_j[i].y = h_j[i].z = 0;
-    }
-
     for (i = 0; i < n; i++)
     {
         for (j = 0; j < n; j++)
         {
-            if (i != j)
-            {
-                    rx = h_r[j].x - h_r[i].x;
-                    ry = h_r[j].y - h_r[i].y;
-                    rz = h_r[j].z - h_r[i].z;
+            rx = h_r[j].x - h_r[i].x;
+            ry = h_r[j].y - h_r[i].y;
+            rz = h_r[j].z - h_r[i].z;
 
-                    vx = h_v[j].x - h_v[i].x;
-                    vy = h_v[j].y - h_v[i].y;
-                    vz = h_v[j].z - h_v[i].z;
+            vx = h_v[j].x - h_v[i].x;
+            vy = h_v[j].y - h_v[i].y;
+            vz = h_v[j].z - h_v[i].z;
 
-                    f = rx*rx + ry*ry + rz*rz + E*E;
+            f = rx*rx + ry*ry + rz*rz + E*E;
 
-                    f3 = f * f * f;
-                    f5 = f3 * f * f;
-                    f3 = sqrt(f3);
-                    f5 = sqrt(f5);
+            f3 = f * f * f;
+            f5 = f3 * f * f;
+            f3 = sqrt(f3);
+            f5 = sqrt(f5);
 
-                    h_a[i].x += h_m[j] * rx / f3;
-                    h_a[i].y += h_m[j] * ry / f3;
-                    h_a[i].z += h_m[j] * rz / f3;
+            h_a[i].x += h_m[j] * rx / f3;
+            h_a[i].y += h_m[j] * ry / f3;
+            h_a[i].z += h_m[j] * rz / f3;
 
-                    h_j[i].x += h_m[j] * (vx/f3 + (3 * vx * rx * rx)/f5);
-                    h_j[i].y += h_m[j] * (vy/f3 + (3 * vy * ry * ry)/f5);
-                    h_j[i].z += h_m[j] * (vz/f3 + (3 * vz * rz * rz)/f5);
-            }
+            h_j[i].x += h_m[j] * (vx/f3 + (3 * vx * rx * rx)/f5);
+            h_j[i].y += h_m[j] * (vy/f3 + (3 * vy * ry * ry)/f5);
+            h_j[i].z += h_m[j] * (vz/f3 + (3 * vz * rz * rz)/f5);
         }
     }
 }
@@ -185,7 +175,15 @@ update_acc_jerk(int total)
                 vy = h_p_v[j].y - h_p_v[i].y;
                 vz = h_p_v[j].z - h_p_v[i].z;
 
-                f = rx*rx + ry*ry + rz*rz + E*E;
+                if(i == 0 || j == 0 || i == 1 || j == 1)
+                {
+                    #define NEW_E (1e-8)
+                    f = rx*rx + ry*ry + rz*rz + NEW_E*NEW_E;
+                }
+                else
+                {
+                    f = rx*rx + ry*ry + rz*rz + E*E;
+                }
 
                 f3 = f * f * f;
                 f5 = f3 * f * f;
@@ -311,9 +309,8 @@ void get_energy_log(int OUT, float ITIME)
 {
     if(iterations % OUT == 0)
     {
-        //printf("%.10f %.10e\n", ITIME, energy_total/OUT);
-        std::cerr << ITIME << " " << energy_total/OUT << std::endl;
-        print_positions(n);
+        fprintf(stderr, "%.10f %.10e\n", ITIME, energy_total/OUT);
+        print_positions(100);
         energy_total = 0.0f;
         energy_ini = energy_end;
     }

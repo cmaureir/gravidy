@@ -67,7 +67,7 @@ void write_output_file(std::string path)
 
     std::ofstream file(path.c_str());
     std::stringstream sline;
-    sline.precision(std::numeric_limits<long float>::digits10);
+    //sline.precision(std::numeric_limits<long float>::digits10);
 
     sline << "Run mode: " << run;
     file << sline.str(); sline.str("");
@@ -83,17 +83,17 @@ void write_output_file(std::string path)
     file << sline.str(); sline.str("");
     file << "\n";
 
-    for (int i = 0; i < n; i++) {
-        sline  << setw(10)  << i;
-        file << sline.str(); sline.str("");
-        sline  << setw(22) << h_r[i].x;
-        file << sline.str(); sline.str("");
-        sline  << setw(22) << h_r[i].y;
-        file << sline.str(); sline.str("");
-        sline  << setw(22) << h_r[i].z;
-        file << sline.str(); sline.str("");
-        file << "\n";
-    }
+//    for (int i = 0; i < n; i++) {
+//        sline  << setw(10)  << i;
+//        file << sline.str(); sline.str("");
+//        sline  << setw(22) << h_r[i].x;
+//        file << sline.str(); sline.str("");
+//        sline  << setw(22) << h_r[i].y;
+//        file << sline.str(); sline.str("");
+//        sline  << setw(22) << h_r[i].z;
+//        file << sline.str(); sline.str("");
+//        file << "\n";
+//    }
 
     file.close();
 }

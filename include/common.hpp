@@ -49,8 +49,8 @@ extern int n;                         // Number of particles
 extern int iterations;                // Number of iterations
 extern float total_mass;              // Total mass of the particles
 extern float int_time;               // Integration time
-extern float ini_time, end_time;     // Initial and Final time stamps
-extern float init_time;              // Initial Acc and Jerk calculation time.
+extern double ini_time, end_time;     // Initial and Final time stamps
+extern double init_time;              // Initial Acc and Jerk calculation time.
 extern float energy_ini, energy_end, energy_total; // Initial and Final energy of the system
 extern float ekin, epot;             // Kinetic and Potential energy
 

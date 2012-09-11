@@ -14,18 +14,25 @@ void init_vectors()
 
     h_r     = (double4*) malloc(d4_size);
     h_v     = (double4*) malloc(d4_size);
+
     h_a     = (double4*) malloc(d4_size);
     h_j     = (double4*) malloc(d4_size);
+
     h_old_a = (double4*) malloc(d4_size);
     h_old_j = (double4*) malloc(d4_size);
+
     h_new_a = (double4*) malloc(d4_size);
     h_new_j = (double4*) malloc(d4_size);
+
     h_p_r   = (double4*) malloc(d4_size);
     h_p_v   = (double4*) malloc(d4_size);
+
     h_ekin  =  (float*) malloc(f1_size);
     h_epot  =  (float*) malloc(f1_size);
+
     h_t     =  (float*) malloc(f1_size);
     h_dt    =  (float*) malloc(f1_size);
+
     h_m     =   (float*) malloc(f1_size);
     h_move  =     (int*) malloc(i1_size);
 
@@ -56,37 +63,37 @@ void init_vectors()
         h_v[i].y = part[i].v.y;
         h_v[i].z = part[i].v.z;
 
-        h_a[i].x = 0;
-        h_a[i].y = 0;
-        h_a[i].z = 0;
+        h_a[i].x = 0.0;
+        h_a[i].y = 0.0;
+        h_a[i].z = 0.0;
 
-        h_j[i].x = 0;
-        h_j[i].y = 0;
-        h_j[i].z = 0;
+        h_j[i].x = 0.0;
+        h_j[i].y = 0.0;
+        h_j[i].z = 0.0;
 
-        h_old_a[i].x = 0;
-        h_old_a[i].y = 0;
-        h_old_a[i].z = 0;
+        h_old_a[i].x = 0.0;
+        h_old_a[i].y = 0.0;
+        h_old_a[i].z = 0.0;
 
-        h_new_a[i].x = 0;
-        h_new_a[i].y = 0;
-        h_new_a[i].z = 0;
+        h_new_a[i].x = 0.0;
+        h_new_a[i].y = 0.0;
+        h_new_a[i].z = 0.0;
 
-        h_old_j[i].x = 0;
-        h_old_j[i].y = 0;
-        h_old_j[i].z = 0;
+        h_old_j[i].x = 0.0;
+        h_old_j[i].y = 0.0;
+        h_old_j[i].z = 0.0;
 
-        h_new_j[i].x = 0;
-        h_new_j[i].y = 0;
-        h_new_j[i].z = 0;
+        h_new_j[i].x = 0.0;
+        h_new_j[i].y = 0.0;
+        h_new_j[i].z = 0.0;
 
-        h_p_r[i].x = 0;
-        h_p_r[i].y = 0;
-        h_p_r[i].z = 0;
+        h_p_r[i].x = 0.0;
+        h_p_r[i].y = 0.0;
+        h_p_r[i].z = 0.0;
 
-        h_p_v[i].x = 0;
-        h_p_v[i].y = 0;
-        h_p_v[i].z = 0;
+        h_p_v[i].x = 0.0;
+        h_p_v[i].y = 0.0;
+        h_p_v[i].z = 0.0;
 
         h_t[i]  = 0.0f;
         h_dt[i] = 0.0f;

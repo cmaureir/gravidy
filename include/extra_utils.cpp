@@ -1,36 +1,28 @@
 #include "extra_utils.hpp"
 
-// Print utilities
 void print_all(int limit)
 {
-    cout << left;
-    cout << setw(10)  << "id";
-    cout << setw(22) << "rx";
-    cout << setw(22) << "ry";
-    cout << setw(22) << "rz";
-    cout << setw(22) << "vx";
-    cout << setw(22) << "vy";
-    cout << setw(22) << "vz";
-    cout << setw(22) << "ax";
-    cout << setw(22) << "ay";
-    cout << setw(22) << "az";
-    cout << setw(22) << "jx";
-    cout << setw(22) << "jy";
-    cout << setw(22) << "jz" << endl;
+    cout << setw(6)  << "id";
+    cout << setw(15) << "rx";
+    cout << setw(15) << "ry";
+    cout << setw(15) << "rz";
+    cout << setw(15) << "vx";
+    cout << setw(15) << "vy";
+    cout << setw(15) << "vz";
+    cout << setw(15) << "ax";
+    cout << setw(15) << "ay";
+    cout << setw(15) << "az";
+    cout << setw(15) << "jx";
+    cout << setw(15) << "jy";
+    cout << setw(15) << "jz" << endl;
     for (int i = 0; i < limit; i++) {
-        cout << setw(10)  << i;
-        cout << setw(22) << h_r[i].x;
-        cout << setw(22) << h_r[i].y;
-        cout << setw(22) << h_r[i].z;
-        cout << setw(22) << h_v[i].x;
-        cout << setw(22) << h_v[i].y;
-        cout << setw(22) << h_v[i].z;
-        cout << setw(22) << h_a[i].x;
-        cout << setw(22) << h_a[i].y;
-        cout << setw(22) << h_a[i].z;
-        cout << setw(22) << h_j[i].x;
-        cout << setw(22) << h_j[i].y;
-        cout << setw(22) << h_j[i].z << endl;
+        printf("%6d %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f\n",
+                i,
+                h_r[i].x, h_r[i].y, h_r[i].z,
+                h_v[i].x, h_v[i].y, h_v[i].z,
+                h_a[i].x, h_a[i].y, h_a[i].z,
+                h_j[i].x, h_j[i].y, h_j[i].z,
+                h_dt[i]);
     }
 }
 

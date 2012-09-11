@@ -13,8 +13,8 @@ int n;
 int iterations;
 float total_mass;
 float int_time;
-float ini_time, end_time;
-float init_time;
+double ini_time, end_time;
+double init_time;
 float energy_ini, energy_end, energy_total;
 float ekin, epot;
 

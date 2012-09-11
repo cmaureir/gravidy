@@ -3,6 +3,8 @@
 #include "common.hpp"
 #endif
 
+#include <thrust/device_ptr.h> 
+#include <thrust/reduce.h> 
 #include "dynamics_gpu_kernels.cuh"
 
 __host__ double gpu_energy(bool);

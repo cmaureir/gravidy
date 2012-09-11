@@ -1,7 +1,7 @@
 #CXXFLAGS=-O2 -pg -Wall -lboost_program_options -lgomp
 CC=		g++
 NVCC=		nvcc
-NVFLAGS=	-O2 -m64 -arch=sm_20
+NVFLAGS=	-O2 -m64 -arch=sm_20 
 CUDA_PATH=	/usr/local/cuda
 BOOST_PATH=	/home/cmaurei/boost/boost_build
 CXXFLAGS=	-O2 -m64 -Wall -lgomp -pg# -fopenmp

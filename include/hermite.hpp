@@ -4,8 +4,8 @@
 #endif
 
 #include "dynamics_cpu.hpp"
-//#include "dynamics_gpu.cuh"
-//#include "equilibrium.hpp"
+#include "dynamics_gpu.cuh"
+#include "equilibrium.hpp"
 
 void integrate_cpu();
-//void integrate_gpu();
+void integrate_gpu();
