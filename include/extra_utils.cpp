@@ -73,14 +73,8 @@ void print_masses(int limit)
 
 void print_times(int limit)
 {
-    cout << left;
-    cout << setw(7)  << "id";
-    cout << setw(22) << "t";
-    cout << setw(22) << "dt" << endl;
     for (int i = 0; i < limit; i++) {
-        cout << setw(10)  << i;
-        cout << setw(22) << h_t[i];
-        cout << setw(22) << h_dt[i] << endl;;
+        printf("%6d %.15f %.15f\n", i, h_dt[i], h_t[i]);
     }
 }
 

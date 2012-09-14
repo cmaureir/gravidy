@@ -93,27 +93,27 @@ double get_halfmass_radius(double dx, double dy, double dz)
 
 float get_crossing_time()
 {
-    float M = n * h_m[0];
+    float M = total_mass;
 
-    float Rv = (-G * M * M) / (2 * (epot));
-    float U_t = sqrt( (Rv * Rv * Rv) / G * M);
-    float t_cr = 2 * sqrt(2) * U_t;
+    float Rv = (-G * M * M) / (4 * (energy_ini));
+    float Ut = sqrt( (Rv * Rv * Rv) / G * M);
+    float t_cr = 2 * sqrt(2) * Ut;
+
+    std::cout << "Virial radius: " << Rv << std::endl;
+    std::cout << "Unity of time: " << Ut << std::endl;
 
     return t_cr;
 }
 
 float get_relaxation_time()
 {
-    // A = sqrt(N * r_h^3 / G m )
-    // B = ( 1 / ln(gamma * N )
-    // t_rh = 0.138 * A * B
     float t_rh;
     float r_h, a, b;
 
     point center = get_center_of_density();
     r_h = get_halfmass_radius(center.x, center.y, center.z);
-    a = sqrt( (n * r_h * r_h * r_h) / ( G * total_mass) );
-    b = 1/0.11;
+    a = sqrt( (n * r_h * r_h * r_h) / ( G * h_m[0]) );
+    b = 1/log(0.11 * n);
 
     t_rh = 0.138 * a * b;
     return t_rh;

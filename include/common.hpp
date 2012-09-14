@@ -8,11 +8,12 @@
 // Initial time step factor
 #define ETA_S 0.01
 // Update time step factor
-#define ETA_N 0.02
+#define ETA_N 0.1
 // Softening parameter
 #define E 1e-4
+#define E2 1e-8
 // Block time steps minimum and maximum
-#define D_TIME_MIN (10e-8)
+#define D_TIME_MIN (10e-7)
 #define D_TIME_MAX (0.125)
 
 // Gravitational constant in nbu
@@ -22,17 +23,15 @@
 #define BSIZE 64
 
 // Neighbor number
-#define J 10
+#define J                   10
+#define PI                  3.141592653589793
+#define TWOPI               (2*3.14159265)
+#define MIN_PART_TO_MOVE    10
+#define KEPLER_ITE          50
+#define INIT_PARTICLE       0
+#define DEL_E               9.0e-16
 
-#define PI 3.141592653589793
 
-#define MIN_PART_TO_MOVE 10
-
-
-//typedef struct float4
-//{
-//    float x,y,z,w;
-//} float4;
 // Particle structure to read input file
 typedef struct particle
 {
