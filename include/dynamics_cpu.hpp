@@ -9,6 +9,7 @@
 #include <algorithm>
 
 #include "extra_utils.hpp"
+#include "kepler.hpp"
 
 void next_itime(float*);
 int find_particles_to_move(float);
@@ -22,5 +23,5 @@ void get_energy_log(int,float);
 void save_old();
 void predicted_pos_vel(float);
 void predicted_pos_vel_kepler(float);
-void correction_pos_vel(float, int);
+void correction_pos_vel(float,int);
 double magnitude(double, double, double);

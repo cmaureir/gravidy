@@ -13,7 +13,11 @@ next_itime(float *ATIME)
     *ATIME = 1.0e10;
     for (int i = 0; i < n; i++)
     {
-        *ATIME = std::min(*ATIME,h_t[i] + h_dt[i]);
+        float time = h_t[i] + h_dt[i];
+        if(time < *ATIME)
+        {
+            *ATIME = time;
+        }
     }
 }
 
@@ -29,19 +33,16 @@ next_itime(float *ATIME)
  */
 int find_particles_to_move(float ITIME)
 {
-    int i, j;
-    j = 0;
-    for (i = 0; i < n; i++)
+    int j = 0;
+    for (int i = 0; i < n; i++)
     {
         h_move[i] = -1;
         if (h_t[i] + h_dt[i] == ITIME)
         {
             h_move[j] = i;
             j++;
-//            std::cout << i << " ";
         }
     }
-//    std::cout << std::endl;
     return j;
 }
 
@@ -60,13 +61,10 @@ int find_particles_to_move(float ITIME)
 void
 init_dt(float *ATIME)
 {
-    int i;
-    float tmp_dt;
-
     // Aarseth initial timestep
     // dt_{i} = ETA_S * sqrt( (|a|) / (|j|) )
-    for (i = 0; i < n; i++) {
-        tmp_dt = ETA_S *
+    for (int i = 0; i < n; i++) {
+        float tmp_dt = ETA_S *
                  magnitude(h_a[i].x, h_a[i].y, h_a[i].z) /
                  magnitude(h_j[i].x, h_j[i].y, h_j[i].z);
 
@@ -83,9 +81,14 @@ init_dt(float *ATIME)
         {
           tmp_dt = pow(2,(int)((log(tmp_dt)/log(2.0))-1));
         }
-        *ATIME = std::min(*ATIME, tmp_dt);
         h_dt[i] = tmp_dt;
         h_t[i] = 0.0;
+
+        // Obtaining the first integration time
+        if(tmp_dt < *ATIME)
+        {
+            *ATIME = tmp_dt;
+        }
     }
 
 }
@@ -118,7 +121,7 @@ init_acc_jerk()
             vy = h_v[j].y - h_v[i].y;
             vz = h_v[j].z - h_v[i].z;
 
-            f = rx*rx + ry*ry + rz*rz + E*E;
+            f = rx*rx + ry*ry + rz*rz + E2;
 
             f3 = f * f * f;
             f5 = f3 * f * f;
@@ -150,9 +153,6 @@ init_acc_jerk()
 void
 update_acc_jerk(int total)
 {
-    double rx, ry, rz;
-    double vx, vy, vz;
-    double f, f3, f5;
     int i, j, k;
 
 
@@ -160,44 +160,35 @@ update_acc_jerk(int total)
     {
         i = h_move[k];
         // Cleaning acceleration and jerk
-        h_a[i].x = h_a[i].y = h_a[i].z = 0.0f;
-        h_j[i].x = h_j[i].y = h_j[i].z = 0.0f;
+        h_a[i].x = h_a[i].y = h_a[i].z = 0.0;
+        h_j[i].x = h_j[i].y = h_j[i].z = 0.0;
 
         for (j = 0; j < n; j++)
         {
-            if(i != j)
-            {
-                rx = h_p_r[j].x - h_p_r[i].x;
-                ry = h_p_r[j].y - h_p_r[i].y;
-                rz = h_p_r[j].z - h_p_r[i].z;
+            if(i == j) continue;
+            double rx = h_p_r[j].x - h_p_r[i].x;
+            double ry = h_p_r[j].y - h_p_r[i].y;
+            double rz = h_p_r[j].z - h_p_r[i].z;
 
-                vx = h_p_v[j].x - h_p_v[i].x;
-                vy = h_p_v[j].y - h_p_v[i].y;
-                vz = h_p_v[j].z - h_p_v[i].z;
+            double vx = h_p_v[j].x - h_p_v[i].x;
+            double vy = h_p_v[j].y - h_p_v[i].y;
+            double vz = h_p_v[j].z - h_p_v[i].z;
 
-                if(i == 0 || j == 0 || i == 1 || j == 1)
-                {
-                    #define NEW_E (1e-8)
-                    f = rx*rx + ry*ry + rz*rz + NEW_E*NEW_E;
-                }
-                else
-                {
-                    f = rx*rx + ry*ry + rz*rz + E*E;
-                }
+            double r2 = rx*rx + ry*ry + rz*rz + E2;
+            double rinv = 1/sqrt(r2);
+            double r2inv = rinv  * rinv;
+            double r3inv = r2inv * rinv;
+            double r5inv = r2inv * r3inv;
+            double mr3inv = r3inv * h_m[j];
+            double mr5inv = r5inv * h_m[j];
 
-                f3 = f * f * f;
-                f5 = f3 * f * f;
-                f3 = sqrt(f3);
-                f5 = sqrt(f5);
+            h_a[i].x += rx * mr3inv;
+            h_a[i].y += ry * mr3inv;
+            h_a[i].z += rz * mr3inv;
 
-                h_a[i].x += h_m[j] * rx / f3;
-                h_a[i].y += h_m[j] * ry / f3;
-                h_a[i].z += h_m[j] * rz / f3;
-
-                h_j[i].x += h_m[j] * (vx/f3 + (3 * vx * rx * rx)/f5);
-                h_j[i].y += h_m[j] * (vy/f3 + (3 * vy * ry * ry)/f5);
-                h_j[i].z += h_m[j] * (vz/f3 + (3 * vz * rz * rz)/f5);
-            }
+            h_j[i].x += vx * mr3inv + (3 * vx * rx * rx) * mr5inv;
+            h_j[i].y += vy * mr3inv + (3 * vy * ry * ry) * mr5inv;
+            h_j[i].z += vz * mr3inv + (3 * vz * rz * rz) * mr5inv;
         }
 
     }
@@ -235,7 +226,7 @@ energy()
             ry = h_p_r[j].y - h_p_r[i].y;
             rz = h_p_r[j].z - h_p_r[i].z;
 
-            r2 = rx*rx + ry*ry + rz*rz;// + E*E;
+            r2 = rx*rx + ry*ry + rz*rz;
 
             epot_tmp -= (h_m[i] * h_m[j]) / sqrt(r2);
         }
@@ -286,7 +277,7 @@ initial_energy()
             ry = h_r[j].y - h_r[i].y;
             rz = h_r[j].z - h_r[i].z;
 
-            r2 = rx*rx + ry*ry + rz*rz;// + E*E;
+            r2 = rx*rx + ry*ry + rz*rz;
 
             epot_tmp -= (h_m[i] * h_m[j]) / sqrt(r2);
         }
@@ -327,7 +318,6 @@ void get_energy_log(int OUT, float ITIME)
 void
 save_old()
 {
-    //#pragma omp parallel for
     for (int i = 0; i < n; i++)
     {
         h_old_a[i].x = h_a[i].x;
@@ -352,21 +342,21 @@ save_old()
 void
 predicted_pos_vel(float ITIME)
 {
-    float tmp_dt, tmp_dt2, tmp_dt3;
+    float dt, dt2, dt3;
 
     for (int i = 0; i < n; i++)
     {
-        tmp_dt = ITIME - h_t[i];
-        tmp_dt2 = (tmp_dt  * tmp_dt)/2;
-        tmp_dt3 = (tmp_dt2 * tmp_dt)/6;
+        dt = ITIME - h_t[i];
+        dt2 = (dt  * dt)/2;
+        dt3 = (dt2 * dt)/6;
 
-        h_p_r[i].x = tmp_dt3 * h_j[i].x + tmp_dt2 * h_a[i].x + tmp_dt * h_v[i].x + h_r[i].x;
-        h_p_r[i].y = tmp_dt3 * h_j[i].y + tmp_dt2 * h_a[i].y + tmp_dt * h_v[i].y + h_r[i].y;
-        h_p_r[i].z = tmp_dt3 * h_j[i].z + tmp_dt2 * h_a[i].z + tmp_dt * h_v[i].z + h_r[i].z;
+        h_p_r[i].x = dt3 * h_j[i].x + dt2 * h_a[i].x + dt * h_v[i].x + h_r[i].x;
+        h_p_r[i].y = dt3 * h_j[i].y + dt2 * h_a[i].y + dt * h_v[i].y + h_r[i].y;
+        h_p_r[i].z = dt3 * h_j[i].z + dt2 * h_a[i].z + dt * h_v[i].z + h_r[i].z;
 
-        h_p_v[i].x = tmp_dt2 * h_j[i].x + tmp_dt * h_a[i].x + h_v[i].x;
-        h_p_v[i].y = tmp_dt2 * h_j[i].y + tmp_dt * h_a[i].y + h_v[i].y;
-        h_p_v[i].z = tmp_dt2 * h_j[i].z + tmp_dt * h_a[i].z + h_v[i].z;
+        h_p_v[i].x = dt2 * h_j[i].x + dt * h_a[i].x + h_v[i].x;
+        h_p_v[i].y = dt2 * h_j[i].y + dt * h_a[i].y + h_v[i].y;
+        h_p_v[i].z = dt2 * h_j[i].z + dt * h_a[i].z + h_v[i].z;
     }
 }
 
@@ -379,9 +369,38 @@ predicted_pos_vel(float ITIME)
  *
  */
 void
-predicted_pos_vel_kepler(float ITIME)
+predicted_pos_vel_kepler(float ITIME, int total)
 {
-    // TO DO
+
+    double rx, ry, rz;
+    double vx, vy, vz;
+
+    for (int i = 0; i < total; i++)
+    {
+        float dt = ITIME - h_t[i];
+
+        rx = h_r[i].x - h_r[0].x;
+        ry = h_r[i].y - h_r[0].y;
+        rz = h_r[i].z - h_r[0].z;
+
+        vx = h_v[i].x - h_v[0].x;
+        vy = h_v[i].y - h_v[0].y;
+        vz = h_v[i].z - h_v[0].z;
+
+        for (float j = 0; j < KEPLER_ITE; j+=dt)
+        {
+            kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, h_m[i], h_m[0], j);
+        }
+
+        h_r[i].x = rx;
+        h_r[i].y = ry;
+        h_r[i].z = rz;
+
+        h_v[i].x = vx;
+        h_v[i].y = vy;
+        h_v[i].z = vz;
+    }
+
 }
 
 /*
@@ -408,7 +427,6 @@ correction_pos_vel(float ITIME, int total)
     int i, k;
 
 
-    //#pragma omp parallel for
     for (k = 0; k < total; k++)
     {
         i = h_move[k];
@@ -460,7 +478,7 @@ correction_pos_vel(float ITIME, int total)
         // |a_{1,i}^{(2)}|^{2}
         abs_a1_22  = abs_a1_2 * abs_a1_2;
 
-        tmp_dt = sqrt( ETA_N * ((abs_a1 * abs_a1_2 + abs_j12) / (abs_j1 * abs_a1_3 + abs_a1_22)));
+        tmp_dt = sqrt(ETA_N * ((abs_a1 * abs_a1_2 + abs_j12) / (abs_j1 * abs_a1_3 + abs_a1_22)));
 
         /* Adjusting to block timesteps */
         if (tmp_dt < D_TIME_MIN)
@@ -473,7 +491,14 @@ correction_pos_vel(float ITIME, int total)
         }
         else
         {
-            tmp_dt = pow(2,(int)((log(tmp_dt)/log(2.0))-1));
+            //tmp_dt = pow(2,(int)((log(tmp_dt)/log(2.0))-1));
+            if (tmp_dt < h_dt[i])
+                tmp_dt = h_dt[i]/2;
+            else if (tmp_dt > 2 * h_dt[i])
+                tmp_dt = 2 * h_dt[i];
+            else
+                tmp_dt = h_dt[i];
+
         }
         h_dt[i] = tmp_dt;
     }

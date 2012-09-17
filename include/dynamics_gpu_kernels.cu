@@ -19,8 +19,8 @@ __global__
 void
 k_energy(double4 *r, double4 *v, float *ekin, float *epot, float *m, int n)
 {
-    float ekin_tmp = 0;
-    float epot_tmp = 0;
+    float ekin_tmp = 0.0f;
+    float epot_tmp = 0.0f;
     double r2, v2;
     double rx, ry, rz;
     double vx, vy, vz;
@@ -28,27 +28,30 @@ k_energy(double4 *r, double4 *v, float *ekin, float *epot, float *m, int n)
     int i = threadIdx.x + blockDim.x * blockIdx.x;
     int j;
 
-    epot_tmp = 0;
-    for (j = i+1; j < n; j++)
+    if (i < n)
     {
-        rx = r[j].x - r[i].x;
-        ry = r[j].y - r[i].y;
-        rz = r[j].z - r[i].z;
+        epot_tmp = 0.0f;
+        for (j = i+1; j < n; j++)
+        {
+            rx = r[j].x - r[i].x;
+            ry = r[j].y - r[i].y;
+            rz = r[j].z - r[i].z;
 
-        r2 = rx*rx + ry*ry + rz*rz;// + E*E;
+            r2 = rx*rx + ry*ry + rz*rz;
 
-        epot_tmp -= (m[i] * m[j]) / sqrt(r2);
+            epot_tmp -= (m[i] * m[j]) / sqrt(r2);
+        }
+
+        vx = v[i].x * v[i].x;
+        vy = v[i].y * v[i].y;
+        vz = v[i].z * v[i].z;
+
+        v2 = vx + vy + vz;
+        ekin_tmp = 0.5 * m[i] * v2;
+
+        ekin[i] = ekin_tmp;
+        epot[i] = epot_tmp;
     }
-
-    vx = v[i].x * v[i].x;
-    vy = v[i].y * v[i].y;
-    vz = v[i].z * v[i].z;
-
-    v2 = vx + vy + vz;
-    ekin_tmp = 0.5 * m[i] * v2;
-
-    ekin[i] = ekin_tmp;
-    epot[i] = epot_tmp;
 }
 
 
@@ -226,15 +229,7 @@ k_update_acc_jerk_simple(double4 *r, double4 *v, double4 *a, double4 *j, float *
                 tmp_v.y = v[k].y - v[i].y;
                 tmp_v.z = v[k].z - v[i].z;
 
-                if(i == 0 || k == 0 || i == 1 || k == 1)
-                {
-                    #define NEW_E (1e-8)
-                    f = tmp_r.x*tmp_r.x + tmp_r.y*tmp_r.y + tmp_r.z*tmp_r.z + NEW_E*NEW_E;
-                }
-                else
-                {
-                    f = tmp_r.x*tmp_r.x + tmp_r.y*tmp_r.y + tmp_r.z*tmp_r.z + E*E;
-                }
+                f = tmp_r.x*tmp_r.x + tmp_r.y*tmp_r.y + tmp_r.z*tmp_r.z + E*E;
 
                 f3 = f * f * f;
                 f5 = f3 * f * f;
@@ -264,10 +259,10 @@ k_update_acc_jerk_tile(double4 *r, double4 *v, double4 *a, double4 *j, float *m,
     double4 *s_r = (double4*)sh;
     double4 *s_v = (double4*)&s_r[blockDim.x];
 
-    double4 pos = {0.0f, 0.0f, 0.0f, 0.0f};
-    double4 vel = {0.0f, 0.0f, 0.0f, 0.0f};
-    double4 tmp_a = {0.0f, 0.0f, 0.0f, 0.0f};
-    double4 tmp_j = {0.0f, 0.0f, 0.0f, 0.0f};
+    double4 pos = {0.0, 0.0, 0.0, 0.0};
+    double4 vel = {0.0, 0.0, 0.0, 0.0};
+    double4 tmp_a = {0.0, 0.0, 0.0, 0.0};
+    double4 tmp_j = {0.0, 0.0, 0.0, 0.0};
 
     double3 tmp_r,tmp_v;
     double f, f3, f5;
@@ -292,48 +287,40 @@ k_update_acc_jerk_tile(double4 *r, double4 *v, double4 *a, double4 *j, float *m,
         mj      = m[idx];
         __syncthreads();
 
-        if ( id != idx )
+        for (int k = 0; k < BSIZE; k++)
         {
-            for (int k = 0; k < BSIZE; k++)
-            {
-                tmp_r.x = s_r[k].x - pos.x;
-                tmp_r.y = s_r[k].y - pos.y;
-                tmp_r.z = s_r[k].z - pos.z;
+            tmp_r.x = s_r[k].x - pos.x;
+            tmp_r.y = s_r[k].y - pos.y;
+            tmp_r.z = s_r[k].z - pos.z;
 
-                tmp_v.x = s_v[k].x - vel.x;
-                tmp_v.y = s_v[k].y - vel.y;
-                tmp_v.z = s_v[k].z - vel.z;
+            tmp_v.x = s_v[k].x - vel.x;
+            tmp_v.y = s_v[k].y - vel.y;
+            tmp_v.z = s_v[k].z - vel.z;
 
-                if(id == 0 || idx == 0 || id == 1 || idx == 1)
-                {
-                    #define NEW_E (1e-8)
-                    f = tmp_r.x*tmp_r.x + tmp_r.y*tmp_r.y + tmp_r.z*tmp_r.z + NEW_E*NEW_E;
-                }
-                else
-                {
-                    f = tmp_r.x*tmp_r.x + tmp_r.y*tmp_r.y + tmp_r.z*tmp_r.z + E*E;
-                }
+            f = tmp_r.x*tmp_r.x + tmp_r.y*tmp_r.y + tmp_r.z*tmp_r.z + E*E;
 
-                f3 = f * f * f;
-                f5 = f3 * f * f;
-                f3 = sqrt(f3);
-                f5 = sqrt(f5);
+            f3 = f * f * f;
+            f5 = f3 * f * f;
+            f3 = sqrt(f3);
+            f5 = sqrt(f5);
 
-                tmp_a.x += mj * tmp_r.x / f3;
-                tmp_a.y += mj * tmp_r.y / f3;
-                tmp_a.z += mj * tmp_r.z / f3;
+            tmp_a.x += mj * tmp_r.x / f3;
+            tmp_a.y += mj * tmp_r.y / f3;
+            tmp_a.z += mj * tmp_r.z / f3;
 
-                tmp_j.x += mj * (tmp_v.x/f3 + (3 * tmp_v.x * tmp_r.x * tmp_r.x)/f5);
-                tmp_j.y += mj * (tmp_v.y/f3 + (3 * tmp_v.y * tmp_r.y * tmp_r.y)/f5);
-                tmp_j.z += mj * (tmp_v.z/f3 + (3 * tmp_v.z * tmp_r.z * tmp_r.z)/f5);
-            }
+            tmp_j.x += mj * (tmp_v.x/f3 + (3 * tmp_v.x * tmp_r.x * tmp_r.x)/f5);
+            tmp_j.y += mj * (tmp_v.y/f3 + (3 * tmp_v.y * tmp_r.y * tmp_r.y)/f5);
+            tmp_j.z += mj * (tmp_v.z/f3 + (3 * tmp_v.z * tmp_r.z * tmp_r.z)/f5);
         }
         
         __syncthreads();
     }
     
-    a[id] = tmp_a;
-    j[id] = tmp_j;
+    if (id != -1)
+    {
+        a[id] = tmp_a;
+        j[id] = tmp_j;
+    }
 }
 
 __global__ void

@@ -8,7 +8,7 @@
 // Initial time step factor
 #define ETA_S 0.01
 // Update time step factor
-#define ETA_N 0.1
+#define ETA_N 0.01
 // Softening parameter
 #define E 1e-4
 #define E2 1e-8
@@ -20,7 +20,7 @@
 #define G 1
 
 // CUDA Fixed block size
-#define BSIZE 64
+#define BSIZE 128
 
 // Neighbor number
 #define J                   10

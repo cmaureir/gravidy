@@ -21,7 +21,9 @@ double
 gpu_energy(bool type)
 {
     int d4_size = sizeof(double4) * n;
-    int f1_size = sizeof(float)  * n;
+
+    thrust::device_ptr<float> dptr_ekin(d_ekin);
+    thrust::device_ptr<float> dptr_epot(d_epot);
 
     int nthreads = BSIZE;
     int nblocks  = std::ceil(n/(float)nthreads);
@@ -40,18 +42,32 @@ gpu_energy(bool type)
     }
 
     cudaThreadSynchronize();
-//    std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
 
-    cudaMemcpy(h_ekin, d_ekin, f1_size, cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_epot, d_epot, f1_size, cudaMemcpyDeviceToHost);
-
-    ekin = 0;
-    epot = 0;
-    for (int i = 0; i < n; i++)
+    try
     {
-        ekin += h_ekin[i];
-        epot += h_epot[i];
+      ekin = thrust::reduce(dptr_ekin, dptr_ekin + n);
+      epot = thrust::reduce(dptr_epot, dptr_epot + n);
     }
+    catch(std::bad_alloc &e)
+    {
+        std::cerr << "Ran out of memory while sorting" << std::endl;
+        exit(-1);
+    }
+    catch(thrust::system_error &e)
+    {
+        std::cerr << "Some other error happened during sort: " << e.what() << std::endl;
+        exit(-1);
+    }
+//    std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
+//    cudaMemcpy(h_ekin, d_ekin, f1_size, cudaMemcpyDeviceToHost);
+//    cudaMemcpy(h_epot, d_epot, f1_size, cudaMemcpyDeviceToHost);
+//    ekin = 0;
+//    epot = 0;
+//    for (int i = 0; i < n; i++)
+//    {
+//        ekin += h_ekin[i];
+//        epot += h_epot[i];
+//    }
 
     return ekin + epot;
 

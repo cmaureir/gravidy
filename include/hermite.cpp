@@ -1,5 +1,5 @@
 #include "hermite.hpp"
-#define ITE_MAX (1e4)
+#define ITE_MAX (1e6)
 #define OUT (1e3)
 
 void
@@ -31,7 +31,7 @@ integrate_gpu()
         total = find_particles_to_move(ITIME);
         save_old();
         predicted_pos_vel(ITIME);
-        if(total < BSIZE * 4)
+        if(total < BSIZE * 2)
         {
             gpu_update_acc_jerk_single(total);
         }
