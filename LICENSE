@@ -47,5 +47,5 @@
  * Note: The part of the algorithm to calculate the density centre 
  * of a cluster following the scheme of Casertano and Hut is
  * copyright (c) 2008, David J. Vanecek, and follows the same
- * BSD 2-Clause License as above.
+ * BSD license as above.
  */
