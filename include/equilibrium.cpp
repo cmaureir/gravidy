@@ -112,7 +112,7 @@ float get_relaxation_time()
 
     point center = get_center_of_density();
     r_h = get_halfmass_radius(center.x, center.y, center.z);
-    a = sqrt( (n * r_h * r_h * r_h) / ( G * h_m[0]) );
+    a = sqrt( (n * r_h * r_h * r_h) / ( G * (total_mass/n) ));
     b = 1/log(0.11 * n);
 
     t_rh = 0.138 * a * b;

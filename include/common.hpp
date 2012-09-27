@@ -21,6 +21,7 @@
 
 // CUDA Fixed block size
 #define BSIZE 128
+#define NJBLOCK 16
 
 // Neighbor number
 #define J                   10
@@ -29,7 +30,21 @@
 #define MIN_PART_TO_MOVE    10
 #define KEPLER_ITE          50
 #define INIT_PARTICLE       0
-#define DEL_E               9.0e-16
+#define DEL_E               9.0e-16 /* maximum error in angle E for kepler equation            */
+#define DEL_E_HYP           2.e-15  /* maximum error in angle E for hyperbolic kepler equation */
+
+
+// Macro from cutil.h
+#  define CUDA_SAFE_CALL_NO_SYNC( call) do {                                 \
+    cudaError err = call;                                                    \
+    if( cudaSuccess != err) {                                                \
+        fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",        \
+                __FILE__, __LINE__, cudaGetErrorString( err) );              \
+        exit(EXIT_FAILURE);                                                  \
+    } } while (0)
+
+#  define CUDA_SAFE_CALL( call)     CUDA_SAFE_CALL_NO_SYNC(call);           \
+
 
 
 // Particle structure to read input file
@@ -50,7 +65,7 @@ extern float total_mass;              // Total mass of the particles
 extern float int_time;               // Integration time
 extern double ini_time, end_time;     // Initial and Final time stamps
 extern double init_time;              // Initial Acc and Jerk calculation time.
-extern float energy_ini, energy_end, energy_total; // Initial and Final energy of the system
+extern float energy_ini, energy_end, energy_tmp; // Initial and Final energy of the system
 extern float ekin, epot;             // Kinetic and Potential energy
 
 /*
@@ -125,3 +140,8 @@ extern float t_cr; // Crossing time
  */
 extern std::string input_file, output_file; // Input and Output filename
 extern std::string run;                     // Run option (cpu or gpu)
+
+extern size_t nthreads, nblocks;
+extern size_t d1_size, d4_size;
+extern size_t f1_size, i1_size;
+extern double4 *tmp_red;

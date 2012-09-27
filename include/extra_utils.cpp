@@ -16,7 +16,7 @@ void print_all(int limit)
     cout << setw(15) << "jy";
     cout << setw(15) << "jz" << endl;
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f %.15f\n",
+        printf("%6d %.14f %.14f %.14f %.14f %.14f %.14f %.14f %.14f %.14f %.14f %.14f %.14f %.14f\n",
                 i,
                 h_r[i].x, h_r[i].y, h_r[i].z,
                 h_v[i].x, h_v[i].y, h_v[i].z,
@@ -29,24 +29,24 @@ void print_all(int limit)
 void print_positions(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.15f %.15f %.15f\n", i, h_r[i].x, h_r[i].y, h_r[i].z );
+        printf("%6d %.14f %.14f %.14f\n", i, h_r[i].x, h_r[i].y, h_r[i].z );
     }
 }
 
 void print_velocities(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.15f %.15f %.15f\n", i, h_v[i].x, h_v[i].y, h_v[i].z );
+        printf("%6d %.14f %.14f %.14f\n", i, h_v[i].x, h_v[i].y, h_v[i].z );
     }
 }
 void print_accelerations(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.15f %.15f %.15f\n", i, h_a[i].x, h_a[i].y, h_a[i].z );
+        printf("%6d %.14f %.14f %.14f\n", i, h_a[i].x, h_a[i].y, h_a[i].z );
     }
 
 }
-void print_jerks(int limit)
+void print_jrks(int limit)
 {
     cout << left;
     cout << setw(10)  << "id";
@@ -74,7 +74,7 @@ void print_masses(int limit)
 void print_times(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.15f %.15f\n", i, h_dt[i], h_t[i]);
+        printf("%6d %.15f %.15f %.15f\n", i, h_dt[i], h_t[i], h_dt[i] + h_t[i]);
     }
 }
 
@@ -102,21 +102,15 @@ void print_old(int limit)
 
 void print_predicted(int limit)
 {
-    cout << left;
-    cout << setw(10)  << "id";
-    cout << setw(22) << "p_rx";
-    cout << setw(22) << "p_ry";
-    cout << setw(22) << "p_rz";
-    cout << setw(22) << "p_vx";
-    cout << setw(22) << "p_vy";
-    cout << setw(22) << "p_vz" << endl;
     for (int i = 0; i < limit; i++) {
-        cout << setw(10)  << i;
-        cout << setw(22) << h_p_r[i].x;
-        cout << setw(22) << h_p_r[i].y;
-        cout << setw(22) << h_p_r[i].z;
-        cout << setw(22) << h_p_v[i].x;
-        cout << setw(22) << h_p_v[i].y;
-        cout << setw(22) << h_p_v[i].z << endl;
+        printf("%6d %.14f %.14f %.14f %.14f %.14f %.14f\n",
+                i,
+                h_p_r[i].x, h_p_r[i].y, h_p_r[i].z,
+                h_p_v[i].x, h_p_v[i].y, h_p_v[i].z);
     }
+}
+
+double magnitude(double x, double y, double z)
+{
+    return sqrt(x*x + y*y + z*z);
 }

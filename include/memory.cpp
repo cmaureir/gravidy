@@ -8,9 +8,10 @@
  */
 void init_vectors()
 {
-    int d4_size = n * sizeof(double4);
-    int f1_size = n * sizeof(float);
-    int i1_size = n * sizeof(int);
+    d4_size = n * sizeof(double4);
+    d1_size = n * sizeof(double);
+    f1_size = n * sizeof(float);
+    i1_size = n * sizeof(int);
 
     h_r     = (double4*) malloc(d4_size);
     h_v     = (double4*) malloc(d4_size);
@@ -21,8 +22,21 @@ void init_vectors()
     h_old_a = (double4*) malloc(d4_size);
     h_old_j = (double4*) malloc(d4_size);
 
-    h_new_a = (double4*) malloc(d4_size);
-    h_new_j = (double4*) malloc(d4_size);
+
+    //h_new_a = (double4*) malloc(n * NJBLOCK * sizeof(double4));
+    //h_new_j = (double4*) malloc(n * NJBLOCK * sizeof(double4));
+
+    h_new_a = (double4*) malloc(n * sizeof(double4));
+    h_new_j = (double4*) malloc(n * sizeof(double4));
+
+
+
+    //h_new_a = (double4**) malloc(n * sizeof(double4*));
+    //h_new_j = (double4**) malloc(n * sizeof(double4*));
+    //for (int ii = 0; ii < n; ii++) {
+    //    h_new_a[ii] = (double4*)malloc(NJBLOCK*sizeof(double4));
+    //    h_new_j[ii] = (double4*)malloc(NJBLOCK*sizeof(double4));
+    //}
 
     h_p_r   = (double4*) malloc(d4_size);
     h_p_v   = (double4*) malloc(d4_size);
@@ -36,22 +50,36 @@ void init_vectors()
     h_m     =   (float*) malloc(f1_size);
     h_move  =     (int*) malloc(i1_size);
 
-    cudaMalloc((void**)&d_r,     d4_size);
-    cudaMalloc((void**)&d_v,     d4_size);
-    cudaMalloc((void**)&d_a,     d4_size);
-    cudaMalloc((void**)&d_j,     d4_size);
-    cudaMalloc((void**)&d_old_a, d4_size);
-    cudaMalloc((void**)&d_old_j, d4_size);
-    cudaMalloc((void**)&d_new_a, d4_size);
-    cudaMalloc((void**)&d_new_j, d4_size);
-    cudaMalloc((void**)&d_p_r,   d4_size);
-    cudaMalloc((void**)&d_p_v,   d4_size);
-    cudaMalloc((void**)&d_m,     f1_size);
-    cudaMalloc((void**)&d_ekin,  f1_size);
-    cudaMalloc((void**)&d_epot,  f1_size);
-    cudaMalloc((void**)&d_t,     f1_size);
-    cudaMalloc((void**)&d_dt,    f1_size);
-    cudaMalloc((void**)&d_move,  i1_size);
+    //d_new_a = new double4* [n];
+    //d_new_j = new double4* [n];
+    //for (int ii = 0; ii < n; ii++) {
+    //    cudaMalloc((void**)&d_new_a[ii], NJBLOCK * sizeof(double4));
+    //    cudaMalloc((void**)&d_new_j[ii], NJBLOCK * sizeof(double4));
+    //}
+    //cudaMalloc((void**)&d_new_a, NJBLOCK * n * sizeof(double4));
+    //cudaMalloc((void**)&d_new_j, NJBLOCK * n * sizeof(double4));
+
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_new_a, d4_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_new_j, d4_size));
+
+
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_r,     d4_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_v,     d4_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_a,     d4_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_j,     d4_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_old_a, d4_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_old_j, d4_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_p_r,   d4_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_p_v,   d4_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_m,     f1_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_ekin,  f1_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_epot,  f1_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_t,     f1_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_dt,    f1_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_move,  i1_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&tmp_red, d4_size));
+
+    double4 empty = {0.0, 0.0, 0.0, 0.0};
 
     for (int i = 0; i < n; i++)
     {
@@ -63,37 +91,28 @@ void init_vectors()
         h_v[i].y = part[i].v.y;
         h_v[i].z = part[i].v.z;
 
-        h_a[i].x = 0.0;
-        h_a[i].y = 0.0;
-        h_a[i].z = 0.0;
+        // Initial predicted position and velocity
+        // has the same value, to perform
+        // the energy calculation
+        h_p_r[i].x = part[i].r.x;
+        h_p_r[i].y = part[i].r.y;
+        h_p_r[i].z = part[i].r.z;
 
-        h_j[i].x = 0.0;
-        h_j[i].y = 0.0;
-        h_j[i].z = 0.0;
+        h_p_v[i].x = part[i].v.x;
+        h_p_v[i].y = part[i].v.y;
+        h_p_v[i].z = part[i].v.z;
 
-        h_old_a[i].x = 0.0;
-        h_old_a[i].y = 0.0;
-        h_old_a[i].z = 0.0;
+        h_a[i] = empty;
+        h_j[i] = empty;
 
-        h_new_a[i].x = 0.0;
-        h_new_a[i].y = 0.0;
-        h_new_a[i].z = 0.0;
-
-        h_old_j[i].x = 0.0;
-        h_old_j[i].y = 0.0;
-        h_old_j[i].z = 0.0;
-
-        h_new_j[i].x = 0.0;
-        h_new_j[i].y = 0.0;
-        h_new_j[i].z = 0.0;
-
-        h_p_r[i].x = 0.0;
-        h_p_r[i].y = 0.0;
-        h_p_r[i].z = 0.0;
-
-        h_p_v[i].x = 0.0;
-        h_p_v[i].y = 0.0;
-        h_p_v[i].z = 0.0;
+        h_old_a[i] = empty;
+        h_old_j[i] = empty;
+        //for (int ii = 0; ii < NJBLOCK * n; ii++) {
+        //    h_new_a[ii] = empty;
+        //    h_new_j[ii] = empty;
+        //}
+            h_new_a[i] = empty;
+            h_new_j[i] = empty;
 
         h_t[i]  = 0.0f;
         h_dt[i] = 0.0f;
@@ -106,8 +125,7 @@ void init_vectors()
 
     // The mass is always the same, so to avoid copying it every
     //  function, we copy it at the begining.
-
-    cudaMemcpy(d_m, h_m, f1_size, cudaMemcpyHostToDevice);
+    CUDA_SAFE_CALL(cudaMemcpy(d_m, h_m, f1_size, cudaMemcpyHostToDevice));
 }
 
 
@@ -129,28 +147,38 @@ void clean_vectors()
     free(h_dt);
     free(h_old_a);
     free(h_old_j);
-    free(h_new_a);
-    free(h_new_j);
     free(h_p_r);
     free(h_p_v);
     free(h_ekin);
     free(h_epot);
     free(h_move);
 
-    cudaFree(d_r);
-    cudaFree(d_v);
-    cudaFree(d_a);
-    cudaFree(d_j);
-    cudaFree(d_m);
-    cudaFree(d_t);
-    cudaFree(d_old_a);
-    cudaFree(d_old_j);
-    cudaFree(d_new_a);
-    cudaFree(d_new_j);
-    cudaFree(d_p_r);
-    cudaFree(d_p_v);
-    cudaFree(d_dt);
-    cudaFree(d_ekin);
-    cudaFree(d_epot);
-    cudaFree(d_move);
+    CUDA_SAFE_CALL(cudaFree(d_r));
+    CUDA_SAFE_CALL(cudaFree(d_v));
+    CUDA_SAFE_CALL(cudaFree(d_a));
+    CUDA_SAFE_CALL(cudaFree(d_j));
+    CUDA_SAFE_CALL(cudaFree(d_m));
+    CUDA_SAFE_CALL(cudaFree(d_t));
+    CUDA_SAFE_CALL(cudaFree(d_old_a));
+    CUDA_SAFE_CALL(cudaFree(d_old_j));
+    CUDA_SAFE_CALL(cudaFree(d_p_r));
+    CUDA_SAFE_CALL(cudaFree(d_p_v));
+    CUDA_SAFE_CALL(cudaFree(d_dt));
+    CUDA_SAFE_CALL(cudaFree(d_ekin));
+    CUDA_SAFE_CALL(cudaFree(d_epot));
+    CUDA_SAFE_CALL(cudaFree(d_move));
+
+    //for (int i = 0; i < n; i++) {
+    //    cudaFree(d_new_a[i]);
+    //    cudaFree(d_new_j[i]);
+    //    free(h_new_a[i]);
+    //    free(h_new_j[i]);
+    //}
+    CUDA_SAFE_CALL(cudaFree(d_new_a));
+    CUDA_SAFE_CALL(cudaFree(d_new_j));
+    free(h_new_a);
+    free(h_new_j);
+
+
+
 }
