@@ -13,8 +13,11 @@
 #define E 1e-4
 #define E2 1e-8
 // Block time steps minimum and maximum
-#define D_TIME_MIN (10e-7)
+#define D_TIME_MIN (1e-7)
 #define D_TIME_MAX (0.125)
+
+#define ITE_MAX (1e6)
+#define OUT (0.01)
 
 // Gravitational constant in nbu
 #define G 1

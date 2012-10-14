@@ -158,8 +158,7 @@ void kepler_prediction(double *rx, double *ry, double *rz,
         *vy = (-ay * sin_e + by * cos_e) * v_const;
         *vz = (-az * sin_e + bz * cos_e) * v_const;
 
-    //printf("New Position vector: (%.10f,%.10f,%.10f)\n \
-            New Velocity vector: (%.10f,%.10f,%.10f)\n", *rx,*ry,*rz,*vx,*vy,*vz);
+    //printf("New Position vector: (%.10f,%.10f,%.10f)\n New Velocity vector: (%.10f,%.10f,%.10f)\n", *rx,*ry,*rz,*vx,*vy,*vz);
 
     }
     else

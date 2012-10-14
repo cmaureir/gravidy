@@ -7,8 +7,7 @@
  *  Determine the next iteration time
  *  considering the time of all the particles
  */
-void
-next_itime(float *ATIME)
+void next_itime(float *ATIME)
 {
     *ATIME = 1.0e10;
     for (int i = INIT_PARTICLE; i < n; i++)
@@ -59,32 +58,31 @@ int find_particles_to_move(float ITIME)
  *  to adjust it to the block time steps.
  *
  */
-void
-init_dt(float *ATIME)
+void init_dt(float *ATIME)
 {
     // Aarseth initial timestep
     // dt_{i} = ETA_S * sqrt( (|a|) / (|j|) )
-    for (int i = 0; i < n; i++) {
-        float tmp_dt = ETA_S *
-                 magnitude(h_a[i].x, h_a[i].y, h_a[i].z) /
-                 magnitude(h_j[i].x, h_j[i].y, h_j[i].z);
+    float tmp_dt;
+    for (int i = 0; i < n; i++)
+    {
+       tmp_dt = ETA_S *
+                magnitude(h_a[i].x, h_a[i].y, h_a[i].z) /
+                magnitude(h_j[i].x, h_j[i].y, h_j[i].z);
 
-        /* Adjusting to block timesteps */
-        tmp_dt = pow(2,(int)((log(tmp_dt)/log(2.0))-1));
+       /* Adjusting to block timesteps */
+       tmp_dt = pow(2,(int)((log(tmp_dt)/log(2.0))-1));
 
-        if (tmp_dt < D_TIME_MIN)
-            tmp_dt = D_TIME_MIN;
-        else if (tmp_dt > D_TIME_MAX)
-            tmp_dt = D_TIME_MAX;
+       if (tmp_dt < D_TIME_MIN)
+       tmp_dt = D_TIME_MIN;
+       else if (tmp_dt > D_TIME_MAX)
+           tmp_dt = D_TIME_MAX;
 
-        h_dt[i] = tmp_dt;
-        h_t[i] = 0.0;
+       h_dt[i] = tmp_dt;
+       h_t[i] = 0.0;
 
-        // Obtaining the first integration time
-        if(tmp_dt < *ATIME)
-        {
-            *ATIME = tmp_dt;
-        }
+       // Obtaining the first integration time
+       if(tmp_dt < *ATIME)
+           *ATIME = tmp_dt;
     }
 
 }
@@ -143,8 +141,7 @@ void init_acc_jrk()
  *  Only perform the calculation of the particles with the t + dt = ITIME
  *
  */
-void
-update_acc_jrk(int total)
+void update_acc_jrk(int total)
 {
     int i, j;
     #pragma omp parallel for private(i,j)
@@ -191,18 +188,24 @@ float energy()
         epot_tmp = 0;
         for (j = i+1; j < n; j++)
         {
-            rx = h_p_r[j].x - h_p_r[i].x;
-            ry = h_p_r[j].y - h_p_r[i].y;
-            rz = h_p_r[j].z - h_p_r[i].z;
+            //rx = h_p_r[j].x - h_p_r[i].x;
+            //ry = h_p_r[j].y - h_p_r[i].y;
+            //rz = h_p_r[j].z - h_p_r[i].z;
+            rx = h_r[j].x - h_r[i].x;
+            ry = h_r[j].y - h_r[i].y;
+            rz = h_r[j].z - h_r[i].z;
 
             r2 = rx*rx + ry*ry + rz*rz;
 
             epot_tmp -= (h_m[i] * h_m[j]) / sqrt(r2);
         }
 
-        vx = h_p_v[i].x * h_p_v[i].x;
-        vy = h_p_v[i].y * h_p_v[i].y;
-        vz = h_p_v[i].z * h_p_v[i].z;
+        //vx = h_p_v[i].x * h_p_v[i].x;
+        //vy = h_p_v[i].y * h_p_v[i].y;
+        //vz = h_p_v[i].z * h_p_v[i].z;
+        vx = h_v[i].x * h_v[i].x;
+        vy = h_v[i].y * h_v[i].y;
+        vz = h_v[i].z * h_v[i].z;
 
         v2 = vx + vy + vz;
 
@@ -216,32 +219,25 @@ float energy()
     return epot + ekin;
 }
 
-void get_energy_log(int OUT, float ITIME, int nsteps, float *out_param)
+void get_energy_log(float ITIME, int nsteps, float *out_param)
 {
     if(ITIME > *out_param)
     {
-        printf("%.10f\n",ITIME);
         energy_end = energy();
-        //double d = sqrt( (h_r[1].x-h_r[0].x) * (h_r[1].x-h_r[0].x) +
-        //                 (h_r[1].y-h_r[0].y) * (h_r[1].y-h_r[0].y) +
-        //                 (h_r[1].z-h_r[0].z) * (h_r[1].z-h_r[0].z)
-        //               );
-
-        //double d = sqrt( (h_r[1].x) * (h_r[1].x) +
-        //                 (h_r[1].y) * (h_r[1].y) +
-        //                 (h_r[1].z) * (h_r[1].z)
-        //               );
         //fprintf(stderr, "%.10f %.10f %.10e %.10f\n", ITIME, omp_get_wtime() - ini_time,(energy_end-energy_ini)/energy_ini, d);
         //fprintf(stderr, "%.10f %.10f %.10e %.10e\n", ITIME, omp_get_wtime() - ini_time,(energy_end-energy_ini)/energy_ini,energy_ini);
-        fprintf(stderr, "%.10f %d %.10e %.10e %.10e\n",
-                ITIME, iterations, nsteps/iterations,
+        fprintf(stderr, "#Energy %.10f %d %.5f %.10e %.10e %.10e %.10e\n",
+                ITIME,
+                iterations,
+                nsteps/(float)iterations,
                 (energy_end-energy_ini)/energy_ini,
                 (energy_end-energy_tmp)/energy_ini,
-                (energy_end-energy_tmp)/energy_tmp);
-        //print_positions(100);
+                (energy_end-energy_tmp)/energy_tmp,
+                energy_end);
+        print_times(n);
         //energy_total = 0.0f;
         energy_tmp = energy_end;
-        *out_param += 0.1;
+        *out_param += OUT;
     }
 }
 
@@ -312,8 +308,7 @@ predicted_pos_vel(float ITIME)
  *    and velocity using the Kepler's equation.
  *
  */
-void
-predicted_pos_vel_kepler(float ITIME, int total)
+void predicted_pos_vel_kepler(float ITIME, int total)
 {
 
     for (int i = 0; i < total; i++)
@@ -331,10 +326,6 @@ predicted_pos_vel_kepler(float ITIME, int total)
 
         for (float j = 0; j < KEPLER_ITE; j+=dt)
         {
-            std::cout << "Particle " << k << " Kepler iteration: " << j << std::endl;
-            printf("%.10f %.10f %.10f\n", rx, ry, rz);
-            printf("%.10f %.10f %.10f\n", vx, vy, vz);
-            getchar();
             kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, h_m[k], h_m[0], j, k);
         }
         h_p_r[k].x = rx;
@@ -355,8 +346,7 @@ predicted_pos_vel_kepler(float ITIME, int total)
  *    to apply the correction terms to the position and velocity.
  *
  */
-void
-correction_pos_vel(float ITIME, int total)
+void correction_pos_vel(float ITIME, int total)
 {
 
     for (int k = 0; k < total; k++)

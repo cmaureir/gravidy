@@ -1,7 +1,6 @@
-#CXXFLAGS=-O2 -pg -Wall -lboost_program_options -lgomp
 CC=		g++
 NVCC=		nvcc
-NVFLAGS=	-O3 -m64 -arch=sm_20
+NVFLAGS=	-O3 -m64 -G -g -arch=sm_20 --ptxas-options="-v -dlcm=cg"
 CUDA_PATH=	/usr/local/cuda
 BOOST_PATH=	/home/cmaurei/boost/boost_build
 CXXFLAGS=	-O3 -m64 -Wall -lgomp -pg -fopenmp
@@ -24,14 +23,16 @@ OBJS_GPU= include/dynamics_gpu_kernels.o \
 
 OBJS = $(OBJS_GPU) $(OBJS_CPU)
 
+all: gravidy
+
 include/dynamics_gpu_kernels.o: include/dynamics_gpu_kernels.cu
 	$(NVCC) $(NVFLAGS) -c $^ -o $@
+
 include/dynamics_gpu.o: include/dynamics_gpu.cu
 	$(NVCC) $(NVFLAGS) -c $^ -o $@
 
 gravidy: gravidy.cpp $(OBJS)
-all: gravidy
 clean:
-	rm -rf gravidy include/dynamics_gpu.o
+	rm -rf gravidy
 distclean: clean
 	rm -rf include/*.o

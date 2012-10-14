@@ -1,6 +1,4 @@
 #include "hermite.hpp"
-#define ITE_MAX (1e6)
-#define OUT (1e3)
 
 
 void integrate_gpu()
@@ -72,7 +70,7 @@ integrate_cpu()
     //std::cout << "Relaxation time: " << get_relaxation_time() << std::endl;
     //std::cout << "Kinetic energy: " << ekin << std::endl;
     //std::cout << "Potential energy: " << epot << std::endl;
-    float out_param = 0.1;
+    float out_param = OUT;
 
     //while (ITIME < int_time && iterations < ITE_MAX)
     int nsteps = 0;
@@ -90,7 +88,7 @@ integrate_cpu()
         iterations++;
         nsteps += total;
 
-        get_energy_log(OUT, ITIME,nsteps, &out_param);
+        get_energy_log(ITIME,nsteps, &out_param);
 
     }
     //energy_end = energy();

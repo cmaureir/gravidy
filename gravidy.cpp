@@ -15,7 +15,7 @@ float total_mass;
 float int_time;
 double ini_time, end_time;
 double init_time;
-float energy_ini, energy_end, energy_total;
+float energy_ini, energy_end, energy_tmp;
 float ekin, epot;
 
 // Struct vector to read the input file
@@ -51,6 +51,11 @@ float t_rh, t_cr;
 std::string input_file, output_file;
 std::string run;
 
+size_t nthreads, nblocks;
+size_t d1_size, d4_size;
+size_t f1_size, i1_size;
+double4 *tmp_red;
+float *ftmp_red;
 /*
  * Main
  */
@@ -62,7 +67,8 @@ main(int argc, char *argv[])
 
     read_input_file(input_file);
     init_vectors();
-
+    // TMP
+    omp_set_num_threads(4);
     ini_time = omp_get_wtime(); // Get initial time
 
     if(run == "cpu")

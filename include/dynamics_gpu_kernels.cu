@@ -70,50 +70,49 @@ __global__ void k_update_2d(int *move, double4 *new_acc, double4 *new_jrk,
     double4 j_acc  = {1.0,2.0,3.0,4.0};
     double4 j_jrk = {-4.0,-3.0,-2.0,-1.0};
 
-    //for (int j = j_ini; j < j_end; j+=BSIZE)
-    //{
-    //    // Shared memory of BSIZE for j-particles
-    //    __shared__ double4 s_r[BSIZE];
-    //    __shared__ double4 s_v[BSIZE];
-    //    __syncthreads();
+    for (int j = j_ini; j < j_end; j+=BSIZE)
+    {
+        // Shared memory of BSIZE for j-particles
+        __shared__ double4 s_r[BSIZE];
+        __shared__ double4 s_v[BSIZE];
+        __syncthreads();
 
-    //    // Load of the r and v to shared memory of the j-particle
-    //    double4 *src_r = (double4 *)&r[j];
-    //    double4 *src_v = (double4 *)&v[j];
-    //    double4 *dst_r = (double4 *)s_r;
-    //    double4 *dst_v = (double4 *)s_v;
-    //    
-    //    dst_r[tx]         = src_r[tx];
-    //    dst_r[BSIZE + tx] = src_r[BSIZE + tx];
+        // Load of the r and v to shared memory of the j-particle
+        double4 *src_r = (double4 *)&r[j];
+        double4 *src_v = (double4 *)&v[j];
+        double4 *dst_r = (double4 *)s_r;
+        double4 *dst_v = (double4 *)s_v;
+        
+        dst_r[tx]         = src_r[tx];
+        dst_r[BSIZE + tx] = src_r[BSIZE + tx];
 
-    //    dst_v[tx]         = src_v[tx];
-    //    dst_v[BSIZE + tx] = src_v[BSIZE + tx];
+        dst_v[tx]         = src_v[tx];
+        dst_v[BSIZE + tx] = src_v[BSIZE + tx];
 
-    //    __syncthreads();
+        __syncthreads();
 
-    //    // If we need to work with an incomplete block
-    //    if (j_end - j < BSIZE)
-    //    {
-    //        #pragma unroll 4
-    //        for (int jj = 0; jj < j_end - j; jj++)
-    //        {
-    //            double4 pos_j = s_r[jj];
-    //            double4 vel_j = s_v[jj];
-    //            dev_gravity(pos, vel, pos_j, vel_j, j_acc, j_jrk, m[jj]);
-    //        }
-    //    }
-    //    else
-    //    {
-    //        #pragma unroll 4
-    //        for (int jj = 0; jj < BSIZE; jj++)
-    //        {
-    //            double4 pos_j = s_r[jj];
-    //            double4 vel_j = s_v[jj];
-    //            dev_gravity(pos, vel, pos_j, vel_j, j_acc, j_jrk, m[jj]);
-    //        }
-    //    }
-    // }
-    printf("%d\n",gid+n*ybid);
+        // If we need to work with an incomplete block
+        if (j_end - j < BSIZE)
+        {
+            #pragma unroll 4
+            for (int jj = 0; jj < j_end - j; jj++)
+            {
+                double4 pos_j = s_r[jj];
+                double4 vel_j = s_v[jj];
+                dev_gravity(pos, vel, pos_j, vel_j, j_acc, j_jrk, m[jj]);
+            }
+        }
+        else
+        {
+            #pragma unroll 4
+            for (int jj = 0; jj < BSIZE; jj++)
+            {
+                double4 pos_j = s_r[jj];
+                double4 vel_j = s_v[jj];
+                dev_gravity(pos, vel, pos_j, vel_j, j_acc, j_jrk, m[jj]);
+            }
+        }
+     }
     new_acc[gid + n * ybid]  = j_acc;
     new_jrk[gid + n * ybid] =  j_jrk;
 }
