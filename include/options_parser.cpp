@@ -39,11 +39,11 @@ bool check_options(int argc, char *argv[])
 {
     po::options_description desc("Options");
     desc.add_options()
-        ("help,h"   , "Display message")
-        ("input,i"  , po::value<std::string>() , "Input data filename")
-        ("output,o" , po::value<std::string>() , "Output data filename")
-        ("time,t"   , po::value<double>()      , "Integration time")
-        ("run,r"    , po::value<std::string>()  , "Running type, CPU (default) or GPU")
+        ("help,h"  , "Display message")
+        ("input,i" , po::value<std::string>(), "Input data filename")
+        ("output,o", po::value<std::string>(), "Output data filename")
+        ("time,t"  , po::value<double>()     , "Integration time")
+        ("run,r"   , po::value<std::string>(), "Running type, CPU (default) or GPU")
     ;
 
     po::variables_map vm;

@@ -65,10 +65,8 @@ __global__ void k_update_2d(int *move, double4 *new_acc, double4 *new_jrk,
 
     double4 pos = r[gid];
     double4 vel = v[gid];
-    //double4 j_acc  = {0.0,0.0,0.0,0.0};
-    //double4 j_jrk = {0.0,0.0,0.0,0.0};
-    double4 j_acc  = {1.0,2.0,3.0,4.0};
-    double4 j_jrk = {-4.0,-3.0,-2.0,-1.0};
+    double4 j_acc  = {0.0,0.0,0.0,0.0};
+    double4 j_jrk = {0.0,0.0,0.0,0.0};
 
     for (int j = j_ini; j < j_end; j+=BSIZE)
     {
@@ -82,7 +80,7 @@ __global__ void k_update_2d(int *move, double4 *new_acc, double4 *new_jrk,
         double4 *src_v = (double4 *)&v[j];
         double4 *dst_r = (double4 *)s_r;
         double4 *dst_v = (double4 *)s_v;
-        
+
         dst_r[tx]         = src_r[tx];
         dst_r[BSIZE + tx] = src_r[BSIZE + tx];
 
@@ -136,12 +134,11 @@ __global__ void k_reduce_energy(float *d_in, float *d_out, int n)
 
     data[tid] = sum;
     __syncthreads();
-    
-    if(BSIZE >= 512) {if (tid <  256) { data[tid] += data[tid +  256];} __syncthreads();}
-    if(BSIZE >= 256) {if (tid <  128) { data[tid] += data[tid +  128];} __syncthreads();}
-    if(BSIZE >= 128) {if (tid <   64) { data[tid] += data[tid +   64];} __syncthreads();}
-    
-    
+
+    if(BSIZE >= 512){if(tid < 256){data[tid] += data[tid + 256];} __syncthreads();}
+    if(BSIZE >= 256){if(tid < 128){data[tid] += data[tid + 128];} __syncthreads();}
+    if(BSIZE >= 128){if(tid <  64){data[tid] += data[tid +  64];} __syncthreads();}
+
     if(tid < 32)
     {
         volatile float* smem = data;
@@ -152,8 +149,8 @@ __global__ void k_reduce_energy(float *d_in, float *d_out, int n)
         if (BSIZE >=  4) { smem[tid] += smem[tid +  2]; }
         if (BSIZE >=  2) { smem[tid] += smem[tid +  1]; }
     }
-    
-    if(tid == 0) d_out[blockIdx.x] = data[0]; 
+
+    if(tid == 0) d_out[blockIdx.x] = data[0];
 }
 
 __global__ void k_reduce(double4 *d_in, double4 *d_out, int n)
@@ -175,12 +172,12 @@ __global__ void k_reduce(double4 *d_in, double4 *d_out, int n)
 
     sdata[tid] = sum;
     __syncthreads();
-    
-    if(BSIZE >= 512) {if (tid <  256) { sdata[tid] += sdata[tid +  256];} __syncthreads();}
-    if(BSIZE >= 256) {if (tid <  128) { sdata[tid] += sdata[tid +  128];} __syncthreads();}
-    if(BSIZE >= 128) {if (tid <   64) { sdata[tid] += sdata[tid +   64];} __syncthreads();}
-    
-    
+
+    if(BSIZE >= 512){if(tid < 256){sdata[tid] += sdata[tid+256];} __syncthreads();}
+    if(BSIZE >= 256){if(tid < 128){sdata[tid] += sdata[tid+128];} __syncthreads();}
+    if(BSIZE >= 128){if(tid <  64){sdata[tid] += sdata[tid+ 64];} __syncthreads();}
+
+
     if(tid < 32)
     {
         volatile double4* smem = sdata;
@@ -191,8 +188,8 @@ __global__ void k_reduce(double4 *d_in, double4 *d_out, int n)
         if (BSIZE >=  4) { smem[tid] += smem[tid +  2]; }
         if (BSIZE >=  2) { smem[tid] += smem[tid +  1]; }
     }
-    
-    if(tid == 0) d_out[blockIdx.x] = sdata[0]; 
+
+    if(tid == 0) d_out[blockIdx.x] = sdata[0];
 }
 
 /*
@@ -210,8 +207,7 @@ __global__ void k_reduce(double4 *d_in, double4 *d_out, int n)
  *  The arrays contains the energy for each particle.
  *
  */
-__global__
-void
+__global__ void
 k_energy(double4 *r, double4 *v, float *ekin, float *epot, float *m, int n)
 {
     int i = threadIdx.x + blockDim.x * blockIdx.x;
@@ -262,7 +258,7 @@ k_init_acc_jrk(double4 *r, double4 *v, double4 *a, double4 *j, float *m, int n)
         for (int i = 0; i < n; i += BSIZE)
         {
             int idx = tile * BSIZE + tx;
-            
+
             s_r[tx]   = r[idx];
             s_v[tx]   = v[idx];
             mj = m[idx];
@@ -300,8 +296,8 @@ k_init_acc_jrk(double4 *r, double4 *v, double4 *a, double4 *j, float *m, int n)
 }
 
 
-__global__ void
-k_update_acc_jrk(double4 *r, double4 *v, double4 *a, double4 *j, float *m, int *move, int n, int total)
+__global__ void k_update_acc_jrk(double4 *r, double4 *v, double4 *a, double4 *j,
+                                 float *m,   int *move,  int n,      int total)
 {
 
     extern __shared__ double4 sh[];
@@ -357,10 +353,9 @@ k_update_acc_jrk(double4 *r, double4 *v, double4 *a, double4 *j, float *m, int *
                 tmp_j.z += tmp_v.z * mr3inv + (3 * tmp_v.z * tmp_r.z * tmp_r.z) * mr5inv;
             }
         }
-        
         __syncthreads();
     }
-    
+
     if (id != -1)
     {
         a[id] = tmp_a;
@@ -373,11 +368,10 @@ k_correction_pos_vel(double4 *r,     double4 *v,     double4 *a,   double4 *j,
                      double4 *old_a, double4 *old_j, double4 *p_r, double4 *p_v,
                      float  *t,      float  *dt,     float ITIME, int *move,
                      int total)
-
 {
 
     int k = threadIdx.x + blockDim.x * blockIdx.x;
-    
+
     if ( k < total)
     {
         int i = move[k];
@@ -449,7 +443,7 @@ k_correction_pos_vel(double4 *r,     double4 *v,     double4 *a,   double4 *j,
 }
 
 __global__ void
-k_update_acc_jrk_single(double4 c_pos, double4 c_vel, double4 *new_a, double4 *new_j, 
+k_update_acc_jrk_single(double4 c_pos, double4 c_vel, double4 *new_a, double4 *new_j,
                          double4 *r,          double4 *v,          float *m,
                          int n,               int current)
 {
@@ -499,7 +493,7 @@ k_predicted_pos_vel(double4 *d_r,   double4 *d_v,   double4 *d_a, double4 *d_j,
     int i = threadIdx.x + blockDim.x * blockIdx.x;
 
     if (i < n)
-    { 
+    {
         float dt = ITIME - d_t[i];
         float dt2 = (dt  * dt)/2;
         float dt3 = (dt2 * dt)/6;

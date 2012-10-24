@@ -25,11 +25,8 @@ void init_vectors()
 
     //h_new_a = (double4*) malloc(n * NJBLOCK * sizeof(double4));
     //h_new_j = (double4*) malloc(n * NJBLOCK * sizeof(double4));
-
     h_new_a = (double4*) malloc(n * sizeof(double4));
     h_new_j = (double4*) malloc(n * sizeof(double4));
-
-
 
     //h_new_a = (double4**) malloc(n * sizeof(double4*));
     //h_new_j = (double4**) malloc(n * sizeof(double4*));
@@ -137,7 +134,6 @@ void init_vectors()
  */
 void clean_vectors()
 {
-
     free(h_r);
     free(h_v);
     free(h_a);
@@ -178,7 +174,4 @@ void clean_vectors()
     CUDA_SAFE_CALL(cudaFree(d_new_j));
     free(h_new_a);
     free(h_new_j);
-
-
-
 }

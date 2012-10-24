@@ -4,6 +4,7 @@
 #include <string>
 #include <thrust/host_vector.h>
 #include <omp.h>
+#include <cassert>
 
 // Initial time step factor
 #define ETA_S 0.01
@@ -13,8 +14,8 @@
 #define E 1e-4
 #define E2 1e-8
 // Block time steps minimum and maximum
-#define D_TIME_MIN (1e-7)
-#define D_TIME_MAX (0.125)
+#define D_TIME_MIN (1.1920928955078125e-07) // 2e-23
+#define D_TIME_MAX (0.125) // 2e-3
 
 #define ITE_MAX (1e6)
 #define OUT (0.01)
@@ -27,26 +28,25 @@
 #define NJBLOCK 16
 
 // Neighbor number
-#define J                   10
-#define PI                  3.141592653589793
-#define TWOPI               (2*3.14159265)
-#define MIN_PART_TO_MOVE    10
-#define KEPLER_ITE          50
-#define INIT_PARTICLE       0
-#define DEL_E               9.0e-16 /* maximum error in angle E for kepler equation            */
-#define DEL_E_HYP           2.e-15  /* maximum error in angle E for hyperbolic kepler equation */
+#define J                10
+#define PI               3.141592653589793
+#define TWOPI            (2*3.14159265)
+#define MIN_PART_TO_MOVE 10
+#define KEPLER_ITE       50
+#define INIT_PARTICLE    0
+#define DEL_E            9.0e-16 // Max error in E kepler equation
+#define DEL_E_HYP        2.e-15  // Max error in E for hyperbolic kepler equation
 
 
 // Macro from cutil.h
-#  define CUDA_SAFE_CALL_NO_SYNC( call) do {                                 \
-    cudaError err = call;                                                    \
-    if( cudaSuccess != err) {                                                \
-        fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",        \
-                __FILE__, __LINE__, cudaGetErrorString( err) );              \
-        exit(EXIT_FAILURE);                                                  \
+#  define CUDA_SAFE_CALL_NO_SYNC( call) do {                          \
+    cudaError err = call;                                             \
+    if( cudaSuccess != err) {                                         \
+        fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", \
+                __FILE__, __LINE__, cudaGetErrorString( err) );       \
+        exit(EXIT_FAILURE);                                           \
     } } while (0)
-
-#  define CUDA_SAFE_CALL( call)     CUDA_SAFE_CALL_NO_SYNC(call);           \
+#  define CUDA_SAFE_CALL( call)     CUDA_SAFE_CALL_NO_SYNC(call);
 
 
 
@@ -62,18 +62,16 @@ typedef struct particle
 /*
  * General variables of the program
  */
-extern int n;                         // Number of particles
-extern int iterations;                // Number of iterations
-extern float total_mass;              // Total mass of the particles
-extern float int_time;               // Integration time
-extern double ini_time, end_time;     // Initial and Final time stamps
-extern double init_time;              // Initial Acc and Jerk calculation time.
-extern float energy_ini, energy_end, energy_tmp; // Initial and Final energy of the system
-extern float ekin, epot;             // Kinetic and Potential energy
+extern int n;                      // Number of particles
+extern int iterations;             // Number of iterations
+extern float total_mass;           // Total mass of the particles
+extern float int_time;             // Integration time
+extern double ini_time, end_time;  // Initial and Final time stamps
+extern double init_time;           // Initial Acc and Jerk calculation time.
+extern float ekin, epot;           // Kinetic and Potential energy
+extern float energy_ini, energy_end, energy_tmp; // Sytem energies
 
-/*
- * Struct vector to read the input file
- */
+// Struct vector to read the input file
 extern std::vector<particle> part;
 
 
@@ -83,10 +81,10 @@ extern std::vector<particle> part;
  */
 extern float *h_ekin, *h_epot;         // Kinetic and Potential energy
 extern float *h_t, *h_dt;              // Time and timestep
-extern double4 *h_r, *h_v, *h_a, *h_j;  // Position, velocity, acceleration and jerk
-extern float   *h_m;                    // Masses
-extern int *h_move;                     // Index of the particles to move in each iteration time
-extern double4 *h_new_a, *h_new_j;      // Temp arrays to save tmp accelerations
+extern double4 *h_r, *h_v, *h_a, *h_j; // Position, velocity, acceleration and jerk
+extern float   *h_m;                   // Masses
+extern int *h_move;                    // Index of the particles to move in each iteration time
+extern double4 *h_new_a, *h_new_j;     // Temp arrays to save tmp accelerations
 
 /*
  * Host pointers
@@ -110,10 +108,10 @@ extern double4 *h_p_v; // Velocity
  */
 extern float *d_ekin, *d_epot;         // Kinetic and Potential energy
 extern float *d_t, *d_dt;              // Time and timestep
-extern double4 *d_r, *d_v, *d_a, *d_j;  // Position, velocity, acceleration and jerk
-extern float   *d_m;                    // Masses
-extern int *d_move;                     // Index of the particles to move in each iteration time
-extern double4 *d_new_a, *d_new_j;      // Temp arrays to save tmp accelerations
+extern double4 *d_r, *d_v, *d_a, *d_j; // Position, velocity, acceleration and jerk
+extern float   *d_m;                   // Masses
+extern int *d_move;                    // Index of the particles to move in each iteration time
+extern double4 *d_new_a, *d_new_j;     // Temp arrays to save tmp accelerations
 
 
 /*
@@ -147,4 +145,8 @@ extern std::string run;                     // Run option (cpu or gpu)
 extern size_t nthreads, nblocks;
 extern size_t d1_size, d4_size;
 extern size_t f1_size, i1_size;
-extern double4 *tmp_red;
+/*
+ * General system time¬
+ */
+extern float t_rh; // Half-mass relaxation time¬
+extern float t_cr; // Crossing time¬

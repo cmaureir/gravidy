@@ -9,9 +9,11 @@
  */
 void next_itime(float *ATIME)
 {
+    // Big number to find the minimum
     *ATIME = 1.0e10;
     for (int i = INIT_PARTICLE; i < n; i++)
     {
+        // Total particle time
         float time = h_t[i] + h_dt[i];
         if(time < *ATIME)
         {
@@ -24,11 +26,9 @@ void next_itime(float *ATIME)
  * @fn find_particles_to_move()
  *
  * @brief
- *  Find particles with the same time that the
- *  integration time.
- *
- * @todo
- *  try if is better to kept the index in the same position
+ *  Find particles wich have the same time
+ *  that the integration time defined in the
+ *  function 'next_time'
  */
 int find_particles_to_move(float ITIME)
 {
@@ -36,8 +36,7 @@ int find_particles_to_move(float ITIME)
     for (int i = INIT_PARTICLE; i < n; i++)
     {
         h_move[i] = -1;
-        //if (h_t[i] + h_dt[i] == ITIME)
-        if (h_t[i] + h_dt[i] <= ITIME)
+        if (h_t[i] + h_dt[i] == ITIME)
         {
             h_move[j] = i;
             j++;
@@ -45,7 +44,6 @@ int find_particles_to_move(float ITIME)
     }
     return j;
 }
-
 
 /*
  * @fn init_dt()
@@ -56,7 +54,6 @@ int find_particles_to_move(float ITIME)
  *
  *  After set each time step, it is necessah_ry
  *  to adjust it to the block time steps.
- *
  */
 void init_dt(float *ATIME)
 {
@@ -65,28 +62,28 @@ void init_dt(float *ATIME)
     float tmp_dt;
     for (int i = 0; i < n; i++)
     {
-       tmp_dt = ETA_S *
-                magnitude(h_a[i].x, h_a[i].y, h_a[i].z) /
-                magnitude(h_j[i].x, h_j[i].y, h_j[i].z);
+        double a2 = get_magnitude(h_a[i].x, h_a[i].y, h_a[i].z);
+        double j2 = get_magnitude(h_j[i].x, h_j[i].y, h_j[i].z);
+        tmp_dt = ETA_S * (a2/j2);
 
-       /* Adjusting to block timesteps */
-       tmp_dt = pow(2,(int)((log(tmp_dt)/log(2.0))-1));
+        // Adjusting to block timesteps
+        // to the nearest-lower power of two
+        int exp = (int)(std::ceil(log(tmp_dt)/log(2.0))-1);
+        tmp_dt = pow(2,exp);
 
-       if (tmp_dt < D_TIME_MIN)
-       tmp_dt = D_TIME_MIN;
-       else if (tmp_dt > D_TIME_MAX)
-           tmp_dt = D_TIME_MAX;
+        if (tmp_dt < D_TIME_MIN)
+            tmp_dt = D_TIME_MIN;
+        else if (tmp_dt > D_TIME_MAX)
+            tmp_dt = D_TIME_MAX;
 
-       h_dt[i] = tmp_dt;
-       h_t[i] = 0.0;
+        h_dt[i] = tmp_dt;
+        h_t[i] = 0.0;
 
-       // Obtaining the first integration time
-       if(tmp_dt < *ATIME)
-           *ATIME = tmp_dt;
+        // Obtaining the first integration time
+        if(tmp_dt < *ATIME)
+            *ATIME = tmp_dt;
     }
-
 }
-
 
 void force_calculation(int i, int j)
 {
@@ -106,13 +103,15 @@ void force_calculation(int i, int j)
     double mr3inv = r3inv * h_m[j];
     double mr5inv = r5inv * h_m[j];
 
-    h_a[i].x += rx * mr3inv;
-    h_a[i].y += ry * mr3inv;
-    h_a[i].z += rz * mr3inv;
+    double rv = rx*vx + ry*vy + rz*vz;
 
-    h_j[i].x += vx * mr3inv + (3 * vx * rx * rx) * mr5inv;
-    h_j[i].y += vy * mr3inv + (3 * vy * ry * ry) * mr5inv;
-    h_j[i].z += vz * mr3inv + (3 * vz * rz * rz) * mr5inv;
+    h_a[i].x += (rx * mr3inv);
+    h_a[i].y += (ry * mr3inv);
+    h_a[i].z += (rz * mr3inv);
+
+    h_j[i].x += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
+    h_j[i].y += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
+    h_j[i].z += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
 }
 
 void init_acc_jrk()
@@ -129,7 +128,6 @@ void init_acc_jrk()
 
     }
 }
-
 
 /*
  * @fn update_acc_jrk()
@@ -149,8 +147,12 @@ void update_acc_jrk(int total)
     {
         i = h_move[k];
         // Cleaning acceleration and jrk
-        h_a[i].x = h_a[i].y = h_a[i].z = 0.0;
-        h_j[i].x = h_j[i].y = h_j[i].z = 0.0;
+        h_a[i].x = 0.0;
+        h_a[i].y = 0.0;
+        h_a[i].z = 0.0;
+        h_j[i].x = 0.0;
+        h_j[i].y = 0.0;
+        h_j[i].z = 0.0;
 
         for (j = INIT_PARTICLE; j < n; j++)
         {
@@ -182,15 +184,12 @@ float energy()
     epot = 0;
     ekin = 0;
 
-    #pragma omp parallel for private(epot_tmp, j, rx, ry, rz, r2, vx, vy, vz, v2, ekin_tmp)
+//    #pragma omp parallel for private(epot_tmp,j,rx,ry,rz,r2,vx,vy,vz,v2,ekin_tmp)
     for (i = 0; i < n; i++)
     {
         epot_tmp = 0;
         for (j = i+1; j < n; j++)
         {
-            //rx = h_p_r[j].x - h_p_r[i].x;
-            //ry = h_p_r[j].y - h_p_r[i].y;
-            //rz = h_p_r[j].z - h_p_r[i].z;
             rx = h_r[j].x - h_r[i].x;
             ry = h_r[j].y - h_r[i].y;
             rz = h_r[j].z - h_r[i].z;
@@ -200,9 +199,6 @@ float energy()
             epot_tmp -= (h_m[i] * h_m[j]) / sqrt(r2);
         }
 
-        //vx = h_p_v[i].x * h_p_v[i].x;
-        //vy = h_p_v[i].y * h_p_v[i].y;
-        //vz = h_p_v[i].z * h_p_v[i].z;
         vx = h_v[i].x * h_v[i].x;
         vy = h_v[i].y * h_v[i].y;
         vz = h_v[i].z * h_v[i].z;
@@ -219,25 +215,18 @@ float energy()
     return epot + ekin;
 }
 
-void get_energy_log(float ITIME, int nsteps, float *out_param)
+void get_energy_log(float ITIME, int iterations, int nsteps)
 {
-    if(ITIME > *out_param)
+    energy_end = energy();
+    double relative_error = abs(energy_end-energy_ini)/abs(energy_ini);
+    energy_tmp += relative_error;
+    //fprintf(stderr, "%.10f %.10f %.10e\n",
+    //        ITIME,
+    //        nsteps/(float)iterations,
+    //        relative_error);
+    if((int)ITIME == 1)
     {
-        energy_end = energy();
-        //fprintf(stderr, "%.10f %.10f %.10e %.10f\n", ITIME, omp_get_wtime() - ini_time,(energy_end-energy_ini)/energy_ini, d);
-        //fprintf(stderr, "%.10f %.10f %.10e %.10e\n", ITIME, omp_get_wtime() - ini_time,(energy_end-energy_ini)/energy_ini,energy_ini);
-        fprintf(stderr, "#Energy %.10f %d %.5f %.10e %.10e %.10e %.10e\n",
-                ITIME,
-                iterations,
-                nsteps/(float)iterations,
-                (energy_end-energy_ini)/energy_ini,
-                (energy_end-energy_tmp)/energy_ini,
-                (energy_end-energy_tmp)/energy_tmp,
-                energy_end);
-        print_times(n);
-        //energy_total = 0.0f;
-        energy_tmp = energy_end;
-        *out_param += OUT;
+        printf("%f %.10e\n", ETA_N, energy_tmp/1);
     }
 }
 
@@ -247,12 +236,12 @@ void get_energy_log(float ITIME, int nsteps, float *out_param)
  * @brief
  *  Save the previous particle position, velocity,
  *    acceleration and jrk.
- *
  */
-void save_old()
+void save_old(int total)
 {
-    for (int i = 0; i < n; i++)
+    for (int k = 0; k < total; k++)
     {
+        int i = h_move[k];
         h_old_a[i].x = h_a[i].x;
         h_old_a[i].y = h_a[i].y;
         h_old_a[i].z = h_a[i].z;
@@ -262,7 +251,6 @@ void save_old()
         h_old_j[i].z = h_j[i].z;
     }
 }
-
 
 /*
  * @fn predicted_pos_vel()
@@ -275,21 +263,20 @@ void save_old()
 void
 predicted_pos_vel(float ITIME)
 {
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = INIT_PARTICLE; i < n; i++)
     {
         float dt = ITIME - h_t[i];
-        float dt2 = (dt  * dt)/2;
-        float dt3 = (dt2 * dt)/6;
+        float dt2 = (dt  * dt);
+        float dt3 = (dt2 * dt);
 
-        h_p_r[i].x = dt3 * h_j[i].x + dt2 * h_a[i].x + dt * h_v[i].x + h_r[i].x;
-        h_p_r[i].y = dt3 * h_j[i].y + dt2 * h_a[i].y + dt * h_v[i].y + h_r[i].y;
-        h_p_r[i].z = dt3 * h_j[i].z + dt2 * h_a[i].z + dt * h_v[i].z + h_r[i].z;
+        h_p_r[i].x = (dt3/6 * h_j[i].x) + (dt2/2 * h_a[i].x) + (dt * h_v[i].x) + h_r[i].x;
+        h_p_r[i].y = (dt3/6 * h_j[i].y) + (dt2/2 * h_a[i].y) + (dt * h_v[i].y) + h_r[i].y;
+        h_p_r[i].z = (dt3/6 * h_j[i].z) + (dt2/2 * h_a[i].z) + (dt * h_v[i].z) + h_r[i].z;
 
-        h_p_v[i].x = dt2 * h_j[i].x + dt * h_a[i].x + h_v[i].x;
-        h_p_v[i].y = dt2 * h_j[i].y + dt * h_a[i].y + h_v[i].y;
-        h_p_v[i].z = dt2 * h_j[i].z + dt * h_a[i].z + h_v[i].z;
-
+        h_p_v[i].x = (dt2/2 * h_j[i].x) + (dt * h_a[i].x) + h_v[i].x;
+        h_p_v[i].y = (dt2/2 * h_j[i].y) + (dt * h_a[i].y) + h_v[i].y;
+        h_p_v[i].z = (dt2/2 * h_j[i].z) + (dt * h_a[i].z) + h_v[i].z;
         //h_p_r[i].x += dt3 * h_j[i].x + dt2 * h_a[i].x + dt * h_v[i].x + h_r[i].x;
         //h_p_r[i].y += dt3 * h_j[i].y + dt2 * h_a[i].y + dt * h_v[i].y + h_r[i].y;
         //h_p_r[i].z += dt3 * h_j[i].z + dt2 * h_a[i].z + dt * h_v[i].z + h_r[i].z;
@@ -353,9 +340,7 @@ void correction_pos_vel(float ITIME, int total)
     {
         int i = h_move[k];
 
-        float dt1 = ITIME - h_t[i];
-        //float dt1 = h_dt[i];
-        h_t[i] = ITIME;
+        float dt1 = h_dt[i];
         float dt2 = dt1 * dt1;
         float dt3 = dt2 * dt1;
         float dt4 = dt2 * dt2;
@@ -389,45 +374,74 @@ void correction_pos_vel(float ITIME, int total)
         double az1_2 = az0_2 + dt1 * az0_3;
 
         // |a_{1,i}|
-        double abs_a1   = sqrt((h_a[i].x * h_a[i].x) + (h_a[i].y * h_a[i].y) + (h_a[i].z * h_a[i].z));
+        double abs_a1 = get_magnitude(h_a[i].x, h_a[i].y, h_a[i].z);
         // |j_{1,i}|
-        double abs_j1   = sqrt((h_j[i].x * h_j[i].x) + (h_j[i].y * h_j[i].y) + (h_j[i].z * h_j[i].z));
+        double abs_j1 = get_magnitude(h_j[i].x, h_j[i].y, h_j[i].z);
         // |j_{1,i}|^{2}
         double abs_j12  = abs_j1 * abs_j1;
         // a_{1,i}^{(3)} = a_{0,i}^{(3)} because the 3rd-order interpolation
-        double abs_a1_3 = sqrt((ax0_3 * ax0_3) + (ay0_3 * ay0_3) + (az0_3 * az0_3));
+        double abs_a1_3 = get_magnitude(ax0_3, ay0_3, az0_3);
         // |a_{1,i}^{(2)}|
-        double abs_a1_2 = sqrt((ax1_2 * ax1_2) + (ay1_2 * ay1_2) + (az1_2 * az1_2));
+        double abs_a1_2 = get_magnitude(ax1_2, ay1_2, az1_2);
         // |a_{1,i}^{(2)}|^{2}
         double abs_a1_22  = abs_a1_2 * abs_a1_2;
 
         float tmp_dt = sqrt(ETA_N * ((abs_a1 * abs_a1_2 + abs_j12) / (abs_j1 * abs_a1_3 + abs_a1_22)));
 
-        /* Adjusting to block timesteps */
-        if (tmp_dt < h_dt[i])
+        h_t[i] = ITIME;
+        tmp_dt = normalize_dt(tmp_dt, h_dt[i], h_t[i], i);
+        h_dt[i] = tmp_dt;
+    }
+}
+
+float normalize_dt(float new_dt, float old_dt, float t, int i)
+{
+    if (new_dt <= old_dt/8)
+    {
+        new_dt = D_TIME_MIN;
+    }
+    else if ( old_dt/8 < new_dt && new_dt <= old_dt/4)
+    {
+        new_dt = old_dt / 8;
+    }
+    else if ( old_dt/4 < new_dt && new_dt <= old_dt/2)
+    {
+        new_dt = old_dt / 4;
+    }
+    else if ( old_dt/2 < new_dt && new_dt <= old_dt)
+    {
+        new_dt = old_dt / 2;
+    }
+    else if ( old_dt < new_dt && new_dt <= old_dt * 2)
+    {
+        new_dt = old_dt;
+    }
+    else if (2 * old_dt < new_dt)
+    {
+        float val = t/(2 *old_dt);
+        if(std::ceil(val) == val)
         {
-            if ( tmp_dt < 2 * h_dt[i])
-                tmp_dt = h_dt[i]/4;
-            else
-                tmp_dt = h_dt[i]/2;
-        }
-        else if (tmp_dt > 2 * h_dt[i])
-        {
-            if ( tmp_dt > 4 * h_dt[i])
-                tmp_dt = 4 * h_dt[i];
-            else
-                tmp_dt = 2 * h_dt[i];
+            new_dt = 2 * old_dt;
         }
         else
         {
-            tmp_dt = h_dt[i];
+            new_dt = old_dt;
         }
-
-        if (tmp_dt < D_TIME_MIN)
-            tmp_dt = D_TIME_MIN;
-        else if (tmp_dt > D_TIME_MAX)
-            tmp_dt = D_TIME_MAX;
-
-        h_dt[i] = tmp_dt;
     }
+    else
+    {
+        std::cerr << "Nothing to do!" << std::endl;
+        getchar();
+    }
+
+    if (new_dt < D_TIME_MIN)
+    {
+        new_dt = D_TIME_MIN;
+    }
+    else if (new_dt > D_TIME_MAX)
+    {
+        new_dt = D_TIME_MAX;
+    }
+
+    return new_dt;
 }

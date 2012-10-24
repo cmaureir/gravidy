@@ -28,8 +28,8 @@ __host__ void gpu_update_2d(int total)
 
     cudaMemcpy(h_new_a,d_new_a,sizeof(double4) * n * NJBLOCK,cudaMemcpyDeviceToHost);
     cudaMemcpy(h_new_j,d_new_j,sizeof(double4) * n * NJBLOCK,cudaMemcpyDeviceToHost);
-    
-    
+
+
 
     for (int k = 0; k < n; k++) {
         int i = h_move[k];
@@ -163,7 +163,7 @@ __host__ void gpu_predicted_pos_vel(float ITIME)
     cudaThreadSynchronize();
     #ifdef KERNEL_ERROR_DEBUG
         std::cerr << "k_predicted_pos_vel: " << cudaGetErrorString(cudaGetLastError()) <<" | TpB: " << nthreads << " | BpG: " << nblocks <<  std::endl;
-    #endif 
+    #endif
 
     CUDA_SAFE_CALL(cudaMemcpy(h_p_r, d_p_r, d4_size, cudaMemcpyDeviceToHost));
     CUDA_SAFE_CALL(cudaMemcpy(h_p_v, d_p_v, d4_size, cudaMemcpyDeviceToHost));
@@ -193,7 +193,7 @@ __host__ void gpu_update_acc_jrk_single(int total)
         cudaThreadSynchronize();
         k_reduce<<< 1, nthreads, smem >>> (tmp_red, tmp_red + nblocks, nblocks);
         cudaMemcpy(h_j + i,tmp_red + nblocks,sizeof(double4),cudaMemcpyDeviceToHost);
-        
+
         cudaMemcpy(h_a + i , d_a + i, sizeof(double4), cudaMemcpyDeviceToHost);
         cudaMemcpy(h_j + i , d_j + i, sizeof(double4), cudaMemcpyDeviceToHost);
     }
@@ -256,7 +256,7 @@ gpu_correction_pos_vel(float ITIME, int total)
 //    // Fix to work only with the particles who need to be moved
 //    cudaMemcpy(d_dt,    h_dt,    f1_size, cudaMemcpyHostToDevice);
 //    k_correction_pos_vel<<< std::ceil(total/(float)32), 32 >>> (d_r, d_v, d_a, d_j,
-//                                                                d_old_a,  d_old_j, 
+//                                                                d_old_a,  d_old_j,
 //                                                                d_p_r,    d_p_v,
 //                                                                d_t,     d_dt,
 //                                                   ITIME,   d_move,  total);
