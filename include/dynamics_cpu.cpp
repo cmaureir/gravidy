@@ -7,14 +7,13 @@
  *  Determine the next iteration time
  *  considering the time of all the particles
  */
-void next_itime(float *ATIME)
+void next_itime(double *ATIME)
 {
     // Big number to find the minimum
     *ATIME = 1.0e10;
     for (int i = INIT_PARTICLE; i < n; i++)
     {
-        // Total particle time
-        float time = h_t[i] + h_dt[i];
+        double time = h_t[i] + h_dt[i];
         if(time < *ATIME)
         {
             *ATIME = time;
@@ -30,7 +29,7 @@ void next_itime(float *ATIME)
  *  that the integration time defined in the
  *  function 'next_time'
  */
-int find_particles_to_move(float ITIME)
+int find_particles_to_move(double ITIME)
 {
     int j = 0;
     for (int i = INIT_PARTICLE; i < n; i++)
@@ -55,11 +54,11 @@ int find_particles_to_move(float ITIME)
  *  After set each time step, it is necessah_ry
  *  to adjust it to the block time steps.
  */
-void init_dt(float *ATIME)
+void init_dt(double *ATIME)
 {
     // Aarseth initial timestep
     // dt_{i} = ETA_S * sqrt( (|a|) / (|j|) )
-    float tmp_dt;
+    double tmp_dt;
     for (int i = 0; i < n; i++)
     {
         double a2 = get_magnitude(h_a[i].x, h_a[i].y, h_a[i].z);
@@ -215,7 +214,7 @@ float energy()
     return epot + ekin;
 }
 
-void get_energy_log(float ITIME, int iterations, int nsteps)
+void get_energy_log(double ITIME, int iterations, int nsteps)
 {
     energy_end = energy();
     double relative_error = abs(energy_end-energy_ini)/abs(energy_ini);
@@ -224,10 +223,7 @@ void get_energy_log(float ITIME, int iterations, int nsteps)
     //        ITIME,
     //        nsteps/(float)iterations,
     //        relative_error);
-    if((int)ITIME == 1)
-    {
-        printf("%f %.10e\n", ETA_N, energy_tmp/1);
-    }
+    printf("%4d %f %.10e %.10e\n", (int)ITIME, ETA_N, relative_error, energy_tmp/(int)ITIME);
 }
 
 /*
@@ -261,14 +257,14 @@ void save_old(int total)
  *    formulas.
  */
 void
-predicted_pos_vel(float ITIME)
+predicted_pos_vel(double ITIME)
 {
     //#pragma omp parallel for
     for (int i = INIT_PARTICLE; i < n; i++)
     {
-        float dt = ITIME - h_t[i];
-        float dt2 = (dt  * dt);
-        float dt3 = (dt2 * dt);
+        double dt = ITIME - h_t[i];
+        double dt2 = (dt  * dt);
+        double dt3 = (dt2 * dt);
 
         h_p_r[i].x = (dt3/6 * h_j[i].x) + (dt2/2 * h_a[i].x) + (dt * h_v[i].x) + h_r[i].x;
         h_p_r[i].y = (dt3/6 * h_j[i].y) + (dt2/2 * h_a[i].y) + (dt * h_v[i].y) + h_r[i].y;
@@ -333,18 +329,18 @@ void predicted_pos_vel_kepler(float ITIME, int total)
  *    to apply the correction terms to the position and velocity.
  *
  */
-void correction_pos_vel(float ITIME, int total)
+void correction_pos_vel(double ITIME, int total)
 {
 
     for (int k = 0; k < total; k++)
     {
         int i = h_move[k];
 
-        float dt1 = h_dt[i];
-        float dt2 = dt1 * dt1;
-        float dt3 = dt2 * dt1;
-        float dt4 = dt2 * dt2;
-        float dt5 = dt4 * dt1;
+        double dt1 = h_dt[i];
+        double dt2 = dt1 * dt1;
+        double dt3 = dt2 * dt1;
+        double dt4 = dt2 * dt2;
+        double dt5 = dt4 * dt1;
 
         // Acceleration 2nd derivate
         double ax0_2 = (-6 * (h_old_a[i].x - h_a[i].x ) - dt1 * (4 * h_old_j[i].x + 2 * h_j[i].x) ) / dt2;
@@ -386,7 +382,7 @@ void correction_pos_vel(float ITIME, int total)
         // |a_{1,i}^{(2)}|^{2}
         double abs_a1_22  = abs_a1_2 * abs_a1_2;
 
-        float tmp_dt = sqrt(ETA_N * ((abs_a1 * abs_a1_2 + abs_j12) / (abs_j1 * abs_a1_3 + abs_a1_22)));
+        double tmp_dt = sqrt(ETA_N * ((abs_a1 * abs_a1_2 + abs_j12) / (abs_j1 * abs_a1_3 + abs_a1_22)));
 
         h_t[i] = ITIME;
         tmp_dt = normalize_dt(tmp_dt, h_dt[i], h_t[i], i);
@@ -394,7 +390,7 @@ void correction_pos_vel(float ITIME, int total)
     }
 }
 
-float normalize_dt(float new_dt, float old_dt, float t, int i)
+double normalize_dt(double new_dt, double old_dt, double t, int i)
 {
     if (new_dt <= old_dt/8)
     {

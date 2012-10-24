@@ -62,14 +62,14 @@ typedef struct particle
 /*
  * General variables of the program
  */
-extern int n;                      // Number of particles
-extern int iterations;             // Number of iterations
-extern float total_mass;           // Total mass of the particles
-extern float int_time;             // Integration time
-extern double ini_time, end_time;  // Initial and Final time stamps
-extern double init_time;           // Initial Acc and Jerk calculation time.
-extern float ekin, epot;           // Kinetic and Potential energy
-extern float energy_ini, energy_end, energy_tmp; // Sytem energies
+extern int n;                         // Number of particles
+extern int iterations;                // Number of iterations
+extern float total_mass;              // Total mass of the particles
+extern double int_time;               // Integration time
+extern double ini_time, end_time;     // Initial and Final time stamps
+extern double init_time;              // Initial Acc and Jerk calculation time.
+extern float energy_ini, energy_end, energy_tmp; // Initial and Final energy of the system
+extern float ekin, epot;             // Kinetic and Potential energy
 
 // Struct vector to read the input file
 extern std::vector<particle> part;
@@ -80,11 +80,11 @@ extern std::vector<particle> part;
  * Particles attribute arrays
  */
 extern float *h_ekin, *h_epot;         // Kinetic and Potential energy
-extern float *h_t, *h_dt;              // Time and timestep
-extern double4 *h_r, *h_v, *h_a, *h_j; // Position, velocity, acceleration and jerk
-extern float   *h_m;                   // Masses
-extern int *h_move;                    // Index of the particles to move in each iteration time
-extern double4 *h_new_a, *h_new_j;     // Temp arrays to save tmp accelerations
+extern double *h_t, *h_dt;              // Time and timestep
+extern double4 *h_r, *h_v, *h_a, *h_j;  // Position, velocity, acceleration and jerk
+extern float   *h_m;                    // Masses
+extern int *h_move;                     // Index of the particles to move in each iteration time
+extern double4 *h_new_a, *h_new_j;      // Temp arrays to save tmp accelerations
 
 /*
  * Host pointers
@@ -107,7 +107,7 @@ extern double4 *h_p_v; // Velocity
  * Particles attribute arrays
  */
 extern float *d_ekin, *d_epot;         // Kinetic and Potential energy
-extern float *d_t, *d_dt;              // Time and timestep
+extern double *d_t, *d_dt;              // Time and timestep
 extern double4 *d_r, *d_v, *d_a, *d_j; // Position, velocity, acceleration and jerk
 extern float   *d_m;                   // Masses
 extern int *d_move;                    // Index of the particles to move in each iteration time
