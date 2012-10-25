@@ -3,8 +3,6 @@
 /*
  * @fn init_vectors()
  *
- * @brief
- *  Memory allocation in host (CPU) and device (GPU)
  */
 void init_vectors()
 {
@@ -38,11 +36,11 @@ void init_vectors()
     h_p_r   = (double4*) malloc(d4_size);
     h_p_v   = (double4*) malloc(d4_size);
 
-    h_ekin  =  (float*) malloc(f1_size);
-    h_epot  =  (float*) malloc(f1_size);
+    h_ekin  =  (double*) malloc(d1_size);
+    h_epot  =  (double*) malloc(d1_size);
 
-    h_t     =  (float*) malloc(f1_size);
-    h_dt    =  (float*) malloc(f1_size);
+    h_t     =  (double*) malloc(d1_size);
+    h_dt    =  (double*) malloc(d1_size);
 
     h_m     =   (float*) malloc(f1_size);
     h_move  =     (int*) malloc(i1_size);
@@ -69,10 +67,10 @@ void init_vectors()
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_p_r,   d4_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_p_v,   d4_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_m,     f1_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_ekin,  f1_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_epot,  f1_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_t,     f1_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_dt,    f1_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_ekin,  d1_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_epot,  d1_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_t,     d1_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_dt,    d1_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_move,  i1_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&tmp_red, d4_size));
 
@@ -111,8 +109,8 @@ void init_vectors()
             h_new_a[i] = empty;
             h_new_j[i] = empty;
 
-        h_t[i]  = 0.0f;
-        h_dt[i] = 0.0f;
+        h_t[i]  = 0.0;
+        h_dt[i] = 0.0;
 
         h_move[i] = 0;
 
@@ -122,7 +120,7 @@ void init_vectors()
 
     // The mass is always the same, so to avoid copying it every
     //  function, we copy it at the begining.
-    CUDA_SAFE_CALL(cudaMemcpy(d_m, h_m, f1_size, cudaMemcpyHostToDevice));
+    //CUDA_SAFE_CALL(cudaMemcpy(d_m, h_m, f1_size, cudaMemcpyHostToDevice));
 }
 
 
@@ -172,6 +170,7 @@ void clean_vectors()
     //}
     CUDA_SAFE_CALL(cudaFree(d_new_a));
     CUDA_SAFE_CALL(cudaFree(d_new_j));
+    CUDA_SAFE_CALL(cudaFree(tmp_red));
     free(h_new_a);
     free(h_new_j);
 }

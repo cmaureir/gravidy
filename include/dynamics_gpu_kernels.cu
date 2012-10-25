@@ -1,60 +1,223 @@
 #include "dynamics_gpu_kernels.cuh"
 
-inline __host__ __device__ double4 operator+(const double4 &a, const double4 &b)
-{
-    return make_double4(a.x + b.x, a.y + b.y, a.z + b.z,  a.w + b.w);
-}
-
-inline __host__ __device__ void operator+=(double4 &a, double4 &b)
-{
-    a.x += b.x;
-    a.y += b.y;
-    a.z += b.z;
-    a.w += b.w;
-}
-
-inline __host__ __device__ void operator+=(volatile double4 &a, volatile double4 &b)
-{
-    a.x += b.x;
-    a.y += b.y;
-    a.z += b.z;
-    a.w += b.w;
-
-}
-
-__device__ void dev_gravity(double4 i_pos, double4 i_vel,
+__device__ void gpu_force_calculation(double4 i_pos, double4 i_vel,
                             double4 j_pos, double4 j_vel,
                             double4 &acc,  double4 &jrk,
                             float j_mass)
 {
-    double dx =  j_pos.x - i_pos.x;
-    double dy =  j_pos.y - i_pos.y;
-    double dz =  j_pos.z - i_pos.z;
-    double dvx = j_vel.x - i_vel.x;
-    double dvy = j_vel.y - i_vel.y;
-    double dvz = j_vel.z - i_vel.z;
-    double r2 =  dx*dx + dy*dy + dz*dz;
-    double rv =  dx*dvx + dy*dvy + dz*dvz;
-    double rinv1 = rsqrtf(r2);
-    double rinv2 = rinv1 * rinv1;
-    double mrinv1 = j_mass * rinv1;
-    double mrinv3 = mrinv1 * rinv2;
-    rv *= -3.f * rinv2;
-    acc.x += mrinv3 * dx;
-    acc.y += mrinv3 * dy;
-    acc.z += mrinv3 * dz;
-    jrk.x += mrinv3 * (dvx + rv * dx);
-    jrk.y += mrinv3 * (dvy + rv * dy);
-    jrk.z += mrinv3 * (dvz + rv * dz);
+//    double dx =  j_pos.x - i_pos.x;
+//    double dy =  j_pos.y - i_pos.y;
+//    double dz =  j_pos.z - i_pos.z;
+//    double dvx = j_vel.x - i_vel.x;
+//    double dvy = j_vel.y - i_vel.y;
+//    double dvz = j_vel.z - i_vel.z;
+//    double r2 =  dx*dx + dy*dy + dz*dz;
+//    double rv =  dx*dvx + dy*dvy + dz*dvz;
+//    double rinv1 = rsqrtf(r2);
+//    double rinv2 = rinv1 * rinv1;
+//    double mrinv1 = j_mass * rinv1;
+//    double mrinv3 = mrinv1 * rinv2;
+//    rv *= 3.f * rinv2;
+//    acc.x += mrinv3 * dx;
+//    acc.y += mrinv3 * dy;
+//    acc.z += mrinv3 * dz;
+//    jrk.x += mrinv3 * (dvx - rv * dx);
+//    jrk.y += mrinv3 * (dvy - rv * dy);
+//    jrk.z += mrinv3 * (dvz - rv * dz);
+
+     double3 rr = {j_pos.x - i_pos.x, j_pos.y - i_pos.y, j_pos.z - i_pos.z};
+     double3 vv = {j_vel.x - i_vel.x, j_vel.y - i_vel.y, j_vel.z - i_vel.z};
+
+     double r2 = rr.x*rr.x + rr.y*rr.y + rr.z*rr.z + E2;
+
+     double rinv   = 1/sqrt(r2);
+     double r2inv  = rinv  * rinv;
+
+     double r3inv  = r2inv * rinv;
+     double r5inv  = r2inv * r3inv;
+     double mr3inv = r3inv * j_mass;
+     double mr5inv = r5inv * j_mass;
+
+     double rv = rr.x*vv.x + rr.y*vv.y + rr.z*vv.z;
+
+     acc.x += (rr.x * mr3inv);
+     acc.y += (rr.y * mr3inv);
+     acc.z += (rr.z * mr3inv);
+
+     jrk.x += (vv.x * mr3inv - (3 *  rv) * rr.x * mr5inv);
+     jrk.y += (vv.y * mr3inv - (3 *  rv) * rr.y * mr5inv);
+     jrk.z += (vv.z * mr3inv - (3 *  rv) * rr.z * mr5inv);
 }
+
+
+__global__ void
+k_energy(double4 *r, double4 *v, double *ekin, double *epot, float *m, int n)
+{
+    int i = threadIdx.x + blockDim.x * blockIdx.x;
+    int j;
+
+    if (i < n)
+    {
+        double epot_tmp = 0.0;
+        for (j = i+1; j < n; j++)
+        {
+            double3 rr = {r[j].x - r[i].x, r[j].y - r[i].y, r[j].z - r[i].z};
+            double r2 = rr.x*rr.x + rr.y*rr.y + rr.z*rr.z;
+
+            epot_tmp -= (m[i] * m[j]) * rsqrt(r2);
+        }
+
+        double3 vv = {v[i].x * v[i].x, v[i].y * v[i].y, v[i].z * v[i].z};
+
+        double v2 = vv.x + vv.y + vv.z;
+        double ekin_tmp = 0.5 * m[i] * v2;
+
+        ekin[i] = ekin_tmp;
+        epot[i] = epot_tmp;
+    }
+}
+
+__global__ void
+k_init_acc_jrk(double4 *r, double4 *v, double4 *a, double4 *j, float *m, int n)
+{
+
+    extern __shared__ double4 sh[];
+    double4 *sr = (double4*)sh;
+    double4 *sv = (double4*)&sr[blockDim.x];
+
+    double4 aa = {0.0, 0.0, 0.0, 0.0};
+    double4 jj = {0.0, 0.0, 0.0, 0.0};
+    float mj;
+
+    int id = threadIdx.x + blockDim.x * blockIdx.x;
+    int tx = threadIdx.x;
+
+    if (id < n)
+    {
+        double4 pos = r[id];
+        double4 vel = v[id];
+
+        int tile = 0;
+        for (int i = 0; i < n; i += BSIZE)
+        {
+            int idx = tile * BSIZE + tx;
+
+            sr[tx]   = r[idx];
+            sv[tx]   = v[idx];
+            mj = m[idx];
+            __syncthreads();
+
+            for (int k = 0; k < BSIZE; k++)
+            {
+
+                gpu_force_calculation(pos, vel, sr[k], sv[k], aa, jj, mj);
+//                double3 rr = {sr[k].x - pos.x, sr[k].y - pos.y, sr[k].z - pos.z};
+//                double3 vv = {sv[k].x - vel.x, sv[k].y - vel.y, sv[k].z - vel.z};
+//
+//                double r2 = rr.x*rr.x + rr.y*rr.y + rr.z*rr.z + E2;
+//
+//                double rinv   = rsqrt(r2);
+//                double r2inv  = rinv  * rinv;
+//                double r3inv  = r2inv * rinv;
+//                double r5inv  = r2inv * r3inv;
+//                double mr3inv = r3inv * mj;
+//                double mr5inv = r5inv * mj;
+//
+//                double rv = rr.x*vv.x + rr.y*vv.y + rr.z*vv.z + E2;
+//
+//                aa.x += (rr.x * mr3inv);
+//                aa.y += (rr.y * mr3inv);
+//                aa.z += (rr.z * mr3inv);
+//
+//                jj.x += (vv.x * mr3inv - (3 *  rv) * rr.x * mr5inv);
+//                jj.y += (vv.y * mr3inv - (3 *  rv) * rr.y * mr5inv);
+//                jj.z += (vv.z * mr3inv - (3 *  rv) * rr.z * mr5inv);
+            }
+            __syncthreads();
+            tile++;
+        }
+
+        a[id] = aa;
+        j[id] = jj;
+    }
+}
+
+__global__ void
+k_update_acc_jrk_single(double4 *new_a, double4 *new_j, double4 *r, double4 *v,
+                        float *m, int n, int current)
+{
+
+    double4 aa = {0.0, 0.0, 0.0, 0.0};
+    double4 jj = {0.0, 0.0, 0.0, 0.0};
+    double4 pos = r[current];
+    double4 vel = v[current];
+
+    int id = threadIdx.x + blockDim.x * blockIdx.x;
+
+    if (id < n)
+    {
+        if(id != current)
+        {
+            float mj = m[id];
+            double3 rr = {r[id].x - pos.x, r[id].y - pos.y, r[id].z - pos.z};
+            double3 vv = {v[id].x - vel.x, v[id].y - vel.y, v[id].z - vel.z};
+
+            double r2 = rr.x*rr.x + rr.y*rr.y + rr.z*rr.z + E2;
+
+            //double rinv = rsqrt(r2);
+            double rinv = 1/sqrt(r2);
+            double r2inv = rinv  * rinv;
+            double r3inv = r2inv * rinv;
+            double r5inv = r2inv * r3inv;
+            double mr3inv = r3inv * mj;
+            double mr5inv = r5inv * mj;
+
+            double rv = rr.x*vv.x + rr.y*vv.y + rr.z*vv.z;
+
+            aa.x = (rr.x * mr3inv);
+            aa.y = (rr.y * mr3inv);
+            aa.z = (rr.z * mr3inv);
+
+            jj.x = (vv.x * mr3inv - (3 * rv ) * rr.x * mr5inv);
+            jj.y = (vv.y * mr3inv - (3 * rv ) * rr.y * mr5inv);
+            jj.z = (vv.z * mr3inv - (3 * rv ) * rr.z * mr5inv);
+
+        }
+
+        new_a[id] = aa;
+        new_j[id] = jj;
+    }
+}
+
+__global__ void
+k_predicted_pos_vel(double4 *d_r,   double4 *d_v,   double4 *d_a, double4 *d_j,
+                    double4 *d_p_r, double4 *d_p_v, double *d_t, double ITIME, int n)
+{
+    int i = threadIdx.x + blockDim.x * blockIdx.x;
+
+    if (i < n)
+    {
+        float dt = ITIME - d_t[i];
+        float dt2 = (dt  * dt);
+        float dt3 = (dt2 * dt);
+
+        d_p_r[i].x = (dt3/6 * d_j[i].x) + (dt2/2 * d_a[i].x) + (dt * d_v[i].x) + d_r[i].x;
+        d_p_r[i].y = (dt3/6 * d_j[i].y) + (dt2/2 * d_a[i].y) + (dt * d_v[i].y) + d_r[i].y;
+        d_p_r[i].z = (dt3/6 * d_j[i].z) + (dt2/2 * d_a[i].z) + (dt * d_v[i].z) + d_r[i].z;
+
+        d_p_v[i].x = (dt2/2 * d_j[i].x) + (dt * d_a[i].x) + d_v[i].x;
+        d_p_v[i].y = (dt2/2 * d_j[i].y) + (dt * d_a[i].y) + d_v[i].y;
+        d_p_v[i].z = (dt2/2 * d_j[i].z) + (dt * d_a[i].z) + d_v[i].z;
+    }
+}
+
+
 
 __global__ void k_update_2d(int *move, double4 *new_acc, double4 *new_jrk,
                             double4 *r,       double4 *v,
                             float *m,         int total,  int n)
 {
 
-    // TO DO
-    // Trabajar sÃlo con el que recibimos
     int xbid  = blockIdx.x;
     int ybid  = blockIdx.y;
     int tx  = threadIdx.x;
@@ -97,7 +260,7 @@ __global__ void k_update_2d(int *move, double4 *new_acc, double4 *new_jrk,
             {
                 double4 pos_j = s_r[jj];
                 double4 vel_j = s_v[jj];
-                dev_gravity(pos, vel, pos_j, vel_j, j_acc, j_jrk, m[jj]);
+                gpu_force_calculation(pos, vel, pos_j, vel_j, j_acc, j_jrk, m[jj]);
             }
         }
         else
@@ -107,7 +270,7 @@ __global__ void k_update_2d(int *move, double4 *new_acc, double4 *new_jrk,
             {
                 double4 pos_j = s_r[jj];
                 double4 vel_j = s_v[jj];
-                dev_gravity(pos, vel, pos_j, vel_j, j_acc, j_jrk, m[jj]);
+                gpu_force_calculation(pos, vel, pos_j, vel_j, j_acc, j_jrk, m[jj]);
             }
         }
      }
@@ -115,6 +278,7 @@ __global__ void k_update_2d(int *move, double4 *new_acc, double4 *new_jrk,
     new_jrk[gid + n * ybid] =  j_jrk;
 }
 
+/*
 __global__ void k_reduce_energy(float *d_in, float *d_out, int n)
 {
     extern __shared__ float data[];
@@ -152,6 +316,7 @@ __global__ void k_reduce_energy(float *d_in, float *d_out, int n)
 
     if(tid == 0) d_out[blockIdx.x] = data[0];
 }
+*/
 
 __global__ void k_reduce(double4 *d_in, double4 *d_out, int n)
 {
@@ -192,110 +357,8 @@ __global__ void k_reduce(double4 *d_in, double4 *d_out, int n)
     if(tid == 0) d_out[blockIdx.x] = sdata[0];
 }
 
+
 /*
- * @fn k_energy
- *
- * @param r    Position array, using only 3 dimensions, the last value of the double4 is empty.
- * @param v    Velocity array, using only 3 dimensions, the last value of the double4 is empty.
- * @param ekin Kinetic energy array.
- * @param epot Potential energy array.
- * @param m    Masses of the particles.
- * @param n    Number of particles.
- *
- * @brief
- *  CUDA Kernel to calculate the potential and kinetic energy for each particle.
- *  The arrays contains the energy for each particle.
- *
- */
-__global__ void
-k_energy(double4 *r, double4 *v, float *ekin, float *epot, float *m, int n)
-{
-    int i = threadIdx.x + blockDim.x * blockIdx.x;
-    int j;
-
-    if (i < n)
-    {
-        float epot_tmp = 0.0f;
-        for (j = i+1; j < n; j++)
-        {
-            double3 rr = {r[j].x - r[i].x, r[j].y - r[i].y, r[j].z - r[i].z};
-            double r2 = rr.x*rr.x + rr.y*rr.y + rr.z*rr.z;
-
-            epot_tmp -= (m[i] * m[j]) * rsqrt(r2);
-        }
-
-        double3 vv = {v[i].x * v[i].x, v[i].y * v[i].y, v[i].z * v[i].z};
-
-        double v2 = vv.x + vv.y + vv.z;
-        float ekin_tmp = 0.5 * m[i] * v2;
-
-        ekin[i] = ekin_tmp;
-        epot[i] = epot_tmp;
-    }
-}
-
-__global__ void
-k_init_acc_jrk(double4 *r, double4 *v, double4 *a, double4 *j, float *m, int n)
-{
-
-    extern __shared__ double4 sh[];
-    double4 *s_r = (double4*)sh;
-    double4 *s_v = (double4*)&s_r[blockDim.x];
-
-    double4 tmp_a = {0.0, 0.0, 0.0, 0.0};
-    double4 tmp_j = {0.0, 0.0, 0.0, 0.0};
-    float mj;
-
-    int id = threadIdx.x + blockDim.x * blockIdx.x;
-    int tx = threadIdx.x;
-
-    if (id < n)
-    {
-        double4 pos   = r[id];
-        double4 vel   = v[id];
-
-        int tile = 0;
-        for (int i = 0; i < n; i += BSIZE)
-        {
-            int idx = tile * BSIZE + tx;
-
-            s_r[tx]   = r[idx];
-            s_v[tx]   = v[idx];
-            mj = m[idx];
-            __syncthreads();
-
-            for (int k = 0; k < BSIZE; k++)
-            {
-                double3 tmp_r = { s_r[k].x - pos.x, s_r[k].y - pos.y, s_r[k].z - pos.z};
-                double3 tmp_v = { s_v[k].x - vel.x, s_v[k].y - vel.y, s_v[k].z - vel.z};
-
-                double r2 = (double)(tmp_r.x*tmp_r.x + (tmp_r.y*tmp_r.y + (tmp_r.z*tmp_r.z + E2)));
-
-                double rinv   = (double)rsqrt(r2);
-                double r2inv  = (double)rinv  * rinv;
-                double r3inv  = (double)r2inv * rinv;
-                double r5inv  = (double)r2inv * r3inv;
-                double mr3inv = (double)r3inv * mj;
-                double mr5inv = (double)r5inv * mj;
-
-                tmp_a.x += (double)(tmp_r.x * mr3inv);
-                tmp_a.y += (double)(tmp_r.y * mr3inv);
-                tmp_a.z += (double)(tmp_r.z * mr3inv);
-
-                tmp_j.x += (double)(tmp_v.x * mr3inv + ((3 * (tmp_v.x * (tmp_r.x * tmp_r.x))) * mr5inv));
-                tmp_j.y += (double)(tmp_v.y * mr3inv + ((3 * (tmp_v.y * (tmp_r.y * tmp_r.y))) * mr5inv));
-                tmp_j.z += (double)(tmp_v.z * mr3inv + ((3 * (tmp_v.z * (tmp_r.z * tmp_r.z))) * mr5inv));
-            }
-            __syncthreads();
-            tile++;
-        }
-
-        a[id] = tmp_a;
-        j[id] = tmp_j;
-    }
-}
-
-
 __global__ void k_update_acc_jrk(double4 *r, double4 *v, double4 *a, double4 *j,
                                  float *m,   int *move,  int n,      int total)
 {
@@ -362,193 +425,55 @@ __global__ void k_update_acc_jrk(double4 *r, double4 *v, double4 *a, double4 *j,
         j[id] = tmp_j;
     }
 }
+*/
 
-__global__ void
-k_correction_pos_vel(double4 *r,     double4 *v,     double4 *a,   double4 *j,
-                     double4 *old_a, double4 *old_j, double4 *p_r, double4 *p_v,
-                     float  *t,      float  *dt,     float ITIME, int *move,
-                     int total)
-{
-
-    int k = threadIdx.x + blockDim.x * blockIdx.x;
-
-    if ( k < total)
-    {
-        int i = move[k];
-
-        float dt1 = ITIME - t[i];
-        t[i] = ITIME;
-        float dt2 = dt1 * dt1;
-        float dt3 = dt2 * dt1;
-        float dt4 = dt2 * dt2;
-        float dt5 = dt4 * dt1;
-
-        // Acceleration 2nd derivate
-        double ax0_2 = (-6 * (old_a[i].x - a[i].x ) - dt1 * (4 * old_j[i].x + 2 * j[i].x) ) / dt2;
-        double ay0_2 = (-6 * (old_a[i].y - a[i].y ) - dt1 * (4 * old_j[i].y + 2 * j[i].y) ) / dt2;
-        double az0_2 = (-6 * (old_a[i].z - a[i].z ) - dt1 * (4 * old_j[i].z + 2 * j[i].z) ) / dt2;
-
-        // Acceleration 3rd derivate
-        double ax0_3 = (12 * (old_a[i].x - a[i].x ) + 6 * dt1 * (old_j[i].x + j[i].x) ) / dt3;
-        double ay0_3 = (12 * (old_a[i].y - a[i].y ) + 6 * dt1 * (old_j[i].y + j[i].y) ) / dt3;
-        double az0_3 = (12 * (old_a[i].z - a[i].z ) + 6 * dt1 * (old_j[i].z + j[i].z) ) / dt3;
-
-        // Correcting position
-        r[i].x = p_r[i].x + (dt4/24)*ax0_2 + (dt5/120)*ax0_3;
-        r[i].y = p_r[i].y + (dt4/24)*ay0_2 + (dt5/120)*ay0_3;
-        r[i].z = p_r[i].z + (dt4/24)*az0_2 + (dt5/120)*az0_3;
-
-        // Correcting velocity
-        v[i].x = p_v[i].x + (dt3/6)*ax0_2 + (dt4/24)*ax0_3;
-        v[i].y = p_v[i].y + (dt3/6)*ay0_2 + (dt4/24)*ay0_3;
-        v[i].z = p_v[i].z + (dt3/6)*az0_2 + (dt4/24)*az0_3;
-
-        // Timestep update
-
-        // Calculating a_{1,i}^{(2)} = a_{0,i}^{(2)} + dt * a_{0,i}^{(3)}
-        double ax1_2 = ax0_2 + dt1 * ax0_3;
-        double ay1_2 = ay0_2 + dt1 * ay0_3;
-        double az1_2 = az0_2 + dt1 * az0_3;
-
-        // |a_{1,i}|
-        double abs_a1   = sqrt((a[i].x * a[i].x) + (a[i].y * a[i].y) + (a[i].z * a[i].z));
-        // |j_{1,i}|
-        double abs_j1   = sqrt((j[i].x * j[i].x) + (j[i].y * j[i].y) + (j[i].z * j[i].z));
-        // |j_{1,i}|^{2}
-        double abs_j12  = abs_j1 * abs_j1;
-        // a_{1,i}^{(3)} = a_{0,i}^{(3)} because the 3rd-order interpolation
-        double abs_a1_3 = sqrt((ax0_3 * ax0_3) + (ay0_3 * ay0_3) + (az0_3 * az0_3));
-        // |a_{1,i}^{(2)}|
-        double abs_a1_2 = sqrt((ax1_2 * ax1_2) + (ay1_2 * ay1_2) + (az1_2 * az1_2));
-        // |a_{1,i}^{(2)}|^{2}
-        double abs_a1_22  = abs_a1_2 * abs_a1_2;
-
-        double tmp_dt = sqrt(ETA_N * ((abs_a1 * abs_a1_2 + abs_j12) / (abs_j1 * abs_a1_3 + abs_a1_22)));
-
-        /* Adjusting to block timesteps */
-        if (tmp_dt < dt[i])
-            tmp_dt = dt[i]/2;
-        else if (tmp_dt > 2 * dt[i])
-            tmp_dt = 2 * dt[i];
-        else
-            tmp_dt = dt[i];
-
-        if (tmp_dt < D_TIME_MIN)
-            tmp_dt = D_TIME_MIN;
-        else if (tmp_dt > D_TIME_MAX)
-            tmp_dt = D_TIME_MAX;
-
-        dt[i] = tmp_dt;
-    }
-}
-
-__global__ void
-k_update_acc_jrk_single(double4 c_pos, double4 c_vel, double4 *new_a, double4 *new_j,
-                         double4 *r,          double4 *v,          float *m,
-                         int n,               int current)
-{
-
-    double4 tmp_a = {0.0, 0.0, 0.0, 0.0};
-    double4 tmp_j = {0.0, 0.0, 0.0, 0.0};
-
-    int ii = threadIdx.x + blockDim.x * blockIdx.x;
-
-    if (ii < n)
-    {
-        new_a[ii] = tmp_a;
-        new_j[ii] = tmp_j;
-        if(ii != current)
-        {
-            float mj = m[ii];
-            double3 tmp_r = { r[ii].x - c_pos.x, r[ii].y - c_pos.y, r[ii].z - c_pos.z};
-            double3 tmp_v = { v[ii].x - c_vel.x, v[ii].y - c_vel.y, v[ii].z - c_vel.z};
-
-            double r2 = tmp_r.x*tmp_r.x + tmp_r.y*tmp_r.y + tmp_r.z*tmp_r.z + E2;
-
-            double rinv = rsqrt(r2);
-            double r2inv = rinv  * rinv;
-            double r3inv = r2inv * rinv;
-            double r5inv = r2inv * r3inv;
-            double mr3inv = r3inv * mj;
-            double mr5inv = r5inv * mj;
-
-            tmp_a.x = tmp_r.x * mr3inv;
-            tmp_a.y = tmp_r.y * mr3inv;
-            tmp_a.z = tmp_r.z * mr3inv;
-
-            tmp_j.x = tmp_v.x * mr3inv + (3 * tmp_v.x * tmp_r.x * tmp_r.x) * mr5inv;
-            tmp_j.y = tmp_v.y * mr3inv + (3 * tmp_v.y * tmp_r.y * tmp_r.y) * mr5inv;
-            tmp_j.z = tmp_v.z * mr3inv + (3 * tmp_v.z * tmp_r.z * tmp_r.z) * mr5inv;
-
-            new_a[ii] = tmp_a;
-            new_j[ii] = tmp_j;
-        }
-    }
-}
-
-__global__ void
-k_predicted_pos_vel(double4 *d_r,   double4 *d_v,   double4 *d_a, double4 *d_j,
-                    double4 *d_p_r, double4 *d_p_v, float *d_t, float ITIME, int n)
-{
-    int i = threadIdx.x + blockDim.x * blockIdx.x;
-
-    if (i < n)
-    {
-        float dt = ITIME - d_t[i];
-        float dt2 = (dt  * dt)/2;
-        float dt3 = (dt2 * dt)/6;
-
-        d_p_r[i].x = dt3 * d_j[i].x + dt2 * d_a[i].x + dt * d_v[i].x + d_r[i].x;
-        d_p_r[i].y = dt3 * d_j[i].y + dt2 * d_a[i].y + dt * d_v[i].y + d_r[i].y;
-        d_p_r[i].z = dt3 * d_j[i].z + dt2 * d_a[i].z + dt * d_v[i].z + d_r[i].z;
-
-        d_p_v[i].x = dt2 * d_j[i].x + dt * d_a[i].x + d_v[i].x;
-        d_p_v[i].y = dt2 * d_j[i].y + dt * d_a[i].y + d_v[i].y;
-        d_p_v[i].z = dt2 * d_j[i].z + dt * d_a[i].z + d_v[i].z;
-    }
-}
 
 __global__ void
 k_update_acc_jrk_simple(double4 *r, double4 *v, double4 *a, double4 *j, float *m, int *move, int n, int total)
 {
+    extern __shared__ double4 sh[];
+    double4 *sr = (double4*)sh;
+    double4 *sv = (double4*)&sr[blockDim.x];
 
-    double4 tmp_a = {0.0, 0.0, 0.0, 0.0};
-    double4 tmp_j = {0.0, 0.0, 0.0, 0.0};
+    double4 aa = {0.0, 0.0, 0.0, 0.0};
+    double4 jj = {0.0, 0.0, 0.0, 0.0};
+    double4 pos = {0.0, 0.0, 0.0, 0.0};
+    double4 vel = {0.0, 0.0, 0.0, 0.0};
+
+    float mj;
 
     int id = threadIdx.x + blockDim.x * blockIdx.x;
+    int tx = threadIdx.x;
 
-    if (id < n)
+
+    int id_move = move[(int)(id/BSIZE)];
+
+    if(id_move != -1)
     {
-        double4 pos   = r[id];
-        double4 vel   = v[id];
-        float   mj    = m[id];
-
-        for (int i = 0; i < n; i++)
-        {
-            if(i == id) continue;
-
-            double3 tmp_r = { r[i].x - pos.x, r[i].y - pos.y, r[i].z - pos.z};
-            double3 tmp_v = { v[i].x - vel.x, v[i].y - vel.y, v[i].z - vel.z};
-
-            double r2     = (double)(tmp_r.x*tmp_r.x + (tmp_r.y*tmp_r.y + (tmp_r.z*tmp_r.z + E2)));
-
-            double rinv   = (double)rsqrt(r2);
-            double r2inv  = (double)rinv  * rinv;
-            double r3inv  = (double)r2inv * rinv;
-            double r5inv  = (double)r2inv * r3inv;
-            double mr3inv = (double)r3inv * mj;
-            double mr5inv = (double)r5inv * mj;
-
-            tmp_a.x += (double)(tmp_r.x * mr3inv);
-            tmp_a.y += (double)(tmp_r.y * mr3inv);
-            tmp_a.z += (double)(tmp_r.z * mr3inv);
-
-            tmp_j.x += (double)(tmp_v.x * mr3inv + ((3 * (tmp_v.x * (tmp_r.x * tmp_r.x))) * mr5inv));
-            tmp_j.y += (double)(tmp_v.y * mr3inv + ((3 * (tmp_v.y * (tmp_r.y * tmp_r.y))) * mr5inv));
-            tmp_j.z += (double)(tmp_v.z * mr3inv + ((3 * (tmp_v.z * (tmp_r.z * tmp_r.z))) * mr5inv));
-        }
-
-        a[id] = tmp_a;
-        j[id] = tmp_j;
+        pos = r[id_move];
+        vel = v[id_move];
     }
+
+
+    int tile = 0;
+    for (int i = 0; i < n; i += BSIZE)
+    {
+        int idx = tile * BSIZE + tx;
+
+        sr[tx]   = r[idx];
+        sv[tx]   = v[idx];
+        mj = m[idx];
+        __syncthreads();
+
+        for (int k = 0; k < BSIZE; k++)
+        {
+            gpu_force_calculation(pos, vel, sr[k], sv[k], aa, jj, mj);
+        }
+        __syncthreads();
+        tile++;
+    }
+
+        a[id] = aa;
+        j[id] = jj;
+
 }

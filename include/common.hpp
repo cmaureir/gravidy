@@ -6,6 +6,8 @@
 #include <omp.h>
 #include <cassert>
 
+//#define KERNEL_ERROR_DEBUG 1
+
 // Initial time step factor
 #define ETA_S 0.01
 // Update time step factor
@@ -68,8 +70,8 @@ extern float total_mass;              // Total mass of the particles
 extern double int_time;               // Integration time
 extern double ini_time, end_time;     // Initial and Final time stamps
 extern double init_time;              // Initial Acc and Jerk calculation time.
-extern float energy_ini, energy_end, energy_tmp; // Initial and Final energy of the system
-extern float ekin, epot;             // Kinetic and Potential energy
+extern double energy_ini, energy_end, energy_tmp; // Initial and Final energy of the system
+extern double ekin, epot;             // Kinetic and Potential energy
 
 // Struct vector to read the input file
 extern std::vector<particle> part;
@@ -79,7 +81,7 @@ extern std::vector<particle> part;
  * Host pointers
  * Particles attribute arrays
  */
-extern float *h_ekin, *h_epot;         // Kinetic and Potential energy
+extern double *h_ekin, *h_epot;         // Kinetic and Potential energy
 extern double *h_t, *h_dt;              // Time and timestep
 extern double4 *h_r, *h_v, *h_a, *h_j;  // Position, velocity, acceleration and jerk
 extern float   *h_m;                    // Masses
@@ -106,7 +108,7 @@ extern double4 *h_p_v; // Velocity
  * Device pointers
  * Particles attribute arrays
  */
-extern float *d_ekin, *d_epot;         // Kinetic and Potential energy
+extern double *d_ekin, *d_epot;         // Kinetic and Potential energy
 extern double *d_t, *d_dt;              // Time and timestep
 extern double4 *d_r, *d_v, *d_a, *d_j; // Position, velocity, acceleration and jerk
 extern float   *d_m;                   // Masses
@@ -150,3 +152,28 @@ extern size_t f1_size, i1_size;
  */
 extern float t_rh; // Half-mass relaxation time¬
 extern float t_cr; // Crossing time¬
+
+extern double4 *tmp_red;
+
+inline __host__ __device__ double4 operator+(const double4 &a, const double4 &b)
+{
+    double4 tmp = {a.x + b.x, a.y + b.y, a.z + b.z,  a.w + b.w};
+    return tmp;
+}
+
+inline __host__ __device__ void operator+=(double4 &a, double4 &b)
+{
+    a.x += b.x;
+    a.y += b.y;
+    a.z += b.z;
+    a.w += b.w;
+}
+
+inline __host__ __device__ void operator+=(volatile double4 &a, volatile double4 &b)
+{
+    a.x += b.x;
+    a.y += b.y;
+    a.z += b.z;
+    a.w += b.w;
+
+}

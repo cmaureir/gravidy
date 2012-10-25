@@ -6,31 +6,55 @@ void integrate_gpu()
     double ATIME = 1.0e+10; // Actual integration time
     double ITIME = 0.0;     // Integration time
     int total;
+    int nsteps = 0;
     iterations = 0;
 
+    CUDA_SAFE_CALL(cudaMemcpy(d_r,  h_r,  d4_size,cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(d_v,  h_v,  d4_size,cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(d_m,  h_m,  f1_size,cudaMemcpyHostToDevice));
     gpu_init_acc_jrk();
+    CUDA_SAFE_CALL(cudaMemcpy(h_a,  d_a,  d4_size,cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(cudaMemcpy(h_j,  d_j,  d4_size,cudaMemcpyDeviceToHost));
     init_dt(&ATIME);
-
     energy_ini = gpu_energy();      // Get initial energy
+    energy_tmp = 0.0;
+    printf("Energy_ini: %.15e\n", energy_ini);
 
+
+    CUDA_SAFE_CALL(cudaMemcpy(d_t,  h_t,  d1_size,cudaMemcpyHostToDevice));
     while (ITIME < int_time)
     {
         ITIME = ATIME;
         total = find_particles_to_move(ITIME);
         save_old(total);
+
+
         gpu_predicted_pos_vel(ITIME);
-        gpu_update_acc_jrk(total);
+        //gpu_update_acc_jrk(total);
+        gpu_update_acc_jrk_simple(total);
+        //gpu_update_2d(total);
+
+        CUDA_SAFE_CALL(cudaMemcpy(h_p_r,  d_p_r,  d4_size,cudaMemcpyDeviceToHost));
+        CUDA_SAFE_CALL(cudaMemcpy(h_p_v,  d_p_v,  d4_size,cudaMemcpyDeviceToHost));
+
         correction_pos_vel(ITIME, total);
         next_itime(&ATIME);
         iterations++;
         nsteps += total;
 
+        CUDA_SAFE_CALL(cudaMemcpy(d_t,  h_t,  d1_size,cudaMemcpyHostToDevice));
+        CUDA_SAFE_CALL(cudaMemcpy(d_r,  h_r,  d4_size,cudaMemcpyHostToDevice));
+        CUDA_SAFE_CALL(cudaMemcpy(d_v,  h_v,  d4_size,cudaMemcpyHostToDevice));
+        CUDA_SAFE_CALL(cudaMemcpy(d_a,  h_a,  d4_size,cudaMemcpyHostToDevice));
+        CUDA_SAFE_CALL(cudaMemcpy(d_j,  h_j,  d4_size,cudaMemcpyHostToDevice));
+
         if(std::ceil(ITIME) == ITIME)
         {
-            get_energy_log(ITIME, iterations, nsteps);
+            gpu_get_energy_log(ITIME, iterations, nsteps);
         }
-
     }
+    energy_end = gpu_energy();
+    printf("Energy_end: %.15e\n", energy_end);
 }
 
 void integrate_cpu()
@@ -45,30 +69,15 @@ void integrate_cpu()
     init_dt(&ATIME);
     energy_ini = energy();
     energy_tmp = 0.0;
+    printf("Energy_ini: %.15e\n", energy_ini);
 
-//    Point p = get_center_of_density();
-//    for (int i = 0; i < n; i++) {
-//        double rx = h_r[i].x - p.x;
-//        double ry = h_r[i].y - p.y;
-//        double rz = h_r[i].z - p.z;
-//        double d  = get_magnitude(rx, ry, rz);
-//        printf("%d %.6f\n",i, d);
-//    }
-
-//    float t_rh = get_relaxation_time();
-//    float t_cr = get_crossing_time();
-//
-//    std::cout << "T_rh : " << t_rh << std::endl;
-//    std::cout << "T_cr : " << t_cr << std::endl;
-//    std::cout << "T_cc : " << 17 * t_rh << std::endl;
-//
-//    printf("%d\n",n);
     while (ITIME < int_time)
     {
         ITIME = ATIME;
         total = find_particles_to_move(ITIME);
         save_old(total);
         predicted_pos_vel(ITIME);
+
         update_acc_jrk(total);
         correction_pos_vel(ITIME, total);
         next_itime(&ATIME);
@@ -79,6 +88,8 @@ void integrate_cpu()
         {
             get_energy_log(ITIME, iterations, nsteps);
         }
-
     }
+    energy_end = energy();
+    printf("Energy_end: %.15e\n", energy_end);
+
 }

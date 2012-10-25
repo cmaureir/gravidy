@@ -141,7 +141,7 @@ void init_acc_jrk()
 void update_acc_jrk(int total)
 {
     int i, j;
-    #pragma omp parallel for private(i,j)
+    //#pragma omp parallel for private(i,j)
     for (int k = 0; k < total; k++)
     {
         i = h_move[k];
@@ -158,6 +158,10 @@ void update_acc_jrk(int total)
             if(i == j) continue;
             force_calculation(i,j);
         }
+
+    //    printf("%d %.10f %.10f %.10f - %.10f %.10f %.10f\n",
+    //            i, h_a[i].x, h_a[i].y, h_a[i].z,
+    //            h_j[i].x, h_j[i].y, h_j[i].z);
     }
 }
 
@@ -173,8 +177,8 @@ void update_acc_jrk(int total)
  */
 float energy()
 {
-    float ekin_tmp = 0;
-    float epot_tmp = 0;
+    double ekin_tmp = 0;
+    double epot_tmp = 0;
     double r2, v2;
     double rx, ry, rz;
     double vx, vy, vz;
@@ -205,11 +209,9 @@ float energy()
         v2 = vx + vy + vz;
 
         ekin_tmp = 0.5 * h_m[i] * v2;
-        #pragma omp critical
-        {
-            ekin += ekin_tmp;
-            epot += epot_tmp;
-        }
+
+        ekin += ekin_tmp;
+        epot += epot_tmp;
     }
     return epot + ekin;
 }
@@ -217,13 +219,21 @@ float energy()
 void get_energy_log(double ITIME, int iterations, int nsteps)
 {
     energy_end = energy();
-    double relative_error = abs(energy_end-energy_ini)/abs(energy_ini);
+    double relative_error = abs((energy_end-energy_ini)/energy_ini);
     energy_tmp += relative_error;
-    //fprintf(stderr, "%.10f %.10f %.10e\n",
-    //        ITIME,
-    //        nsteps/(float)iterations,
-    //        relative_error);
-    printf("%4d %f %.10e %.10e\n", (int)ITIME, ETA_N, relative_error, energy_tmp/(int)ITIME);
+
+    if((int)ITIME == 1)
+        printf("ITIME  ITER NSTEPS/ITER    ETA     TIME            ENERGY     REL_ENER     CUM_ENER\n");
+
+    printf("%4d %6d %.6f %f %.6f %.15e %.15e %.15e\n",
+            (int)ITIME,
+            iterations,
+            nsteps/(float)iterations,
+            ETA_N,
+            omp_get_wtime() - ini_time,
+            energy_end,
+            relative_error,
+            energy_tmp/(int)ITIME);
 }
 
 /*
@@ -441,3 +451,20 @@ double normalize_dt(double new_dt, double old_dt, double t, int i)
 
     return new_dt;
 }
+
+//    Point p = get_center_of_density();
+//    for (int i = 0; i < n; i++) {
+//        double rx = h_r[i].x - p.x;
+//        double ry = h_r[i].y - p.y;
+//        double rz = h_r[i].z - p.z;
+//        double d  = get_magnitude(rx, ry, rz);
+//        printf("%d %.6f\n",i, d);
+//    }
+
+//    float t_rh = get_relaxation_time();
+//    float t_cr = get_crossing_time();
+//
+//    std::cout << "T_rh : " << t_rh << std::endl;
+//    std::cout << "T_cr : " << t_cr << std::endl;
+//    std::cout << "T_cc : " << 17 * t_rh << std::endl;
+//

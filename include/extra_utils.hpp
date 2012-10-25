@@ -15,6 +15,7 @@ void print_positions(int);
 void print_velocities(int);
 void print_accelerations(int);
 void print_jrks(int);
+void print_accjrk(int);
 void print_masses(int);
 void print_times(int, float);
 void print_old(int);

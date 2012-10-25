@@ -1,6 +1,7 @@
 CC=         g++
 NVCC=       nvcc
-NVFLAGS=    -O3 -m64 -G -g -arch=sm_20 --ptxas-options="-v -dlcm=cg"
+NVFLAGS=    -O3 -m64 -G -g -arch=sm_20
+#NVFLAGS=    -O3 -m64 -G -g -arch=sm_20 --ptxas-options="-v -dlcm=cg"
 CUDA_PATH=  /usr/local/cuda
 BOOST_PATH= /home/cmaurei/boost/boost_build
 CXXFLAGS=   -O3 -m64 -Wall -lgomp -pg -fopenmp

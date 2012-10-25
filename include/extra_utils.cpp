@@ -40,6 +40,17 @@ void print_jrks(int limit)
         printf("%6d %.14f %.14f %.14f\n", i, h_j[i].x, h_j[i].y, h_j[i].z );
     }
 }
+
+void print_accjrk(int limit)
+{
+    for (int i = 0; i < limit; i++) {
+        printf("%6d %.14f %.14f %.14f %.14f %.14f %.14f\n",
+                i,
+                h_a[i].x, h_a[i].y, h_a[i].z,
+                h_j[i].x, h_j[i].y, h_j[i].z
+                );
+    }
+}
 void print_masses(int limit)
 {
     for (int i = 0; i < limit; i++) {
