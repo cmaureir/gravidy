@@ -159,7 +159,6 @@ __host__ void gpu_update_acc_jrk_simple(int total)
     CUDA_SAFE_CALL(cudaMemcpy(d_move, h_move, i1_size, cudaMemcpyHostToDevice));
 
     int smem = BSIZE * 2 * sizeof(double4);
-    printf("%4d %4d\n", nblocks, nthreads);
     k_update_acc_jrk_simple <<< nblocks, nthreads, smem >>> (d_p_r, d_p_v, d_a, d_j,
                                                              d_m, d_move, n, total);
     cudaThreadSynchronize();
