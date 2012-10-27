@@ -141,7 +141,6 @@ void init_acc_jrk()
 void update_acc_jrk(int total)
 {
     int i, j;
-    //#pragma omp parallel for private(i,j)
     for (int k = 0; k < total; k++)
     {
         i = h_move[k];
@@ -158,10 +157,6 @@ void update_acc_jrk(int total)
             if(i == j) continue;
             force_calculation(i,j);
         }
-
-    //    printf("%d %.10f %.10f %.10f - %.10f %.10f %.10f\n",
-    //            i, h_a[i].x, h_a[i].y, h_a[i].z,
-    //            h_j[i].x, h_j[i].y, h_j[i].z);
     }
 }
 
@@ -175,44 +170,37 @@ void update_acc_jrk(int total)
  *    and in the update_acc_jrk() functions.
  *
  */
-float energy()
+double energy()
 {
-    double ekin_tmp = 0;
-    double epot_tmp = 0;
-    double r2, v2;
-    double rx, ry, rz;
-    double vx, vy, vz;
+    double ekin_tmp;
+    double epot_tmp;
     int i, j;
 
-    epot = 0;
-    ekin = 0;
+    epot = 0.0;
+    ekin = 0.0;
 
-//    #pragma omp parallel for private(epot_tmp,j,rx,ry,rz,r2,vx,vy,vz,v2,ekin_tmp)
     for (i = 0; i < n; i++)
     {
-        epot_tmp = 0;
+        epot_tmp = 0.0;
         for (j = i+1; j < n; j++)
         {
-            rx = h_r[j].x - h_r[i].x;
-            ry = h_r[j].y - h_r[i].y;
-            rz = h_r[j].z - h_r[i].z;
-
-            r2 = rx*rx + ry*ry + rz*rz;
-
+            double rx = h_r[j].x - h_r[i].x;
+            double ry = h_r[j].y - h_r[i].y;
+            double rz = h_r[j].z - h_r[i].z;
+            double r2 = rx*rx + ry*ry + rz*rz;
             epot_tmp -= (h_m[i] * h_m[j]) / sqrt(r2);
         }
 
-        vx = h_v[i].x * h_v[i].x;
-        vy = h_v[i].y * h_v[i].y;
-        vz = h_v[i].z * h_v[i].z;
-
-        v2 = vx + vy + vz;
-
+        double vx = h_v[i].x * h_v[i].x;
+        double vy = h_v[i].y * h_v[i].y;
+        double vz = h_v[i].z * h_v[i].z;
+        double v2 = vx + vy + vz;
         ekin_tmp = 0.5 * h_m[i] * v2;
 
         ekin += ekin_tmp;
         epot += epot_tmp;
     }
+    printf("%.10f %.10f\n", ekin, epot);
     return epot + ekin;
 }
 
@@ -273,16 +261,16 @@ predicted_pos_vel(double ITIME)
     for (int i = INIT_PARTICLE; i < n; i++)
     {
         double dt = ITIME - h_t[i];
-        double dt2 = (dt  * dt);
-        double dt3 = (dt2 * dt);
+        double dt2 = (dt  * dt)/2;
+        double dt3 = (dt2 * dt)/6;
 
-        h_p_r[i].x = (dt3/6 * h_j[i].x) + (dt2/2 * h_a[i].x) + (dt * h_v[i].x) + h_r[i].x;
-        h_p_r[i].y = (dt3/6 * h_j[i].y) + (dt2/2 * h_a[i].y) + (dt * h_v[i].y) + h_r[i].y;
-        h_p_r[i].z = (dt3/6 * h_j[i].z) + (dt2/2 * h_a[i].z) + (dt * h_v[i].z) + h_r[i].z;
+        h_p_r[i].x = (dt3 * h_j[i].x) + (dt2 * h_a[i].x) + (dt * h_v[i].x) + h_r[i].x;
+        h_p_r[i].y = (dt3 * h_j[i].y) + (dt2 * h_a[i].y) + (dt * h_v[i].y) + h_r[i].y;
+        h_p_r[i].z = (dt3 * h_j[i].z) + (dt2 * h_a[i].z) + (dt * h_v[i].z) + h_r[i].z;
 
-        h_p_v[i].x = (dt2/2 * h_j[i].x) + (dt * h_a[i].x) + h_v[i].x;
-        h_p_v[i].y = (dt2/2 * h_j[i].y) + (dt * h_a[i].y) + h_v[i].y;
-        h_p_v[i].z = (dt2/2 * h_j[i].z) + (dt * h_a[i].z) + h_v[i].z;
+        h_p_v[i].x = (dt2 * h_j[i].x) + (dt * h_a[i].x) + h_v[i].x;
+        h_p_v[i].y = (dt2 * h_j[i].y) + (dt * h_a[i].y) + h_v[i].y;
+        h_p_v[i].z = (dt2 * h_j[i].z) + (dt * h_a[i].z) + h_v[i].z;
         //h_p_r[i].x += dt3 * h_j[i].x + dt2 * h_a[i].x + dt * h_v[i].x + h_r[i].x;
         //h_p_r[i].y += dt3 * h_j[i].y + dt2 * h_a[i].y + dt * h_v[i].y + h_r[i].y;
         //h_p_r[i].z += dt3 * h_j[i].z + dt2 * h_a[i].z + dt * h_v[i].z + h_r[i].z;
@@ -301,7 +289,7 @@ predicted_pos_vel(double ITIME)
  *    and velocity using the Kepler's equation.
  *
  */
-void predicted_pos_vel_kepler(float ITIME, int total)
+void predicted_pos_vel_kepler(double ITIME, int total)
 {
 
     for (int i = 0; i < total; i++)
@@ -316,10 +304,15 @@ void predicted_pos_vel_kepler(float ITIME, int total)
         double vx = h_v[k].x - h_v[0].x;
         double vy = h_v[k].y - h_v[0].y;
         double vz = h_v[k].z - h_v[0].z;
+        printf("Starting with particle %d\n", i);
+        printf("-->Distance to BH : %.10f\n", sqrt(rx*rx+ry*ry+rz*rz));
 
-        for (float j = 0; j < KEPLER_ITE; j+=dt)
+        // TO DO: Fix the 1 !!!
+        for (float j = 0; j < 1; j+=dt)
         {
             kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, h_m[k], h_m[0], j, k);
+            printf("kepler iteration  %d end\n", j);
+            getchar();
         }
         h_p_r[k].x = rx;
         h_p_r[k].y = ry;
@@ -328,6 +321,8 @@ void predicted_pos_vel_kepler(float ITIME, int total)
         h_p_v[k].x = vx;
         h_p_v[k].y = vy;
         h_p_v[k].z = vz;
+        printf("End particle %d\n");
+        getchar();
     }
 }
 
@@ -436,7 +431,7 @@ double normalize_dt(double new_dt, double old_dt, double t, int i)
     }
     else
     {
-        std::cerr << "Nothing to do!" << std::endl;
+        fprintf(stderr, "gravidy: Undefined treatment for the time-step of (%d)",i);
         getchar();
     }
 

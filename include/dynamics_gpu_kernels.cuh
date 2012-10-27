@@ -17,3 +17,6 @@ __global__ void k_predicted_pos_vel    (double4*, double4*, double4*, double4*,
 
 __global__ void k_update_acc_jrk_simple(double4 *r, double4 *v, double4 *a, double4 *j,
                                         float *m,    int *move,  int n,      int total);
+
+__device__ void k_force_calculation(double4, double4, double4, double4,
+                                    double4&, double4&, float);

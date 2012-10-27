@@ -18,5 +18,6 @@ __host__ void   gpu_init_acc_jrk();
 __host__ void   gpu_update_acc_jrk(int);
 __host__ void   gpu_update_2d(int);
 __host__ void   gpu_update_acc_jrk_single(int);
-
+__host__ void gpu_correction_pos_vel(double,int);
 __host__ void gpu_update_acc_jrk_simple(int);
+__host__ double normalize_dt(double, double, double, int);

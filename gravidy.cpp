@@ -20,10 +20,8 @@ double ekin, epot;
 
 // Struct vector to read the input file
 std::vector<particle> part;
-
 double4  *h_old_a, *h_old_j;
 double4 *h_p_r, *h_p_v;
-
 double4 *d_old_a, *d_old_j;
 double4 *d_p_r, *d_p_v;
 
@@ -34,7 +32,7 @@ double *h_t, *h_dt;
 float   *h_m;
 int *h_move;
 double4 *h_r, *h_v, *h_a, *h_j;
-double4 *h_new_a, *h_new_j;
+//double4 *h_new_a, *h_new_j;
 
 // Device pointers
 double *d_ekin, *d_epot;
@@ -42,7 +40,7 @@ double *d_t, *d_dt;
 float   *d_m;
 int *d_move;
 double4 *d_r, *d_v, *d_a, *d_j;
-double4 *d_new_a, *d_new_j;
+//double4 *d_new_a, *d_new_j;
 
 // System times
 float t_rh, t_cr;

@@ -3,7 +3,7 @@
 void print_all(int limit, float ITIME)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%.5f %6d %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f\n",
+        printf("%.10f %6d %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
                 ITIME,
                 i,
                 h_r[i].x, h_r[i].y, h_r[i].z,
@@ -17,34 +17,34 @@ void print_all(int limit, float ITIME)
 void print_positions(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.14f %.14f %.14f\n", i, h_r[i].x, h_r[i].y, h_r[i].z );
+        printf("%6d %.10f %.10f %.10f\n", i, h_r[i].x, h_r[i].y, h_r[i].z );
     }
 }
 
 void print_velocities(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.14f %.14f %.14f\n", i, h_v[i].x, h_v[i].y, h_v[i].z );
+        printf("%6d %.10f %.10f %.10f\n", i, h_v[i].x, h_v[i].y, h_v[i].z );
     }
 }
 void print_accelerations(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.14f %.14f %.14f\n", i, h_a[i].x, h_a[i].y, h_a[i].z );
+        printf("%6d %.10f %.10f %.10f\n", i, h_a[i].x, h_a[i].y, h_a[i].z );
     }
 
 }
 void print_jrks(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.14f %.14f %.14f\n", i, h_j[i].x, h_j[i].y, h_j[i].z );
+        printf("%6d %.10f %.10f %.10f\n", i, h_j[i].x, h_j[i].y, h_j[i].z );
     }
 }
 
 void print_accjrk(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.14f %.14f %.14f %.14f %.14f %.14f\n",
+        printf("%6d %4.10f %4.10f %4.10f %4.10f %4.10f %4.10f\n",
                 i,
                 h_a[i].x, h_a[i].y, h_a[i].z,
                 h_j[i].x, h_j[i].y, h_j[i].z
@@ -54,7 +54,7 @@ void print_accjrk(int limit)
 void print_masses(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.14f\n", i, h_m[i] );
+        printf("%6d %.10f\n", i, h_m[i] );
     }
 }
 
@@ -63,7 +63,7 @@ void print_times(int limit, float itime)
     int exp = 0;
     for (int i = 0; i < limit; i++) {
         exp = (int)std::ceil(log(h_dt[i])/log(2));
-        printf("%.15f %6d %.15f %2d %.15f\n", itime, i, h_dt[i], exp, h_t[i]);
+        printf("%.10f %6d %.10f %2d %.10f\n", itime, i, h_dt[i], exp, h_t[i]);
     }
 }
 
@@ -71,7 +71,7 @@ void print_times(int limit, float itime)
 void print_old(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.14f %.14f %.14f %.14f %.14f %.14f\n",
+        printf("%6d %.10f %.10f %.10f %.10f %.10f %.10f\n",
                 i,
                 h_old_a[i].x, h_old_a[i].y, h_old_a[i].z,
                 h_old_j[i].x, h_old_j[i].y, h_old_j[i].z);
@@ -81,7 +81,7 @@ void print_old(int limit)
 void print_predicted(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.14f %.14f %.14f %.14f %.14f %.14f\n",
+        printf("%6d %.10f %.10f %.10f %.10f %.10f %.10f\n",
                 i,
                 h_p_r[i].x, h_p_r[i].y, h_p_r[i].z,
                 h_p_v[i].x, h_p_v[i].y, h_p_v[i].z);

@@ -26,7 +26,7 @@
 #define G 1
 
 // CUDA Fixed block size
-#define BSIZE 128
+#define BSIZE 64
 #define NJBLOCK 16
 
 // Neighbor number
@@ -86,7 +86,7 @@ extern double *h_t, *h_dt;              // Time and timestep
 extern double4 *h_r, *h_v, *h_a, *h_j;  // Position, velocity, acceleration and jerk
 extern float   *h_m;                    // Masses
 extern int *h_move;                     // Index of the particles to move in each iteration time
-extern double4 *h_new_a, *h_new_j;      // Temp arrays to save tmp accelerations
+//extern double4 *h_new_a, *h_new_j;      // Temp arrays to save tmp accelerations
 
 /*
  * Host pointers
@@ -113,7 +113,7 @@ extern double *d_t, *d_dt;              // Time and timestep
 extern double4 *d_r, *d_v, *d_a, *d_j; // Position, velocity, acceleration and jerk
 extern float   *d_m;                   // Masses
 extern int *d_move;                    // Index of the particles to move in each iteration time
-extern double4 *d_new_a, *d_new_j;     // Temp arrays to save tmp accelerations
+//extern double4 *d_new_a, *d_new_j;     // Temp arrays to save tmp accelerations
 
 
 /*

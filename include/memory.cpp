@@ -23,8 +23,8 @@ void init_vectors()
 
     //h_new_a = (double4*) malloc(n * NJBLOCK * sizeof(double4));
     //h_new_j = (double4*) malloc(n * NJBLOCK * sizeof(double4));
-    h_new_a = (double4*) malloc(n * sizeof(double4));
-    h_new_j = (double4*) malloc(n * sizeof(double4));
+    //h_new_a = (double4*) malloc(d4_size);
+    //h_new_j = (double4*) malloc(d4_size);
 
     //h_new_a = (double4**) malloc(n * sizeof(double4*));
     //h_new_j = (double4**) malloc(n * sizeof(double4*));
@@ -54,8 +54,8 @@ void init_vectors()
     //cudaMalloc((void**)&d_new_a, NJBLOCK * n * sizeof(double4));
     //cudaMalloc((void**)&d_new_j, NJBLOCK * n * sizeof(double4));
 
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_new_a, d4_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_new_j, d4_size));
+    //CUDA_SAFE_CALL(cudaMalloc((void**)&d_new_a, d4_size));
+    //CUDA_SAFE_CALL(cudaMalloc((void**)&d_new_j, d4_size));
 
 
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_r,     d4_size));
@@ -72,7 +72,7 @@ void init_vectors()
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_t,     d1_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_dt,    d1_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_move,  i1_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&tmp_red, d4_size));
+    //CUDA_SAFE_CALL(cudaMalloc((void**)&tmp_red, d4_size));
 
     double4 empty = {0.0, 0.0, 0.0, 0.0};
 
@@ -106,21 +106,14 @@ void init_vectors()
         //    h_new_a[ii] = empty;
         //    h_new_j[ii] = empty;
         //}
-            h_new_a[i] = empty;
-            h_new_j[i] = empty;
+        //h_new_a[i] = empty;
+        //h_new_j[i] = empty;
 
         h_t[i]  = 0.0;
         h_dt[i] = 0.0;
-
         h_move[i] = 0;
-
         h_m[i]   = part[i].m;
-
     }
-
-    // The mass is always the same, so to avoid copying it every
-    //  function, we copy it at the begining.
-    //CUDA_SAFE_CALL(cudaMemcpy(d_m, h_m, f1_size, cudaMemcpyHostToDevice));
 }
 
 
@@ -168,9 +161,9 @@ void clean_vectors()
     //    free(h_new_a[i]);
     //    free(h_new_j[i]);
     //}
-    CUDA_SAFE_CALL(cudaFree(d_new_a));
-    CUDA_SAFE_CALL(cudaFree(d_new_j));
-    CUDA_SAFE_CALL(cudaFree(tmp_red));
-    free(h_new_a);
-    free(h_new_j);
+    //CUDA_SAFE_CALL(cudaFree(d_new_a));
+    //CUDA_SAFE_CALL(cudaFree(d_new_j));
+    //CUDA_SAFE_CALL(cudaFree(tmp_red));
+    //free(h_new_a);
+    //free(h_new_j);
 }
