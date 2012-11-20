@@ -70,6 +70,9 @@ main(int argc, char *argv[])
     // TMP
     ini_time = (float)clock()/CLOCKS_PER_SEC;
 
+    // Opening output file for debugging
+    out = fopen(output_file.c_str(), "w");
+
     if(run == "cpu")
         integrate_cpu();
     else if(run == "gpu")
@@ -77,7 +80,8 @@ main(int argc, char *argv[])
 
     end_time = (ini_time - (float)clock()/CLOCKS_PER_SEC);
 
-//    write_output_file(output_file);
+    fclose(out);
+    //write_output_file(output_file);
     clean_vectors();
 
     return 0;
