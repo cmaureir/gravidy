@@ -1,103 +1,109 @@
 #include "hermite.hpp"
 
-
 void integrate_gpu()
 {
     double ATIME = 1.0e+10; // Actual integration time
     double ITIME = 0.0;     // Integration time
-    int total;
-    int nsteps = 0;
-    iterations = 0;
+    int nact     = 0;       // Active particles
+    int nsteps   = 0;       // Amount of steps per particles on the system
+    iterations   = 0;       // Iterations of the integration
 
+    // Copying the input file information from the CPU to the GPU
     CUDA_SAFE_CALL(cudaMemcpy(d_r,  h_r,  d4_size,cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(d_v,  h_v,  d4_size,cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(d_m,  h_m,  f1_size,cudaMemcpyHostToDevice));
-    gpu_init_acc_jrk();
-    CUDA_SAFE_CALL(cudaMemcpy(h_a,  d_a,  d4_size,cudaMemcpyDeviceToHost));
-    CUDA_SAFE_CALL(cudaMemcpy(h_j,  d_j,  d4_size,cudaMemcpyDeviceToHost));
-    init_dt(&ATIME);
-    energy_ini = gpu_energy();      // Get initial energy
-    energy_tmp = 0.0;
-    printf("Energy_ini: %.15e\n", energy_ini);
-//    print_all(n,0);
 
+    gpu_init_acc_jrk();   // Initial calculation of a and a1
+
+    // Copying a and a1 from the GPU to the CPU
+    CUDA_SAFE_CALL(cudaMemcpy(h_a,  d_a,  d4_size,cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(cudaMemcpy(h_a1, d_a1, d4_size,cudaMemcpyDeviceToHost));
+
+    //init_dt(&ATIME);  // Initial calculation of time-steps using simple equation
+    init_dt2(&ATIME); // Initial calculation of time-steps using complete equation
+
+    energy_ini = gpuenergy(); // Initial calculation of the energy of the system
+    energy_tmp = energy_ini;  // Saving initial energy, to calculate errors
+
+    get_energy_log(ITIME, iterations, nsteps); // First log of the integration
 
     CUDA_SAFE_CALL(cudaMemcpy(d_t,  h_t,  d1_size,cudaMemcpyHostToDevice));
     while (ITIME < int_time)
     {
-        ITIME = ATIME;
-        total = find_particles_to_move(ITIME);
-        save_old(total);
+        ITIME = ATIME;                         // New integration time
+        nact = find_particles_to_move(ITIME);  // Find particles to move (nact)
+        save_old(nact);                        // Save old information
 
+        // Copying the index of the particles to move from the CPU to the GPU
+        CUDA_SAFE_CALL(cudaMemcpy(d_move, h_move, i1_size, cudaMemcpyDeviceToHost);
 
-        gpu_predicted_pos_vel(ITIME);
-        //gpu_update_acc_jrk(total);
-        gpu_update_acc_jrk_simple(total);
-        //update_acc_jrk(total);
-        //gpu_update_2d(total);
-        gpu_correction_pos_vel(ITIME, total);
-        next_itime(&ATIME);
-        iterations++;
-        nsteps += total;
+        gpu_predicted_pos_vel(ITIME);          // Predict all the particles
+        //#ifdef USE_KEPLER
+        //predicted_pos_vel_kepler(ITIME, nact); // Predict nact particles with Kepler
+        //#endif
+        gpuupdate_acc_jrk(nact);               // Update a and a1 of nact particles
 
+        // Copying a and a1 from the GPU to the CPU
+        CUDA_SAFE_CALL(cudaMemcpy(h_a,  d_a,  d4_size,cudaMemcpyDeviceToHost));
+        CUDA_SAFE_CALL(cudaMemcpy(h_a1, d_a1, d4_size,cudaMemcpyDeviceToHost));
 
-        if(std::ceil(ITIME) == ITIME)
+        correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
+
+        // Copying r, v and t from CPU to GPU
+        CUDA_SAFE_CALL(cudaMemcpy(d_r, h_r, d4_size, cudaMemcpyHostToDevice);
+        CUDA_SAFE_CALL(cudaMemcpy(d_v, h_v, d4_size, cudaMemcpyHostToDevice);
+        CUDA_SAFE_CALL(cudaMemcpy(d_t, h_t, d1_size, cudaMemcpyHostToDevice);
+
+        next_itime(&ATIME);                    // Find next integration time
+
+        if(std::ceil(ITIME) == ITIME)          // Print log in every integer ITIME
         {
-            gpu_get_energy_log(ITIME, iterations, nsteps);
+           get_energy_log(ITIME, iterations, nsteps, out);
         }
-//        print_all(n, 0);
-//        printf("%.10f %4d\n", ITIME, total);
-//        if(iterations == 10005)
-//            break;
+
+        nsteps += nact;                        // Update nsteps with nact
+        iterations++;                          // Increase iterations
     }
-    energy_end = gpu_energy();
-    printf("Energy_end: %.15e\n", energy_end);
 }
 
 void integrate_cpu()
 {
     double ATIME = 1.0e+10; // Actual integration time
     double ITIME = 0.0;     // Integration time
-    int total = 0;
-    int nsteps = 0;
-    iterations = 0;
+    int nact     = 0;       // Active particles
+    int nsteps   = 0;       // Amount of steps per particles on the system
+    iterations   = 0;       // Iterations of the integration
 
-    // Output file
-    FILE *out;
-    out = fopen(output_file.c_str(), "w");
+    init_acc_jrk();   // Initial calculation of a and a1
+    //init_dt(&ATIME);  // Initial calculation of time-steps using simple equation
+    init_dt2(&ATIME); // Initial calculation of time-steps using complete equation
 
-    init_acc_jrk();
-//    init_dt(&ATIME);
-    init_dt2(&ATIME);
-    //print_times(n,0);
-    energy_ini = energy();
-    energy_tmp = energy_ini;
-    //fprintf(out, "Energy_ini: %.15e\n", energy_ini);
-    //fflush(out);
+    energy_ini = energy();   // Initial calculation of the energy of the system
+    energy_tmp = energy_ini; // Saving initial energy, to calculate errors
+
+    get_energy_log(ITIME, iterations, nsteps); // First log of the integration
 
     while (ITIME < int_time)
     {
-        ITIME = ATIME;
-        total = find_particles_to_move(ITIME);
-        save_old(total);
-        predicted_pos_vel(ITIME);
+        ITIME = ATIME;                         // New integration time
+        nact = find_particles_to_move(ITIME);  // Find particles to move (nact)
+        save_old(nact);                        // Save old information
+
+        predicted_pos_vel(ITIME);              // Predict all the particles
         #ifdef USE_KEPLER
-        predicted_pos_vel_kepler(ITIME, total);
+        predicted_pos_vel_kepler(ITIME, nact); // Predict nact particles with Kepler
         #endif
-        update_acc_jrk(total);
-        correction_pos_vel(ITIME, total);
-        next_itime(&ATIME);
+        update_acc_jrk(nact);                  // Update a and a1 of nact particles
+        correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
 
-        iterations++;
-        nsteps += total;
+        next_itime(&ATIME);                    // Find next integration time
 
-        if(std::ceil(ITIME) == ITIME)
+        if(std::ceil(ITIME) == ITIME)          // Print log in every integer ITIME
         {
            get_energy_log(ITIME, iterations, nsteps, out);
         }
-    }
-    energy_end = energy();
-//    printf("Energy_end: %.15e\n", energy_end);
-    fclose(out);
 
+        nsteps += nact;                        // Update nsteps with nact
+        iterations++;                          // Increase iterations
+    }
 }
