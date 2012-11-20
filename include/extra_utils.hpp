@@ -10,7 +10,7 @@
 
 using namespace std;
 
-// Printing particles
+// Group of particles
 void print_all(int, float);
 void print_positions(int);
 void print_velocities(int);
@@ -23,7 +23,7 @@ void print_old(int);
 void print_predicted(int);
 void print_movement(int, int, float);
 
-
+// Single
 void print_particle(int);
 
 // Functions
