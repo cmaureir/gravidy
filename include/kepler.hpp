@@ -5,8 +5,7 @@
 #include <cmath>
 #include <iostream>
 
-void kepler_prediction(double*, double*, double*,
-                       double*, double*, double*,
-                       double, int);
+void kepler_prediction(double*, double*, double*, double*,
+                       double*, double*, double,  int);
 double solve_kepler(double, double);
 double kepler(const double, double);

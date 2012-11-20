@@ -8,13 +8,13 @@ static double
     _1_13_12 = 1./13./12.,
     _1_12_11 = 1./12./11.,
     _1_11_10 = 1./11./10.,
-    _1_10_9 = 1./10./9.,
-    _1_9_8 = 1./9./8.,
-    _1_8_7 = 1./8./7.,
-    _1_7_6 = 1./7./6.,
-    _1_6_5 = 1./6./5.,
-    _1_4_3 = 1./4./3.,
-    _1_3_2 = 1./3./2.;
+    _1_10_9  = 1./10./9.,
+    _1_9_8   = 1./9./8.,
+    _1_8_7   = 1./8./7.,
+    _1_7_6   = 1./7./6.,
+    _1_6_5   = 1./6./5.,
+    _1_4_3   = 1./4./3.,
+    _1_3_2   = 1./3./2.;
 
 void kepler_prediction(double *rx, double *ry, double *rz,
                        double *vx, double *vy, double *vz,
@@ -123,7 +123,6 @@ void kepler_prediction(double *rx, double *ry, double *rz,
         /*
          * Elliptical Orbit case
          */
-
         // Calculate Eccentric Anomaly
         e_anomaly = (a - r) / (ecc * a);
 
@@ -274,9 +273,10 @@ void kepler_prediction(double *rx, double *ry, double *rz,
     h_p_v[i].y = h_p_v[0].y + (*vy);
     h_p_v[i].z = h_p_v[0].z + (*vz);
 
-    // Force contribution of the central mass on a particle
-    // and its derivates
-
+    /*
+     * Force contribution of the central mass on a particle
+     * (Acceleration and it 1st, 2nd and 3rd derivatives
+     */
 
     double r2inv = 1/(r2);
     double mr3inv = -G * m0 * r2inv * sqrt(r2inv);
@@ -318,7 +318,6 @@ void kepler_prediction(double *rx, double *ry, double *rz,
                 + (3.0 * va + ra1) * (*rz) + (vr * vr * r2inv)
                 * (-15.0 * (*vz) + 35.0 * vr * r2inv * (*rz))));
 
-
     h_a[i].x = a0x;
     h_a[i].y = a0y;
     h_a[i].z = a0z;
@@ -335,15 +334,11 @@ void kepler_prediction(double *rx, double *ry, double *rz,
     h_a3[i].y = a3y;
     h_a3[i].z = a3z;
 
-    //printf("a0 = (%.10f, %.10f, %.10f)\n", a0x, a0y, a0z);
-    //printf("a1 = (%.10f, %.10f, %.10f)\n", a1x, a1y, a1z);
-    //printf("a2 = (%.10f, %.10f, %.10f)\n", a2x, a2y, a2z);
-    //printf("a3 = (%.10f, %.10f, %.10f)\n", a3x, a3y, a3z);
 }
 
 double solve_kepler(double m_anomaly, double ecc)
 {
-    // Solving Kepler's equation
+    // Solving Kepler's equation for an elliptical orbit
     double e_new = ecc > 0.8 ? M_PI : m_anomaly;
     double d = 0;
     int e_iter = 0;
@@ -363,6 +358,7 @@ double solve_kepler(double m_anomaly, double ecc)
 /*
  * Following function taken from
  * http://www.projectpluto.com/kepler.htm
+ * (Adapted to solve only hyperbolic orbits.)
  */
 double kepler(const double ecc, double mean_anom)
 {
@@ -419,7 +415,7 @@ double kepler(const double ecc, double mean_anom)
         n_iter++;
         if(curr_abs < .72 && ecc < 1.1)
         {
-            // [e * sinh(E) - E] / E << 1, and/or e * cosh(E) - 1 << 1
+            // e * cosh(E) - 1 << 1
             // so don't calculate it directly
             double curr2 = curr * curr;
             // relative error when omitting nth order term needs to be smaller than resolution 1.e-15:
@@ -469,13 +465,14 @@ double kepler(const double ecc, double mean_anom)
             err = (ecc * sinh(curr) - curr) - mean_anom;
         }
 
-        if(n_iter > KEPLER_ITE) // amended
+        // Breaking condition.
+        if(n_iter > KEPLER_ITE)
         {
             #ifdef DEBUG_KEPLER
             fprintf(stderr,
-                "[Warning] Aborting hyperbolic kepler solution after %d iterations, keeping error of %e (e=%e, M=%e, E_=%1.12e, sinh(E_)=%1.12e)\n",
-                KEPLER_ITE, err,
-                ecc, mean_anom, curr, sinh(curr));
+                "[Warning] Aborting hyperbolic kepler solution after %d iterations,
+                keeping error of %e (e=%e, M=%e, E_=%1.12e, sinh(E_)=%1.12e)\n",
+                KEPLER_ITE, err, ecc, mean_anom, curr, sinh(curr));
             #endif
             break;
         }
