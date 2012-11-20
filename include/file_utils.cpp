@@ -35,6 +35,7 @@ void read_input_file(std::string path)
 
     file.close();
     n = (int)part.size();
+
     // Fixing ntreads and nblocks
     nthreads = BSIZE;
     nblocks = ceil(n/(float)nthreads);
@@ -57,15 +58,22 @@ void write_output_file(std::string path)
 {
     if(path == "")
     {
-        path = std::string("output/");
-        path.append(input_file.begin()+6, input_file.end());
-        path.append("_");
         std::ostringstream strs;
+        path = std::string("output/");
+        path.append("out."
+        path.append(input_file);
+        path.append("_");
         strs << int_time;
         path.append(strs.str());
-        path.append("_");
+        path.append("t_");
         path.append(run);
-        path.append(".out");
+        path.append("_s");
+        strs << softening;
+        path.append(strs.str());
+        path.append("_e");
+        strs << eta;
+        path.append(strs.str());
+        path.append(".info");
     }
 
     std::ofstream file(path.c_str());
@@ -73,8 +81,6 @@ void write_output_file(std::string path)
     sline.precision(std::numeric_limits<double>::digits10);
 
     sline << "Run mode: " << run;
-    file << sline.str(); sline.str("");
-    sline << "\nInit Acc and Jerk calculation time: "  << init_time;
     file << sline.str(); sline.str("");
     sline << "\nEnergy Init: "  << energy_ini;
     file << sline.str(); sline.str("");
@@ -85,18 +91,6 @@ void write_output_file(std::string path)
     sline << "\nIterations number: "  << iterations;
     file << sline.str(); sline.str("");
     file << "\n";
-
-    //for (int i = 0; i < n; i++) {
-    //    sline  << setw(10)  << i;
-    //    file << sline.str(); sline.str("");
-    //    sline  << setw(22) << h_r[i].x;
-    //    file << sline.str(); sline.str("");
-    //    sline  << setw(22) << h_r[i].y;
-    //    file << sline.str(); sline.str("");
-    //    sline  << setw(22) << h_r[i].z;
-    //    file << sline.str(); sline.str("");
-    //    file << "\n";
-    //}
 
     file.close();
 }
