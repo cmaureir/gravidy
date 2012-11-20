@@ -121,8 +121,9 @@ extern std::vector<particle> part; // Vector to save the input file data
 extern int n;                         // Number of particles on the system
 extern int iterations;                // Number of iterations in the integration
 extern std::string input_file;        // Input filename
-extern std::string output_file;       // Output filename
-extern std::string run;               // Run/Execution option (cpu or gpu)
+extern std::string output_file;       // Output filename for general info.
+extern FILE *out;                     // Out file for debugging.
+extern std::string run;               // Run/Execution option (CPU or GPU)
 extern float total_mass;              // Total mass of the particles
                                       // (In N-body units will be 1)
 extern double int_time;               // Integration clock time
@@ -134,7 +135,7 @@ extern double energy_tmp;             // Energy at an integration time t-1
 extern float  softening, eta;         // Softening and ETA parameters
                                       // (This parameters takes the previous
                                       // setted values E, and ETA_N or the
-                                      // parameters gived by the command line)
+                                      // parameters give by the command line)
 extern float t_rh;                    // Half-mass relaxation time
 extern float t_cr;                    // Crossing time
 extern size_t d1_size, d4_size;       // double and double4 size
@@ -143,7 +144,7 @@ extern size_t nthreads, nblocks;      // Dynamical number of threads and blocks
                                       // for the GPU use.
 
 /*********************************
- *  Host and Devive pointers
+ *  Host and Device pointers
  *********************************/
 
 /*
@@ -151,7 +152,7 @@ extern size_t nthreads, nblocks;      // Dynamical number of threads and blocks
  * (Particles attribute arrays)
  */
 extern double *h_ekin, *h_epot; // Kinetic and Potential energy
-extern double  *h_t, *h_dt;     // Time and timestep
+extern double  *h_t, *h_dt;     // Time and time-step
 extern double4 *h_r, *h_v;      // Position and Velocity
 extern double4 *h_a, *h_a1;     // Acceleration and its first derivative (Jerk)
 extern float   *h_m;            // Masses of the particles
@@ -167,7 +168,7 @@ extern double4 *h_p_v;          // Predicted Velocity
  * (Particles attribute arrays)
  */
 extern double *d_ekin, *d_epot; // Kinetic and Potential energy
-extern double  *d_t, *d_dt;     // Time and timestep
+extern double  *d_t, *d_dt;     // Time and time-step
 extern double4 *d_r, *d_v;      // Position and Velocity
 extern double4 *d_a, *d_a1;     // Acceleration and its first derivative (Jerk)
 extern float   *d_m;            // Masses of the particles
