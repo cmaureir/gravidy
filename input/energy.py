@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import math
+import sys
 
-f = open("Sol_1k_disc45.in")
+
+f = open(sys.argv[1])
 
 m = []
 

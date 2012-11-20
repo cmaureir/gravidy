@@ -10,6 +10,7 @@
 
 using namespace std;
 
+// Printing particles
 void print_all(int, float);
 void print_positions(int);
 void print_velocities(int);
@@ -21,4 +22,9 @@ void print_times(int, float);
 void print_old(int);
 void print_predicted(int);
 void print_movement(int, int, float);
+
+
+void print_particle(int);
+
+// Functions
 double get_magnitude(double, double, double);

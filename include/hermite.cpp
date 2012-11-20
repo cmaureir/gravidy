@@ -62,12 +62,18 @@ void integrate_cpu()
     int nsteps = 0;
     iterations = 0;
 
+    // Output file
+    FILE *out;
+    out = fopen(output_file.c_str(), "w");
+
     init_acc_jrk();
-    init_dt(&ATIME);
+//    init_dt(&ATIME);
+    init_dt2(&ATIME);
+    //print_times(n,0);
     energy_ini = energy();
-    energy_tmp = 0.0;
-    printf("Energy_ini: %.15e\n", energy_ini);
-//    print_all(n,0);
+    energy_tmp = energy_ini;
+    //fprintf(out, "Energy_ini: %.15e\n", energy_ini);
+    //fflush(out);
 
     while (ITIME < int_time)
     {
@@ -75,23 +81,23 @@ void integrate_cpu()
         total = find_particles_to_move(ITIME);
         save_old(total);
         predicted_pos_vel(ITIME);
-//        predicted_pos_vel_kepler(ITIME, total);
+        #ifdef USE_KEPLER
+        predicted_pos_vel_kepler(ITIME, total);
+        #endif
         update_acc_jrk(total);
         correction_pos_vel(ITIME, total);
         next_itime(&ATIME);
+
         iterations++;
         nsteps += total;
 
         if(std::ceil(ITIME) == ITIME)
         {
-            get_energy_log(ITIME, iterations, nsteps);
+           get_energy_log(ITIME, iterations, nsteps, out);
         }
-//        print_all(n, 0);
-//        printf("%.10f %4d\n", ITIME, total);
-//        if(iterations == 1000)
-//            break;
     }
     energy_end = energy();
-    printf("Energy_end: %.15e\n", energy_end);
+//    printf("Energy_end: %.15e\n", energy_end);
+    fclose(out);
 
 }

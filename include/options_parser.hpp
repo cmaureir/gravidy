@@ -7,4 +7,5 @@
 #endif
 
 namespace po = boost::program_options;
+bool check_options_noboost(int argc, char *argv[]);
 bool check_options(int argc, char *argv[]);

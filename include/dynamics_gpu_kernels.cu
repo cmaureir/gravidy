@@ -317,7 +317,7 @@ __device__ void k_force_calculation(double4 i_pos, double4 i_vel,
  * @note Working properly.
  */
 __global__ void
-k_predicted_pos_vel(double4 *d_r,   double4 *d_v,   double4 *d_a, double4 *d_j,
+k_predicted_pos_vel(double4 *d_r,   double4 *d_v,   double4 *d_a, double4 *d_a1,
                     double4 *d_p_r, double4 *d_p_v, double *d_t, double ITIME, int n)
 {
     int i = threadIdx.x + blockDim.x * blockIdx.x;
@@ -328,12 +328,12 @@ k_predicted_pos_vel(double4 *d_r,   double4 *d_v,   double4 *d_a, double4 *d_j,
         double dt2 = (dt  * dt)/2;
         double dt3 = (dt2 * dt)/6;
 
-        d_p_r[i].x = (dt3 * d_j[i].x) + (dt2 * d_a[i].x) + (dt * d_v[i].x) + d_r[i].x;
-        d_p_r[i].y = (dt3 * d_j[i].y) + (dt2 * d_a[i].y) + (dt * d_v[i].y) + d_r[i].y;
-        d_p_r[i].z = (dt3 * d_j[i].z) + (dt2 * d_a[i].z) + (dt * d_v[i].z) + d_r[i].z;
+        d_p_r[i].x = (dt3 * d_a1[i].x) + (dt2 * d_a[i].x) + (dt * d_v[i].x) + d_r[i].x;
+        d_p_r[i].y = (dt3 * d_a1[i].y) + (dt2 * d_a[i].y) + (dt * d_v[i].y) + d_r[i].y;
+        d_p_r[i].z = (dt3 * d_a1[i].z) + (dt2 * d_a[i].z) + (dt * d_v[i].z) + d_r[i].z;
 
-        d_p_v[i].x = (dt2 * d_j[i].x) + (dt  * d_a[i].x) + d_v[i].x;
-        d_p_v[i].y = (dt2 * d_j[i].y) + (dt  * d_a[i].y) + d_v[i].y;
-        d_p_v[i].z = (dt2 * d_j[i].z) + (dt  * d_a[i].z) + d_v[i].z;
+        d_p_v[i].x = (dt2 * d_a1[i].x) + (dt  * d_a[i].x) + d_v[i].x;
+        d_p_v[i].y = (dt2 * d_a1[i].y) + (dt  * d_a[i].y) + d_v[i].y;
+        d_p_v[i].z = (dt2 * d_a1[i].z) + (dt  * d_a[i].z) + d_v[i].z;
     }
 }

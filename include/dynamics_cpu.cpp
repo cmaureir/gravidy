@@ -10,6 +10,9 @@
 void next_itime(double *ATIME)
 {
     // Big number to find the minimum
+    #ifdef DEBUG_HERMITE
+    printf("[DEBUG] next_itime()\n");
+    #endif
     *ATIME = 1.0e10;
     for (int i = INIT_PARTICLE; i < n; i++)
     {
@@ -31,16 +34,29 @@ void next_itime(double *ATIME)
  */
 int find_particles_to_move(double ITIME)
 {
+    #ifdef DEBUG_HERMITE
+    printf("[DEBUG] find_particles_to_move()\n");
+    #endif
     int j = 0;
-    for (int i = INIT_PARTICLE; i < n; i++)
+    for (int i = 0; i < n; i++)
     {
         h_move[i] = -1;
         if (h_t[i] + h_dt[i] == ITIME)
         {
-            h_move[j] = i;
-            j++;
+            #ifdef USE_KEPLER
+            if(i != 0)
+            {
+                h_move[j] = i;
+                j++;
+            }
+            #else
+                h_move[j] = i;
+                j++;
+            #endif
+//            std::cout << i << " ";
         }
     }
+ //   std::cout << std::endl;
     return j;
 }
 
@@ -56,17 +72,101 @@ int find_particles_to_move(double ITIME)
  */
 void init_dt(double *ATIME)
 {
+    #ifdef DEBUG_HERMITE
+    printf("[DEBUG] init_dt()\n");
+    #endif
     // Aarseth initial timestep
     // dt_{i} = ETA_S * sqrt( (|a|) / (|j|) )
     double tmp_dt;
-    for (int i = 0; i < n; i++)
+    for (int i = INIT_PARTICLE; i < n; i++)
     {
+        #ifdef USE_KEPLER
+        if(i == 0)
+        {
+            h_dt[0] = 0.0;
+            continue;
+        }
+        #endif
         double a2 = get_magnitude(h_a[i].x, h_a[i].y, h_a[i].z);
-        double j2 = get_magnitude(h_j[i].x, h_j[i].y, h_j[i].z);
+        double j2 = get_magnitude(h_a1[i].x, h_a1[i].y, h_a1[i].z);
         tmp_dt = ETA_S * (a2/j2);
 
         // Adjusting to block timesteps
         // to the nearest-lower power of two
+        int exp = (int)(std::ceil(log(tmp_dt)/log(2.0))-1);
+        tmp_dt = pow(2,exp);
+
+        if (tmp_dt < D_TIME_MIN)
+            tmp_dt = D_TIME_MIN;
+        else if (tmp_dt > D_TIME_MAX)
+            tmp_dt = D_TIME_MAX;
+
+        h_dt[i] = tmp_dt;
+        h_t[i] = 0.0;
+
+        // Obtaining the first integration time
+        if(tmp_dt < *ATIME)
+            *ATIME = tmp_dt;
+    }
+}
+
+void init_dt2(double *ATIME)
+{
+    // Get Snap and Crackle
+    #ifdef DEBUG_HERMITE
+    printf("[DEBUG] init_dt2()\n");
+    #endif
+    int i = 0;
+    int j = 0;
+    for (i = INIT_PARTICLE; i < n; i++) {
+        for (j = INIT_PARTICLE; i < n; i++) {
+            double rx = h_r[j].x - h_r[i].x;
+            double ry = h_r[j].y - h_r[i].y;
+            double rz = h_r[j].z - h_r[i].z;
+
+            double vx = h_v[j].x - h_v[i].x;
+            double vy = h_v[j].y - h_v[i].y;
+            double vz = h_v[j].z - h_v[i].z;
+
+            double r2 = rx*rx + ry*ry + rz*rz + softening*softening;
+            double rinv = 1/sqrt(r2);
+            double r2inv = rinv  * rinv;
+            double r3inv = r2inv * rinv;
+            double mr3inv = r3inv * h_m[j];
+
+            double rv = rx*vx + ry*vy + rz*vz;
+            double ra = rx*h_a[i].x + ry*h_a[i].y + rz*h_a[i].z;
+            double v2 = vx*vx + vy*vy + vz*vz;
+            double va = h_a[i].x*vx + h_a[i].y*vy + h_a[i].z*vz;
+            double rj = rx*h_a1[i].x + ry*h_a1[i].y + rz*h_a1[i].z;
+
+            double alpha = rv * r2inv;
+            double beta = alpha*alpha + r2inv * (v2 + ra);
+            double gamma = 3 * va + rj * r2inv + alpha * (3*beta - 4*alpha*alpha);
+
+            h_a2[i].x += mr3inv*h_a[i].x - 6*alpha*h_a1[i].x - 3*beta*h_a[i].x;
+            h_a2[i].y += mr3inv*h_a[i].y - 6*alpha*h_a1[i].y - 3*beta*h_a[i].y;
+            h_a2[i].z += mr3inv*h_a[i].z - 6*alpha*h_a1[i].z - 3*beta*h_a[i].z;
+
+            h_a3[i].x += mr3inv*h_a1[i].x - 9*alpha*h_a2[i].x - 9*beta*h_a1[i].x -3*gamma*h_a[i].x;
+            h_a3[i].y += mr3inv*h_a1[i].y - 9*alpha*h_a2[i].y - 9*beta*h_a1[i].y -3*gamma*h_a[i].y;
+            h_a3[i].z += mr3inv*h_a1[i].z - 9*alpha*h_a2[i].z - 9*beta*h_a1[i].z -3*gamma*h_a[i].z;
+        }
+    }
+    // Get Timesteps
+    for (i = 0; i < n; i++) {
+        #ifdef USE_KEPLER
+        if(i == 0)
+        {
+            h_dt[0] = 0.0;
+            continue;
+        }
+        #endif
+        double m_a = get_magnitude(h_a[i].x, h_a[i].y, h_a[i].z);
+        double m_a1 = get_magnitude(h_a1[i].x, h_a1[i].y, h_a1[i].z);
+        double m_a2 = get_magnitude(h_a2[i].x, h_a2[i].y, h_a2[i].z);
+        double m_a3 = get_magnitude(h_a3[i].x, h_a3[i].y, h_a3[i].z);
+        double tmp_dt = sqrt(ETA_S * (m_a * m_a2 + m_a1*m_a1)/(m_a1*m_a3+m_a2*m_a2));
         int exp = (int)(std::ceil(log(tmp_dt)/log(2.0))-1);
         tmp_dt = pow(2,exp);
 
@@ -94,7 +194,7 @@ void force_calculation(int i, int j)
     double vy = h_p_v[j].y - h_p_v[i].y;
     double vz = h_p_v[j].z - h_p_v[i].z;
 
-    double r2 = rx*rx + ry*ry + rz*rz + E2;
+    double r2 = rx*rx + ry*ry + rz*rz + softening*softening;
     double rinv = 1/sqrt(r2);
     double r2inv = rinv  * rinv;
     double r3inv = r2inv * rinv;
@@ -108,15 +208,18 @@ void force_calculation(int i, int j)
     h_a[i].y += (ry * mr3inv);
     h_a[i].z += (rz * mr3inv);
 
-    h_j[i].x += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
-    h_j[i].y += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
-    h_j[i].z += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
+    h_a1[i].x += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
+    h_a1[i].y += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
+    h_a1[i].z += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
 }
 
 void init_acc_jrk()
 {
+    #ifdef DEBUG_HERMITE
+    printf("[DEBUG] init_acc_jrk()\n");
+    #endif
     int j;
-//    #pragma omp parallel for private(j)
+    #pragma omp parallel for private(j)
     for (int i = INIT_PARTICLE; i < n; i++)
     {
         for (j = INIT_PARTICLE; j < n; j++)
@@ -140,6 +243,9 @@ void init_acc_jrk()
  */
 void update_acc_jrk(int total)
 {
+    #ifdef DEBUG_HERMITE
+    printf("[DEBUG] update_acc_jrk()\n");
+    #endif
     int i, j;
     for (int k = 0; k < total; k++)
     {
@@ -148,9 +254,9 @@ void update_acc_jrk(int total)
         h_a[i].x = 0.0;
         h_a[i].y = 0.0;
         h_a[i].z = 0.0;
-        h_j[i].x = 0.0;
-        h_j[i].y = 0.0;
-        h_j[i].z = 0.0;
+        h_a1[i].x = 0.0;
+        h_a1[i].y = 0.0;
+        h_a1[i].z = 0.0;
 
         for (j = INIT_PARTICLE; j < n; j++)
         {
@@ -200,28 +306,28 @@ double energy()
         ekin += ekin_tmp;
         epot += epot_tmp;
     }
-    printf("%.10f %.10f\n", ekin, epot);
     return epot + ekin;
 }
 
-void get_energy_log(double ITIME, int iterations, int nsteps)
+void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
 {
     energy_end = energy();
-    double relative_error = abs((energy_end-energy_ini)/energy_ini);
-    energy_tmp += relative_error;
+    double relative_error   = abs((energy_end-energy_tmp)/energy_ini);
+    double cumulative_error = abs((energy_end-energy_ini)/energy_ini);
+    energy_tmp = energy_end;
 
-    if((int)ITIME == 1)
-        printf("ITIME  ITER NSTEPS/ITER    ETA     TIME            ENERGY     REL_ENER     CUM_ENER\n");
-
-    printf("%4d %6d %.6f %f %.6f %.15e %.15e %.15e\n",
+    printf("% 6d % 10d % 10d % .6f % .6f % .6f % .15e % .15e % .15e 00\n",
+    //fprintf(out, "% 6d % 10d % 10d % .6f % .6f % .6f % .15e % .15e % .15e 00\n",
             (int)ITIME,
             iterations,
-            nsteps/(float)iterations,
-            ETA_N,
-            omp_get_wtime() - ini_time,
+            nsteps,
+            eta,
+            softening,
+            (float)clock()/CLOCKS_PER_SEC - ini_time,
             energy_end,
             relative_error,
-            energy_tmp/(int)ITIME);
+            cumulative_error);
+    fflush(out);
 }
 
 /*
@@ -233,16 +339,19 @@ void get_energy_log(double ITIME, int iterations, int nsteps)
  */
 void save_old(int total)
 {
-    for (int k = 0; k < total; k++)
+    #ifdef DEBUG_HERMITE
+    printf("[DEBUG] save_old()\n");
+    #endif
+    for (int k = INIT_PARTICLE; k < total; k++)
     {
         int i = h_move[k];
         h_old_a[i].x = h_a[i].x;
         h_old_a[i].y = h_a[i].y;
         h_old_a[i].z = h_a[i].z;
 
-        h_old_j[i].x = h_j[i].x;
-        h_old_j[i].y = h_j[i].y;
-        h_old_j[i].z = h_j[i].z;
+        h_old_a1[i].x = h_a1[i].x;
+        h_old_a1[i].y = h_a1[i].y;
+        h_old_a1[i].z = h_a1[i].z;
     }
 }
 
@@ -257,27 +366,48 @@ void save_old(int total)
 void
 predicted_pos_vel(double ITIME)
 {
+    #ifdef DEBUG_HERMITE
+    printf("[DEBUG] predicted_pos_vel()\n");
+    #endif
     //#pragma omp parallel for
     for (int i = INIT_PARTICLE; i < n; i++)
     {
         double dt = ITIME - h_t[i];
-        double dt2 = (dt  * dt)/2;
-        double dt3 = (dt2 * dt)/6;
+        double dt2 = (dt  * dt);
+        double dt3 = (dt2 * dt);
 
-        h_p_r[i].x = (dt3 * h_j[i].x) + (dt2 * h_a[i].x) + (dt * h_v[i].x) + h_r[i].x;
-        h_p_r[i].y = (dt3 * h_j[i].y) + (dt2 * h_a[i].y) + (dt * h_v[i].y) + h_r[i].y;
-        h_p_r[i].z = (dt3 * h_j[i].z) + (dt2 * h_a[i].z) + (dt * h_v[i].z) + h_r[i].z;
+        #ifdef USE_KEPLER
+        if (h_move[i] == -1)
+        {
+            h_p_r[i].x = (dt3/6 * h_a1[i].x) + (dt2/2 * h_a[i].x) + (dt * h_v[i].x) + h_r[i].x;
+            h_p_r[i].y = (dt3/6 * h_a1[i].y) + (dt2/2 * h_a[i].y) + (dt * h_v[i].y) + h_r[i].y;
+            h_p_r[i].z = (dt3/6 * h_a1[i].z) + (dt2/2 * h_a[i].z) + (dt * h_v[i].z) + h_r[i].z;
 
-        h_p_v[i].x = (dt2 * h_j[i].x) + (dt * h_a[i].x) + h_v[i].x;
-        h_p_v[i].y = (dt2 * h_j[i].y) + (dt * h_a[i].y) + h_v[i].y;
-        h_p_v[i].z = (dt2 * h_j[i].z) + (dt * h_a[i].z) + h_v[i].z;
-        //h_p_r[i].x += dt3 * h_j[i].x + dt2 * h_a[i].x + dt * h_v[i].x + h_r[i].x;
-        //h_p_r[i].y += dt3 * h_j[i].y + dt2 * h_a[i].y + dt * h_v[i].y + h_r[i].y;
-        //h_p_r[i].z += dt3 * h_j[i].z + dt2 * h_a[i].z + dt * h_v[i].z + h_r[i].z;
+            h_p_v[i].x = (dt2/2 * h_a1[i].x) + (dt * h_a[i].x) + h_v[i].x;
+            h_p_v[i].y = (dt2/2 * h_a1[i].y) + (dt * h_a[i].y) + h_v[i].y;
+            h_p_v[i].z = (dt2/2 * h_a1[i].z) + (dt * h_a[i].z) + h_v[i].z;
+        }
+        else
+        {
+            h_p_r[i].x += (dt3/6 * h_a1[i].x) + (dt2/2 * h_a[i].x);
+            h_p_r[i].y += (dt3/6 * h_a1[i].y) + (dt2/2 * h_a[i].y);
+            h_p_r[i].z += (dt3/6 * h_a1[i].z) + (dt2/2 * h_a[i].z);
 
-        //h_p_v[i].x += dt2 * h_j[i].x + dt * h_a[i].x + h_v[i].x;
-        //h_p_v[i].y += dt2 * h_j[i].y + dt * h_a[i].y + h_v[i].y;
-        //h_p_v[i].z += dt2 * h_j[i].z + dt * h_a[i].z + h_v[i].z;
+            h_p_v[i].x += (dt2/6 * h_a1[i].x) + (dt/2 * h_a[i].x);
+            h_p_v[i].y += (dt2/6 * h_a1[i].y) + (dt/2 * h_a[i].y);
+            h_p_v[i].z += (dt2/6 * h_a1[i].z) + (dt/2 * h_a[i].z);
+
+        }
+        #else
+        h_p_r[i].x = (dt3/6 * h_a1[i].x) + (dt2/2 * h_a[i].x) + (dt * h_v[i].x) + h_r[i].x;
+        h_p_r[i].y = (dt3/6 * h_a1[i].y) + (dt2/2 * h_a[i].y) + (dt * h_v[i].y) + h_r[i].y;
+        h_p_r[i].z = (dt3/6 * h_a1[i].z) + (dt2/2 * h_a[i].z) + (dt * h_v[i].z) + h_r[i].z;
+
+        h_p_v[i].x = (dt2/2 * h_a1[i].x) + (dt * h_a[i].x) + h_v[i].x;
+        h_p_v[i].y = (dt2/2 * h_a1[i].y) + (dt * h_a[i].y) + h_v[i].y;
+        h_p_v[i].z = (dt2/2 * h_a1[i].z) + (dt * h_a[i].z) + h_v[i].z;
+        #endif
+
     }
 }
 
@@ -291,11 +421,15 @@ predicted_pos_vel(double ITIME)
  */
 void predicted_pos_vel_kepler(double ITIME, int total)
 {
-
+    #ifdef DEBUG_HERMITE
+    printf("[DEBUG] predicted_pos_vel_kepler()\n");
+    #endif
     for (int i = 0; i < total; i++)
     {
         int k = h_move[i];
-        float dt = ITIME - h_t[i];
+        double dt = ITIME - h_t[k];
+        //double time = 0.0;
+
 
         double rx = h_r[k].x - h_r[0].x;
         double ry = h_r[k].y - h_r[0].y;
@@ -304,16 +438,18 @@ void predicted_pos_vel_kepler(double ITIME, int total)
         double vx = h_v[k].x - h_v[0].x;
         double vy = h_v[k].y - h_v[0].y;
         double vz = h_v[k].z - h_v[0].z;
-        printf("Starting with particle %d\n", i);
-        printf("-->Distance to BH : %.10f\n", sqrt(rx*rx+ry*ry+rz*rz));
+        #ifdef DEBUG_KEPLER
+        printf("Particle %d\n", k);
+        printf("[Old position] %.15f %.15f %.15f\n", h_r[k].x, h_r[k].y, h_r[k].z);
+        printf("[Old velocity] %.15f %.15f %.15f\n", h_v[k].x, h_v[k].y, h_v[k].z);
+        #endif
 
-        // TO DO: Fix the 1 !!!
-        for (float j = 0; j < 1; j+=dt)
-        {
-            kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, h_m[k], h_m[0], j, k);
-            printf("kepler iteration  %d end\n", j);
-            getchar();
-        }
+        //for (time = h_t[k]; time < ITIME; time+=dt)
+        //{
+        //    kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, dt, k);
+        //}
+        kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, dt, k);
+
         h_p_r[k].x = rx;
         h_p_r[k].y = ry;
         h_p_r[k].z = rz;
@@ -321,8 +457,11 @@ void predicted_pos_vel_kepler(double ITIME, int total)
         h_p_v[k].x = vx;
         h_p_v[k].y = vy;
         h_p_v[k].z = vz;
-        printf("End particle %d\n");
-        getchar();
+        #ifdef DEBUG_KEPLER
+        printf("[New position] %.15f %.15f %.15f\n", h_p_r[k].x, h_p_r[k].y, h_p_r[k].z);
+        printf("[New velocity] %.15f %.15f %.15f\n", h_p_v[k].x, h_p_v[k].y, h_p_v[k].z);
+        printf("End particle %d\n", k);
+        #endif
     }
 }
 
@@ -336,6 +475,9 @@ void predicted_pos_vel_kepler(double ITIME, int total)
  */
 void correction_pos_vel(double ITIME, int total)
 {
+    #ifdef DEBUG_HERMITE
+    printf("[DEBUG] correction_pos_vel()\n");
+    #endif
 
     for (int k = 0; k < total; k++)
     {
@@ -348,55 +490,105 @@ void correction_pos_vel(double ITIME, int total)
         double dt5 = dt4 * dt1;
 
         // Acceleration 2nd derivate
-        double ax0_2 = (-6 * (h_old_a[i].x - h_a[i].x ) - dt1 * (4 * h_old_j[i].x + 2 * h_j[i].x) ) / dt2;
-        double ay0_2 = (-6 * (h_old_a[i].y - h_a[i].y ) - dt1 * (4 * h_old_j[i].y + 2 * h_j[i].y) ) / dt2;
-        double az0_2 = (-6 * (h_old_a[i].z - h_a[i].z ) - dt1 * (4 * h_old_j[i].z + 2 * h_j[i].z) ) / dt2;
+        #ifdef USE_KEPLER
+        h_a2[i].x += (-6 * (h_old_a[i].x - h_a[i].x ) - dt1 * (4 * h_old_a1[i].x + 2 * h_a1[i].x) ) / dt2;
+        h_a2[i].y += (-6 * (h_old_a[i].y - h_a[i].y ) - dt1 * (4 * h_old_a1[i].y + 2 * h_a1[i].y) ) / dt2;
+        h_a2[i].z += (-6 * (h_old_a[i].z - h_a[i].z ) - dt1 * (4 * h_old_a1[i].z + 2 * h_a1[i].z) ) / dt2;
+        #else
+        h_a2[i].x = (-6 * (h_old_a[i].x - h_a[i].x ) - dt1 * (4 * h_old_a1[i].x + 2 * h_a1[i].x) ) / dt2;
+        h_a2[i].y = (-6 * (h_old_a[i].y - h_a[i].y ) - dt1 * (4 * h_old_a1[i].y + 2 * h_a1[i].y) ) / dt2;
+        h_a2[i].z = (-6 * (h_old_a[i].z - h_a[i].z ) - dt1 * (4 * h_old_a1[i].z + 2 * h_a1[i].z) ) / dt2;
+        #endif
 
         // Acceleration 3rd derivate
-        double ax0_3 = (12 * (h_old_a[i].x - h_a[i].x ) + 6 * dt1 * (h_old_j[i].x + h_j[i].x) ) / dt3;
-        double ay0_3 = (12 * (h_old_a[i].y - h_a[i].y ) + 6 * dt1 * (h_old_j[i].y + h_j[i].y) ) / dt3;
-        double az0_3 = (12 * (h_old_a[i].z - h_a[i].z ) + 6 * dt1 * (h_old_j[i].z + h_j[i].z) ) / dt3;
+        #ifdef USE_KEPLER
+        h_a3[i].x += (12 * (h_old_a[i].x - h_a[i].x ) + 6 * dt1 * (h_old_a1[i].x + h_a1[i].x) ) / dt3;
+        h_a3[i].y += (12 * (h_old_a[i].y - h_a[i].y ) + 6 * dt1 * (h_old_a1[i].y + h_a1[i].y) ) / dt3;
+        h_a3[i].z += (12 * (h_old_a[i].z - h_a[i].z ) + 6 * dt1 * (h_old_a1[i].z + h_a1[i].z) ) / dt3;
+        #else
+        h_a3[i].x = (12 * (h_old_a[i].x - h_a[i].x ) + 6 * dt1 * (h_old_a1[i].x + h_a1[i].x) ) / dt3;
+        h_a3[i].y = (12 * (h_old_a[i].y - h_a[i].y ) + 6 * dt1 * (h_old_a1[i].y + h_a1[i].y) ) / dt3;
+        h_a3[i].z = (12 * (h_old_a[i].z - h_a[i].z ) + 6 * dt1 * (h_old_a1[i].z + h_a1[i].z) ) / dt3;
+        #endif
 
         // Correcting position
-        h_r[i].x = h_p_r[i].x + (dt4/24)*ax0_2 + (dt5/120)*ax0_3;
-        h_r[i].y = h_p_r[i].y + (dt4/24)*ay0_2 + (dt5/120)*ay0_3;
-        h_r[i].z = h_p_r[i].z + (dt4/24)*az0_2 + (dt5/120)*az0_3;
+        h_r[i].x = h_p_r[i].x + (dt4/24)*h_a2[i].x + (dt5/120)*h_a3[i].x;
+        h_r[i].y = h_p_r[i].y + (dt4/24)*h_a2[i].y + (dt5/120)*h_a3[i].y;
+        h_r[i].z = h_p_r[i].z + (dt4/24)*h_a2[i].z + (dt5/120)*h_a3[i].z;
 
         // Correcting velocity
-        h_v[i].x = h_p_v[i].x + (dt3/6)*ax0_2 + (dt4/24)*ax0_3;
-        h_v[i].y = h_p_v[i].y + (dt3/6)*ay0_2 + (dt4/24)*ay0_3;
-        h_v[i].z = h_p_v[i].z + (dt3/6)*az0_2 + (dt4/24)*az0_3;
-
-        // Timestep update
-
-        // Calculating a_{1,i}^{(2)} = a_{0,i}^{(2)} + dt * a_{0,i}^{(3)}
-        double ax1_2 = ax0_2 + dt1 * ax0_3;
-        double ay1_2 = ay0_2 + dt1 * ay0_3;
-        double az1_2 = az0_2 + dt1 * az0_3;
-
-        // |a_{1,i}|
-        double abs_a1 = get_magnitude(h_a[i].x, h_a[i].y, h_a[i].z);
-        // |j_{1,i}|
-        double abs_j1 = get_magnitude(h_j[i].x, h_j[i].y, h_j[i].z);
-        // |j_{1,i}|^{2}
-        double abs_j12  = abs_j1 * abs_j1;
-        // a_{1,i}^{(3)} = a_{0,i}^{(3)} because the 3rd-order interpolation
-        double abs_a1_3 = get_magnitude(ax0_3, ay0_3, az0_3);
-        // |a_{1,i}^{(2)}|
-        double abs_a1_2 = get_magnitude(ax1_2, ay1_2, az1_2);
-        // |a_{1,i}^{(2)}|^{2}
-        double abs_a1_22  = abs_a1_2 * abs_a1_2;
-
-        double tmp_dt = sqrt(ETA_N * ((abs_a1 * abs_a1_2 + abs_j12) / (abs_j1 * abs_a1_3 + abs_a1_22)));
+        h_v[i].x = h_p_v[i].x + (dt3/6)*h_a2[i].x + (dt4/24)*h_a3[i].x;
+        h_v[i].y = h_p_v[i].y + (dt3/6)*h_a2[i].y + (dt4/24)*h_a3[i].y;
+        h_v[i].z = h_p_v[i].z + (dt3/6)*h_a2[i].z + (dt4/24)*h_a3[i].z;
 
         h_t[i] = ITIME;
-        tmp_dt = normalize_dt(tmp_dt, h_dt[i], h_t[i], i);
-        h_dt[i] = tmp_dt;
+        double normal_dt  = get_timestep_normal(i);
+        #ifdef USE_KEPLER
+        double central_dt = get_timestep_central(i);
+        if(normal_dt > central_dt)
+        {
+            central_dt = normalize_dt(central_dt, h_dt[i], h_t[i], i);
+            h_dt[i] = central_dt;
+        }
+        else
+        {
+            normal_dt = normalize_dt(normal_dt, h_dt[i], h_t[i], i);
+            h_dt[i] = normal_dt;
+        }
+        #else
+            normal_dt = normalize_dt(normal_dt, h_dt[i], h_t[i], i);
+            h_dt[i] = normal_dt;
+        #endif
+
     }
+}
+
+double get_timestep_normal(int i)
+{
+    #ifdef DEBUG_HERMITE
+    printf("[DEBUG] get_timestep_normal()\n");
+    #endif
+    // Calculating a_{1,i}^{(2)} = a_{0,i}^{(2)} + dt * a_{0,i}^{(3)}
+    double ax1_2 = h_a2[i].x + h_dt[i] * h_a3[i].x;
+    double ay1_2 = h_a2[i].y + h_dt[i] * h_a3[i].y;
+    double az1_2 = h_a2[i].z + h_dt[i] * h_a3[i].z;
+
+    // |a_{1,i}|
+    double abs_a1 = get_magnitude(h_a[i].x, h_a[i].y, h_a[i].z);
+    // |j_{1,i}|
+    double abs_j1 = get_magnitude(h_a1[i].x, h_a1[i].y, h_a1[i].z);
+    // |j_{1,i}|^{2}
+    double abs_j12  = abs_j1 * abs_j1;
+    // a_{1,i}^{(3)} = a_{0,i}^{(3)} because the 3rd-order interpolation
+    double abs_a1_3 = get_magnitude(h_a3[i].x, h_a3[i].y, h_a3[i].z);
+    // |a_{1,i}^{(2)}|
+    double abs_a1_2 = get_magnitude(ax1_2, ay1_2, az1_2);
+    // |a_{1,i}^{(2)}|^{2}
+    double abs_a1_22  = abs_a1_2 * abs_a1_2;
+
+    double normal_dt = sqrt(eta * ((abs_a1 * abs_a1_2 + abs_j12) / (abs_j1 * abs_a1_3 + abs_a1_22)));
+
+
+    return normal_dt;
+}
+
+double get_timestep_central(int i)
+{
+    #ifdef DEBUG_HERMITE
+    printf("[DEBUG] get_timestep_central()\n");
+    #endif
+    double r = get_magnitude(h_r[i].x, h_r[i].y, h_r[i].z);
+    double r3 = r*r*r;
+    double central_dt = ((2.0 * M_PI )/NSTEPS * sqrt(r3/(G * h_m[0])));
+
+    return central_dt;
 }
 
 double normalize_dt(double new_dt, double old_dt, double t, int i)
 {
+    #ifdef DEBUG_HERMITE
+    printf("[DEBUG] normalize_dt()\n");
+    #endif
     if (new_dt <= old_dt/8)
     {
         new_dt = D_TIME_MIN;
@@ -429,11 +621,11 @@ double normalize_dt(double new_dt, double old_dt, double t, int i)
             new_dt = old_dt;
         }
     }
-    else
-    {
-        fprintf(stderr, "gravidy: Undefined treatment for the time-step of (%d)",i);
-        getchar();
-    }
+    //else
+    //{
+    //    //fprintf(stderr, "gravidy: Undefined treatment for the time-step of (%d)",i);
+    //    new_dt = old_dt;
+    //}
 
     if (new_dt < D_TIME_MIN)
     {

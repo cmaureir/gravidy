@@ -10,7 +10,7 @@ void gpu_correction_pos_vel(double ITIME, int total)
         CUDA_SAFE_CALL(cudaMemcpy(h_p_r + i,  d_p_r + i , sizeof(double4),cudaMemcpyDeviceToHost));
         CUDA_SAFE_CALL(cudaMemcpy(h_p_v + i,  d_p_v + i , sizeof(double4),cudaMemcpyDeviceToHost));
         CUDA_SAFE_CALL(cudaMemcpy(h_a   + i,  d_a   + i , sizeof(double4),cudaMemcpyDeviceToHost));
-        CUDA_SAFE_CALL(cudaMemcpy(h_j   + i,  d_j   + i , sizeof(double4),cudaMemcpyDeviceToHost));
+        CUDA_SAFE_CALL(cudaMemcpy(h_a1  + i,  d_a1  + i , sizeof(double4),cudaMemcpyDeviceToHost));
 
 
         double dt1 = h_dt[i];
@@ -20,14 +20,14 @@ void gpu_correction_pos_vel(double ITIME, int total)
         double dt5 = dt4 * dt1;
 
         // Acceleration 2nd derivate
-        double ax0_2 = (-6 * (h_old_a[i].x - h_a[i].x ) - dt1 * (4 * h_old_j[i].x + 2 * h_j[i].x) ) / dt2;
-        double ay0_2 = (-6 * (h_old_a[i].y - h_a[i].y ) - dt1 * (4 * h_old_j[i].y + 2 * h_j[i].y) ) / dt2;
-        double az0_2 = (-6 * (h_old_a[i].z - h_a[i].z ) - dt1 * (4 * h_old_j[i].z + 2 * h_j[i].z) ) / dt2;
+        double ax0_2 = (-6 * (h_old_a[i].x - h_a[i].x ) - dt1 * (4 * h_old_a1[i].x + 2 * h_a1[i].x) ) / dt2;
+        double ay0_2 = (-6 * (h_old_a[i].y - h_a[i].y ) - dt1 * (4 * h_old_a1[i].y + 2 * h_a1[i].y) ) / dt2;
+        double az0_2 = (-6 * (h_old_a[i].z - h_a[i].z ) - dt1 * (4 * h_old_a1[i].z + 2 * h_a1[i].z) ) / dt2;
 
         // Acceleration 3rd derivate
-        double ax0_3 = (12 * (h_old_a[i].x - h_a[i].x ) + 6 * dt1 * (h_old_j[i].x + h_j[i].x) ) / dt3;
-        double ay0_3 = (12 * (h_old_a[i].y - h_a[i].y ) + 6 * dt1 * (h_old_j[i].y + h_j[i].y) ) / dt3;
-        double az0_3 = (12 * (h_old_a[i].z - h_a[i].z ) + 6 * dt1 * (h_old_j[i].z + h_j[i].z) ) / dt3;
+        double ax0_3 = (12 * (h_old_a[i].x - h_a[i].x ) + 6 * dt1 * (h_old_a1[i].x + h_a1[i].x) ) / dt3;
+        double ay0_3 = (12 * (h_old_a[i].y - h_a[i].y ) + 6 * dt1 * (h_old_a1[i].y + h_a1[i].y) ) / dt3;
+        double az0_3 = (12 * (h_old_a[i].z - h_a[i].z ) + 6 * dt1 * (h_old_a1[i].z + h_a1[i].z) ) / dt3;
 
         // Correcting position
         h_r[i].x = h_p_r[i].x + (dt4/24)*ax0_2 + (dt5/120)*ax0_3;
@@ -49,7 +49,7 @@ void gpu_correction_pos_vel(double ITIME, int total)
         // |a_{1,i}|
         double abs_a1 = get_magnitude(h_a[i].x, h_a[i].y, h_a[i].z);
         // |j_{1,i}|
-        double abs_j1 = get_magnitude(h_j[i].x, h_j[i].y, h_j[i].z);
+        double abs_j1 = get_magnitude(h_a1[i].x, h_a1[i].y, h_a1[i].z);
         // |j_{1,i}|^{2}
         double abs_j12  = abs_j1 * abs_j1;
         // a_{1,i}^{(3)} = a_{0,i}^{(3)} because the 3rd-order interpolation
@@ -101,7 +101,7 @@ __host__ void gpu_recv_initial_data()
 __host__ void gpu_init_acc_jrk()
 {
     int smem = BSIZE * 2 * sizeof(double4);
-    k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_r, d_v, d_a, d_j, d_m, n);
+    k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_r, d_v, d_a, d_a1, d_m, n);
     cudaThreadSynchronize();
     #ifdef KERNEL_ERROR_DEBUG
         std::cerr << "k_init_acc_jrk: " << std::endl;
@@ -137,7 +137,7 @@ __host__ void gpu_predicted_pos_vel(float ITIME)
 {
 
 
-    k_predicted_pos_vel<<< nblocks, nthreads >>> (d_r, d_v, d_a, d_j, d_p_r, d_p_v,
+    k_predicted_pos_vel<<< nblocks, nthreads >>> (d_r, d_v, d_a, d_a1, d_p_r, d_p_v,
                                                   d_t, ITIME, n);
     cudaThreadSynchronize();
     #ifdef KERNEL_ERROR_DEBUG
@@ -152,7 +152,7 @@ __host__ void gpu_update_acc_jrk_simple(int total)
     CUDA_SAFE_CALL(cudaMemcpy(d_move, h_move, i1_size, cudaMemcpyHostToDevice));
 
     int smem = BSIZE * 2 * sizeof(double4);
-    k_update_acc_jrk_simple <<< nblocks, nthreads, smem >>> (d_p_r, d_p_v, d_a, d_j,
+    k_update_acc_jrk_simple <<< nblocks, nthreads, smem >>> (d_p_r, d_p_v, d_a, d_a1,
                                                              d_m, d_move, n, total);
     cudaThreadSynchronize();
     #ifdef KERNEL_ERROR_DEBUG
@@ -186,14 +186,14 @@ __host__ void gpu_update_acc_jrk_simple(int total)
 //        h_a[i].y = 0.0;
 //        h_a[i].z = 0.0;
 //
-//        h_j[i].x = 0.0;
-//        h_j[i].y = 0.0;
-//        h_j[i].z = 0.0;
+//        h_a1[i].x = 0.0;
+//        h_a1[i].y = 0.0;
+//        h_a1[i].z = 0.0;
 //
 //
 //        for (int iii = 0; iii < n; iii++) {
 //            h_a[i] += h_new_a[iii];
-//            h_j[i] += h_new_j[iii];
+//            h_a1[i] += h_new_j[iii];
 //        }
 //
 ////        k_reduce<<< nblocks, nthreads, smem >>> (d_new_a, tmp_red, n);
@@ -204,10 +204,10 @@ __host__ void gpu_update_acc_jrk_simple(int total)
 ////        k_reduce<<< nblocks, nthreads, smem >>> (d_new_j, tmp_red, n);
 ////        cudaThreadSynchronize();
 ////        k_reduce<<< 1, nthreads, smem >>> (tmp_red, tmp_red + nblocks, nblocks);
-////        cudaMemcpy(h_j + i,tmp_red + nblocks,sizeof(double4),cudaMemcpyDeviceToHost);
+////        cudaMemcpy(h_a1 + i,tmp_red + nblocks,sizeof(double4),cudaMemcpyDeviceToHost);
 ////
 //        //cudaMemcpy(h_a + i , d_a + i, sizeof(double4), cudaMemcpyDeviceToHost);
-//        //cudaMemcpy(h_j + i , d_j + i, sizeof(double4), cudaMemcpyDeviceToHost);
+//        //cudaMemcpy(h_a1 + i , d_a1 + i, sizeof(double4), cudaMemcpyDeviceToHost);
 //    }
 //}
 //__host__ void gpu_update_2d(int total)
@@ -257,7 +257,7 @@ __host__ void gpu_update_acc_jrk(int total)
 
     CUDA_SAFE_CALL(cudaMemcpy(d_move, h_move, i1_size, cudaMemcpyHostToDevice));
 
-    k_update_acc_jrk <<< nblocks, nthreads, smem >>> (d_p_r, d_p_v, d_a, d_j, d_m,
+    k_update_acc_jrk <<< nblocks, nthreads, smem >>> (d_p_r, d_p_v, d_a, d_a1, d_m,
                                                             d_move, n, total);
     cudaThreadSynchronize();
     #ifdef KERNEL_ERROR_DEBUG
@@ -268,7 +268,7 @@ __host__ void gpu_update_acc_jrk(int total)
     {
         int j = h_move[i];
         CUDA_SAFE_CALL(cudaMemcpy(&h_a[j], &d_a[j], sizeof(double4), cudaMemcpyDeviceToHost));
-        CUDA_SAFE_CALL(cudaMemcpy(&h_j[j], &d_j[j], sizeof(double4), cudaMemcpyDeviceToHost));
+        CUDA_SAFE_CALL(cudaMemcpy(&h_a1[j], &d_a1[j], sizeof(double4), cudaMemcpyDeviceToHost));
     }
 }
 */

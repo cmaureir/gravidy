@@ -9,7 +9,7 @@ void print_all(int limit, float ITIME)
                 h_r[i].x, h_r[i].y, h_r[i].z,
                 h_v[i].x, h_v[i].y, h_v[i].z,
                 h_a[i].x, h_a[i].y, h_a[i].z,
-                h_j[i].x, h_j[i].y, h_j[i].z,
+                h_a1[i].x, h_a1[i].y, h_a1[i].z,
                 h_dt[i]);
     }
 }
@@ -37,7 +37,7 @@ void print_accelerations(int limit)
 void print_jrks(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.10f %.10f %.10f\n", i, h_j[i].x, h_j[i].y, h_j[i].z );
+        printf("%6d %.10f %.10f %.10f\n", i, h_a1[i].x, h_a1[i].y, h_a1[i].z );
     }
 }
 
@@ -47,7 +47,7 @@ void print_accjrk(int limit)
         printf("%6d %4.10f %4.10f %4.10f %4.10f %4.10f %4.10f\n",
                 i,
                 h_a[i].x, h_a[i].y, h_a[i].z,
-                h_j[i].x, h_j[i].y, h_j[i].z
+                h_a1[i].x, h_a1[i].y, h_a1[i].z
                 );
     }
 }
@@ -74,7 +74,7 @@ void print_old(int limit)
         printf("%6d %.10f %.10f %.10f %.10f %.10f %.10f\n",
                 i,
                 h_old_a[i].x, h_old_a[i].y, h_old_a[i].z,
-                h_old_j[i].x, h_old_j[i].y, h_old_j[i].z);
+                h_old_a1[i].x, h_old_a1[i].y, h_old_a1[i].z);
     }
 }
 
@@ -105,6 +105,18 @@ void print_movement(int limit, int total, float ITIME)
     }
     printf("\n");
 }
+
+
+void print_particle(int i)
+{
+    printf("%5d %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
+            i,
+            h_r[i].x, h_r[i].y, h_r[i].z, h_v[i].x, h_v[i].y, h_v[i].z,
+            h_a[i].x, h_a[i].y, h_a[i].z, h_a1[i].x, h_a1[i].y, h_a1[i].z);
+
+}
+
+
 
 double get_magnitude(double x, double y, double z)
 {

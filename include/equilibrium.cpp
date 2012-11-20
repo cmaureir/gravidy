@@ -27,7 +27,7 @@ Point get_center_of_density()
         std::sort(d.begin(), d.end());
         radius = d[J-1].value;
         aa = (J-1) * h_m[i];
-        bb = (4.0 * PI * radius * radius * radius)/3.0;
+        bb = (4.0 * M_PI * radius * radius * radius)/3.0;
         p.push_back( aa / bb );
     }
 

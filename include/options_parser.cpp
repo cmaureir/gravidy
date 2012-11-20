@@ -21,6 +21,30 @@ bool file_exists(const std::string& filename)
     return false;
 }
 
+bool check_options_noboost(int argc, char *argv[])
+{
+    input_file = std::string(argv[1]);
+    int_time = atoi(argv[2]);
+    softening= atof(argv[3]);
+    eta = atof(argv[4]);
+    run = std::string("cpu"); // Default
+
+    // Preparing output filename
+    std::ostringstream ss;
+    ss << "_t";
+    ss << int_time;
+    ss << "_s";
+    ss << softening;
+    ss << "_e";
+    ss << eta;
+    ss << ".out";
+    std::string ext(ss.str());
+
+    output_file = input_file+ext;
+
+    return true;
+}
+
 /*
  * @fn check_options
  *
@@ -39,11 +63,13 @@ bool check_options(int argc, char *argv[])
 {
     po::options_description desc("Options");
     desc.add_options()
-        ("help,h"  , "Display message")
-        ("input,i" , po::value<std::string>(), "Input data filename")
-        ("output,o", po::value<std::string>(), "Output data filename")
-        ("time,t"  , po::value<double>()     , "Integration time")
-        ("run,r"   , po::value<std::string>(), "Running type, CPU (default) or GPU")
+        ("help,h"  ,     "Display message")
+        ("input,i" ,     po::value<std::string>(), "Input data filename")
+        ("output,o",     po::value<std::string>(), "Output data filename")
+        ("time,t"  ,     po::value<float>()     , "Integration time")
+        ("softening,s", po::value<float>()     , "Softening")
+        ("eta,e"  ,     po::value<float>()     , "ETA of time-step calculation")
+        ("run,r"   ,     po::value<std::string>(), "Running type, CPU (default) or GPU")
     ;
 
     po::variables_map vm;
@@ -81,6 +107,7 @@ bool check_options(int argc, char *argv[])
     }
 
     // Output option
+    output_file = input_file+std::string(".output");
     if (vm.count("output"))
     {
         output_file = vm["output"].as<std::string>();
@@ -95,7 +122,7 @@ bool check_options(int argc, char *argv[])
     // Time option
     if (vm.count("time"))
     {
-        int_time = vm["time"].as<double>();
+        int_time = vm["time"].as<float>();
     }
     else
     {
@@ -105,6 +132,19 @@ bool check_options(int argc, char *argv[])
                   << std::endl;
         return false;
     }
+
+    softening = E;
+    if (vm.count("softening"))
+    {
+        softening= vm["softening"].as<float>();
+    }
+
+    eta  = ETA_N;
+    if (vm.count("eta"))
+    {
+        eta = vm["eta"].as<float>();
+    }
+
 
     // Run option
     run = std::string("cpu"); // Default

@@ -15,10 +15,13 @@ void init_vectors()
     h_v     = (double4*) malloc(d4_size);
 
     h_a     = (double4*) malloc(d4_size);
-    h_j     = (double4*) malloc(d4_size);
+    h_a1     = (double4*) malloc(d4_size);
+
+    h_a2    = (double4*) malloc(d4_size);
+    h_a3    = (double4*) malloc(d4_size);
 
     h_old_a = (double4*) malloc(d4_size);
-    h_old_j = (double4*) malloc(d4_size);
+    h_old_a1 = (double4*) malloc(d4_size);
 
 
     //h_new_a = (double4*) malloc(n * NJBLOCK * sizeof(double4));
@@ -61,9 +64,9 @@ void init_vectors()
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_r,     d4_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_v,     d4_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_a,     d4_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_j,     d4_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_a1,     d4_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_old_a, d4_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_old_j, d4_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_old_a1, d4_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_p_r,   d4_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_p_v,   d4_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_m,     f1_size));
@@ -98,10 +101,13 @@ void init_vectors()
         h_p_v[i].z = part[i].v.z;
 
         h_a[i] = empty;
-        h_j[i] = empty;
+        h_a1[i] = empty;
+
+        h_a2[i] = empty;
+        h_a3[i] = empty;
 
         h_old_a[i] = empty;
-        h_old_j[i] = empty;
+        h_old_a1[i] = empty;
         //for (int ii = 0; ii < NJBLOCK * n; ii++) {
         //    h_new_a[ii] = empty;
         //    h_new_j[ii] = empty;
@@ -128,12 +134,14 @@ void clean_vectors()
     free(h_r);
     free(h_v);
     free(h_a);
-    free(h_j);
+    free(h_a1);
+    free(h_a2);
+    free(h_a3);
     free(h_m);
     free(h_t);
     free(h_dt);
     free(h_old_a);
-    free(h_old_j);
+    free(h_old_a1);
     free(h_p_r);
     free(h_p_v);
     free(h_ekin);
@@ -143,11 +151,11 @@ void clean_vectors()
     CUDA_SAFE_CALL(cudaFree(d_r));
     CUDA_SAFE_CALL(cudaFree(d_v));
     CUDA_SAFE_CALL(cudaFree(d_a));
-    CUDA_SAFE_CALL(cudaFree(d_j));
+    CUDA_SAFE_CALL(cudaFree(d_a1));
     CUDA_SAFE_CALL(cudaFree(d_m));
     CUDA_SAFE_CALL(cudaFree(d_t));
     CUDA_SAFE_CALL(cudaFree(d_old_a));
-    CUDA_SAFE_CALL(cudaFree(d_old_j));
+    CUDA_SAFE_CALL(cudaFree(d_old_a1));
     CUDA_SAFE_CALL(cudaFree(d_p_r));
     CUDA_SAFE_CALL(cudaFree(d_p_v));
     CUDA_SAFE_CALL(cudaFree(d_dt));
