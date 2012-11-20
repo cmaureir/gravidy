@@ -21,6 +21,21 @@ bool file_exists(const std::string& filename)
     return false;
 }
 
+
+/*
+ * @fn check_options_noboost
+ *
+ * @param int argc
+ *  Number of standard parameters
+ * @param char* argv
+ *  Parameters values
+ *
+ * @brief
+ *   Checking the parameters of the program using the
+ *   boost library.
+ *
+ * @return state of the parameters
+ */
 bool check_options_noboost(int argc, char *argv[])
 {
     input_file = std::string(argv[1]);
@@ -63,13 +78,13 @@ bool check_options(int argc, char *argv[])
 {
     po::options_description desc("Options");
     desc.add_options()
-        ("help,h"  ,     "Display message")
-        ("input,i" ,     po::value<std::string>(), "Input data filename")
-        ("output,o",     po::value<std::string>(), "Output data filename")
-        ("time,t"  ,     po::value<float>()     , "Integration time")
-        ("softening,s", po::value<float>()     , "Softening")
-        ("eta,e"  ,     po::value<float>()     , "ETA of time-step calculation")
-        ("run,r"   ,     po::value<std::string>(), "Running type, CPU (default) or GPU")
+        ("help,h",      "Display message")
+        ("input,i",     po::value<std::string>(), "Input data filename")
+        ("output,o",    po::value<std::string>(), "Output data filename")
+        ("time,t",      po::value<float>(),       "Integration time")
+        ("softening,s", po::value<float>(),       "Softening")
+        ("eta,e",       po::value<float>(),       "ETA of time-step calculation")
+        ("run,r",       po::value<std::string>(), "Running type CPU or GPU")
     ;
 
     po::variables_map vm;
