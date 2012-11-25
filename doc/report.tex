@@ -1,0 +1,108 @@
+\documentclass[letter, 10pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsfonts}
+\usepackage{algorithm}
+\usepackage{enumerate}
+\usepackage{algorithmic}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage[top=2cm,bottom=2cm,left=2.5cm,right=2.5cm,footskip=1.5cm,headheight=1.5cm,headsep=.5cm,textheight=3cm]{geometry}
+
+\usepackage{listings}
+\usepackage{color}
+\usepackage{tikz}
+
+\definecolor{red}{RGB}{255,0,0}
+\definecolor{green}{RGB}{0,255,0}
+\definecolor{blue}{RGB}{0,0,255}
+\definecolor{oran}{RGB}{255,93,0}
+
+\newcommand{\blue}{\textcolor{blue}}
+\newcommand{\red}{\textcolor{red}}
+\newcommand{\green}{\textcolor{green}}
+\newcommand{\oran}{\textcolor{oran}}
+\newcommand{\gray}{\textcolor{gray}}
+\definecolor{gray97}{gray}{.97}
+\definecolor{gray75}{gray}{.75}
+\definecolor{gray45}{gray}{.45}
+
+\newcommand{\bs}{\boldsymbol}
+
+\lstset{ frame=Ltb,
+     framerule=0pt,
+     aboveskip=0.5cm,
+     framextopmargin=3pt,
+     framexbottommargin=3pt,
+     framexleftmargin=0.4cm,
+     xleftmargin=17pt,
+     framesep=0pt,
+     rulesep=.4pt,
+     backgroundcolor=\color{gray97},
+     rulesepcolor=\color{black},
+     %
+     stringstyle=\ttfamily,
+     showstringspaces = false,
+     basicstyle=\tiny\ttfamily,
+     %commentstyle=\color{gray45},
+     %keywordstyle=\bfseries,
+     %
+     numbers=left,
+     numbersep=13pt,
+     numberstyle=\tiny,
+     numberfirstline = false,
+     breaklines=true,
+     emph = {[1]\_\_device\_\_,\_\_global\_\_,\_\_syncthreads,pragma,omp,parallel,
+     private, threadIdx, blockDim, blockIdx,cudaThreadSynchronize},
+     emphstyle={[1]\color{green}},
+     escapechar=!,
+   }
+
+% minimizar fragmentado de listados
+\lstnewenvironment{listing}[1][]
+   {\lstset{#1}\pagebreak[0]}{\pagebreak[0]}
+
+\lstdefinestyle{consola}
+   {basicstyle=\scriptsize\bf\ttfamily,
+    backgroundcolor=\color{gray75},
+   }
+\lstdefinestyle{C}
+   {language=C,
+   }
+
+\pagestyle{empty}
+\begin{document}
+
+\title{\texttt{GraviDy}: Documentation}
+\author{
+Cristián Maureira\\
+\url{cristian.maureira.fredes@aei.mpg.de}}
+\date{\today}
+
+\maketitle
+
+\section{Introduction}
+\label{introduction}
+\input{src/introduction}
+
+\section{Pseudocode}
+\label{pseudocode}
+\input{src/pseudocode}
+
+\section{CPU implementation}
+\label{cpu}
+\input{src/cpu}
+
+\section{GPU implementation}
+\label{gpu}
+\input{src/gpu}
+
+%\bibsection
+%\bibliographystyle{plain}
+%\bibliography{report}
+
+
+\end{document}
