@@ -42,7 +42,6 @@ bool check_options_noboost(int argc, char *argv[])
     int_time = atoi(argv[2]);
     softening= atof(argv[3]);
     eta = atof(argv[4]);
-    run = std::string("cpu"); // Default
 
     // Preparing output filename
     std::ostringstream ss;
@@ -84,7 +83,6 @@ bool check_options(int argc, char *argv[])
         ("time,t",      po::value<float>(),       "Integration time")
         ("softening,s", po::value<float>(),       "Softening")
         ("eta,e",       po::value<float>(),       "ETA of time-step calculation")
-        ("run,r",       po::value<std::string>(), "Running type CPU or GPU")
     ;
 
     po::variables_map vm;
@@ -160,21 +158,6 @@ bool check_options(int argc, char *argv[])
         eta = vm["eta"].as<float>();
     }
 
-
-    // Run option
-    run = std::string("cpu"); // Default
-    if (vm.count("run"))
-    {
-        run = vm["run"].as<std::string>();
-        if(!(run == "gpu" || run == "cpu"))
-        {
-            std::cerr << "gravidy: Invalid option -- '"
-                      << run
-                      << "'"
-                      << std::endl;
-            return false;
-        }
-    }
 
     return true;
 }

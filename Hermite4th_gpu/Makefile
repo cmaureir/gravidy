@@ -15,7 +15,6 @@ OBJS_CPU=   include/options_parser.o \
 			include/extra_utils.o    \
 			include/equilibrium.o    \
 			include/memory.o         \
-			include/kepler.o         \
 			include/dynamics_cpu.o   \
 			include/hermite.o
 

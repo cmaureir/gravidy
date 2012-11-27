@@ -1,0 +1,91 @@
+#include "memory.hpp"
+
+/*
+ * @fn init_vectors()
+ *
+ */
+void init_vectors()
+{
+    d4_size = n * sizeof(double4);
+    d1_size = n * sizeof(double);
+    f1_size = n * sizeof(float);
+    i1_size = n * sizeof(int);
+
+    /*
+     * CPU pointers
+     */
+    h_r      = (double4*) malloc(d4_size);
+    h_v      = (double4*) malloc(d4_size);
+    h_a      = (double4*) malloc(d4_size);
+    h_a1     = (double4*) malloc(d4_size);
+    h_a2     = (double4*) malloc(d4_size);
+    h_a3     = (double4*) malloc(d4_size);
+    h_old_a  = (double4*) malloc(d4_size);
+    h_old_a1 = (double4*) malloc(d4_size);
+    h_p_r    = (double4*) malloc(d4_size);
+    h_p_v    = (double4*) malloc(d4_size);
+    h_ekin   =  (double*) malloc(d1_size);
+    h_epot   =  (double*) malloc(d1_size);
+    h_t      =  (double*) malloc(d1_size);
+    h_dt     =  (double*) malloc(d1_size);
+    h_m      =   (float*) malloc(f1_size);
+    h_move   =     (int*) malloc(i1_size);
+
+    // Empty double4
+    double4 empty = {0.0, 0.0, 0.0, 0.0};
+
+    for (int i = 0; i < n; i++)
+    {
+
+        h_m[i]     = part[i].m;
+        h_r[i].x   = part[i].r.x;
+        h_r[i].y   = part[i].r.y;
+        h_r[i].z   = part[i].r.z;
+        h_v[i].x   = part[i].v.x;
+        h_v[i].y   = part[i].v.y;
+        h_v[i].z   = part[i].v.z;
+        h_p_r[i].x = part[i].r.x;
+        h_p_r[i].y = part[i].r.y;
+        h_p_r[i].z = part[i].r.z;
+        h_p_v[i].x = part[i].v.x;
+        h_p_v[i].y = part[i].v.y;
+        h_p_v[i].z = part[i].v.z;
+
+        h_a[i]      = empty;
+        h_a1[i]     = empty;
+        h_a2[i]     = empty;
+        h_a3[i]     = empty;
+        h_old_a[i]  = empty;
+        h_old_a1[i] = empty;
+        h_t[i]      = 0.0;
+        h_dt[i]     = 0.0;
+        h_move[i]   = 0;
+    }
+}
+
+
+/*
+ * @fn clean_vectors()
+ *
+ * @brief
+ *  Free memory on the CPU
+ */
+void clean_vectors()
+{
+    free(h_m);
+    free(h_r);
+    free(h_v);
+    free(h_a);
+    free(h_a1);
+    free(h_a2);
+    free(h_a3);
+    free(h_t);
+    free(h_dt);
+    free(h_old_a);
+    free(h_old_a1);
+    free(h_p_r);
+    free(h_p_v);
+    free(h_ekin);
+    free(h_epot);
+    free(h_move);
+}

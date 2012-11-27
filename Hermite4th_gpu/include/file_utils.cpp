@@ -66,7 +66,6 @@ void write_output_file(std::string path)
         strs << int_time;
         path.append(strs.str());
         path.append("t_");
-        path.append(run);
         path.append("_s");
         strs << softening;
         path.append(strs.str());
@@ -80,8 +79,6 @@ void write_output_file(std::string path)
     std::stringstream sline;
     sline.precision(std::numeric_limits<double>::digits10);
 
-    sline << "Run mode: " << run;
-    file << sline.str(); sline.str("");
     sline << "\nEnergy Init: "  << energy_ini;
     file << sline.str(); sline.str("");
     sline << "\nEnergy End:  "  << energy_end;

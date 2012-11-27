@@ -49,7 +49,6 @@ float t_rh, t_cr;
 
 // Options strings
 std::string input_file, output_file;
-std::string run;
 
 size_t nthreads, nblocks;
 size_t d1_size, d4_size;
@@ -73,10 +72,7 @@ main(int argc, char *argv[])
     // Opening output file for debugging
     out = fopen(output_file.c_str(), "w");
 
-    if(run == "cpu")
-        integrate_cpu();
-    else if(run == "gpu")
-        integrate_gpu();
+    integrate_gpu();
 
     end_time = (ini_time - (float)clock()/CLOCKS_PER_SEC);
 

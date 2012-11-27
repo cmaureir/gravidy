@@ -1,5 +1,17 @@
 #include "equilibrium.hpp"
 
+void get_system_info()
+{
+    Point p_c = get_center_of_density();
+    t_rh = get_relaxation_time();
+    t_cr = get_crossing_time();
+
+    std::cout << "Halfmass radius " << get_halfmass_radius(p_c) << std::endl;
+    std::cout << "Core radius " << get_core_radius(p_c) << std::endl;
+    std::cout << "Relax. time " << t_rh << std::endl;
+    std::cout << "Cross. time " << t_cr << std::endl;
+}
+
 Point get_center_of_density()
 {
     std::vector<double> p;
@@ -53,33 +65,33 @@ Point get_center_of_density()
     return density_center;
 }
 
-double get_halfmass_radius(double dx, double dy, double dz)
+double get_halfmass_radius(Point dc)
 {
     float half_mass;
     double tmp, r_h;
     int i, j;
 
     Distance d_tmp;
-    std::vector<Distance> distances;
+    std::vector<Distance> distances(n);
 
     half_mass = 0;
     j = 0;
 
     for (i = 0; i < n; i++)
     {
-        tmp = sqrt( (dx - h_r[i].x) * (dx - h_r[i].x) +
-                    (dy - h_r[i].y) * (dy - h_r[i].y) +
-                    (dz - h_r[i].z) * (dz - h_r[i].z) );
+        tmp = sqrt( (dc.x - h_r[i].x) * (dc.x - h_r[i].x) +
+                    (dc.y - h_r[i].y) * (dc.y - h_r[i].y) +
+                    (dc.z - h_r[i].z) * (dc.z - h_r[i].z) );
         d_tmp.index = i;
         d_tmp.value  = tmp;
-        distances.push_back(d_tmp);
+        distances[i] = d_tmp;
     }
 
     std::sort(distances.begin(), distances.end());
 
     for (i = 0; i < n; i++)
     {
-        if(half_mass == total_mass/2)
+        if(half_mass >= total_mass/2.0)
         {
             j = i;
             break;
@@ -92,6 +104,38 @@ double get_halfmass_radius(double dx, double dy, double dz)
     return r_h;
 }
 
+float get_core_radius(Point pc)
+{
+    std::vector<Distance> d(n);
+    double core_mass = 0.0;
+    double radius = 0.0;
+    int i;
+
+    for (i = 0; i < n; i++)
+    {
+        double rx  = h_r[i].x - pc.x;
+        double ry  = h_r[i].y - pc.y;
+        double rz  = h_r[i].z - pc.z;
+        double r   = sqrt(rx*rx + ry*ry + rz*rz);
+        d[i].index = i;
+        d[i].value = r;
+    }
+
+    std::sort(d.begin(), d.end());
+
+    for (i = 0; i < n; i++)
+    {
+        if (core_mass > RADIUS_MASS_PORCENTAGE)
+        {
+            i -= 1;
+            break;
+        }
+        core_mass += h_m[d[i].index];
+    }
+    radius = d[i].value;
+
+    return radius;
+}
 
 float get_crossing_time()
 {
@@ -112,7 +156,7 @@ float get_relaxation_time()
     float r_h, a, b;
 
     Point center = get_center_of_density();
-    r_h = get_halfmass_radius(center.x, center.y, center.z);
+    r_h = get_halfmass_radius(center);
     a = sqrt( (n * r_h * r_h * r_h) / ( G * (total_mass/n) ));
     b = 1/log(0.11 * n);
     t_rh = 0.138 * a * b;

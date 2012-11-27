@@ -23,7 +23,9 @@ struct Point
     double x,y,z;
 };
 
+void get_system_info();
 Point get_center_of_density();
-double get_halfmass_radius(double, double, double);
+double get_halfmass_radius(Point pc);
+float get_core_radius(Point pc);
 float get_crossing_time();
 float get_relaxation_time();

@@ -10,9 +10,6 @@
 void next_itime(double *ATIME)
 {
     // Big number to find the minimum
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] next_itime()\n");
-    #endif
     *ATIME = 1.0e10;
     for (int i = INIT_PARTICLE; i < n; i++)
     {
@@ -34,29 +31,16 @@ void next_itime(double *ATIME)
  */
 int find_particles_to_move(double ITIME)
 {
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] find_particles_to_move()\n");
-    #endif
     int j = 0;
     for (int i = 0; i < n; i++)
     {
         h_move[i] = -1;
         if (h_t[i] + h_dt[i] == ITIME)
         {
-            #ifdef USE_KEPLER
-            if(i != 0)
-            {
                 h_move[j] = i;
                 j++;
-            }
-            #else
-                h_move[j] = i;
-                j++;
-            #endif
-//            std::cout << i << " ";
         }
     }
- //   std::cout << std::endl;
     return j;
 }
 
@@ -72,21 +56,11 @@ int find_particles_to_move(double ITIME)
  */
 void init_dt(double *ATIME)
 {
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] init_dt()\n");
-    #endif
     // Aarseth initial timestep
     // dt_{i} = ETA_S * sqrt( (|a|) / (|j|) )
     double tmp_dt;
     for (int i = INIT_PARTICLE; i < n; i++)
     {
-        #ifdef USE_KEPLER
-        if(i == 0)
-        {
-            h_dt[0] = 0.0;
-            continue;
-        }
-        #endif
         double a2 = get_magnitude(h_a[i].x, h_a[i].y, h_a[i].z);
         double j2 = get_magnitude(h_a1[i].x, h_a1[i].y, h_a1[i].z);
         tmp_dt = ETA_S * (a2/j2);
@@ -113,9 +87,6 @@ void init_dt(double *ATIME)
 void init_dt2(double *ATIME)
 {
     // Get Snap and Crackle
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] init_dt2()\n");
-    #endif
     int i = 0;
     int j = 0;
     for (i = INIT_PARTICLE; i < n; i++) {
@@ -155,13 +126,6 @@ void init_dt2(double *ATIME)
     }
     // Get Timesteps
     for (i = 0; i < n; i++) {
-        #ifdef USE_KEPLER
-        if(i == 0)
-        {
-            h_dt[0] = 0.0;
-            continue;
-        }
-        #endif
         double m_a = get_magnitude(h_a[i].x, h_a[i].y, h_a[i].z);
         double m_a1 = get_magnitude(h_a1[i].x, h_a1[i].y, h_a1[i].z);
         double m_a2 = get_magnitude(h_a2[i].x, h_a2[i].y, h_a2[i].z);
@@ -215,11 +179,7 @@ void force_calculation(int i, int j)
 
 void init_acc_jrk()
 {
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] init_acc_jrk()\n");
-    #endif
     int j;
-    #pragma omp parallel for private(j)
     for (int i = INIT_PARTICLE; i < n; i++)
     {
         for (j = INIT_PARTICLE; j < n; j++)
@@ -243,14 +203,10 @@ void init_acc_jrk()
  */
 void update_acc_jrk(int total)
 {
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] update_acc_jrk()\n");
-    #endif
     int i, j;
     for (int k = 0; k < total; k++)
     {
         i = h_move[k];
-        // Cleaning acceleration and jrk
         h_a[i].x = 0.0;
         h_a[i].y = 0.0;
         h_a[i].z = 0.0;
@@ -339,9 +295,6 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
  */
 void save_old(int total)
 {
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] save_old()\n");
-    #endif
     for (int k = INIT_PARTICLE; k < total; k++)
     {
         int i = h_move[k];
@@ -366,39 +319,12 @@ void save_old(int total)
 void
 predicted_pos_vel(double ITIME)
 {
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] predicted_pos_vel()\n");
-    #endif
-    //#pragma omp parallel for
     for (int i = INIT_PARTICLE; i < n; i++)
     {
         double dt = ITIME - h_t[i];
         double dt2 = (dt  * dt);
         double dt3 = (dt2 * dt);
 
-        #ifdef USE_KEPLER
-        if (h_move[i] == -1)
-        {
-            h_p_r[i].x = (dt3/6 * h_a1[i].x) + (dt2/2 * h_a[i].x) + (dt * h_v[i].x) + h_r[i].x;
-            h_p_r[i].y = (dt3/6 * h_a1[i].y) + (dt2/2 * h_a[i].y) + (dt * h_v[i].y) + h_r[i].y;
-            h_p_r[i].z = (dt3/6 * h_a1[i].z) + (dt2/2 * h_a[i].z) + (dt * h_v[i].z) + h_r[i].z;
-
-            h_p_v[i].x = (dt2/2 * h_a1[i].x) + (dt * h_a[i].x) + h_v[i].x;
-            h_p_v[i].y = (dt2/2 * h_a1[i].y) + (dt * h_a[i].y) + h_v[i].y;
-            h_p_v[i].z = (dt2/2 * h_a1[i].z) + (dt * h_a[i].z) + h_v[i].z;
-        }
-        else
-        {
-            h_p_r[i].x += (dt3/6 * h_a1[i].x) + (dt2/2 * h_a[i].x);
-            h_p_r[i].y += (dt3/6 * h_a1[i].y) + (dt2/2 * h_a[i].y);
-            h_p_r[i].z += (dt3/6 * h_a1[i].z) + (dt2/2 * h_a[i].z);
-
-            h_p_v[i].x += (dt2/6 * h_a1[i].x) + (dt/2 * h_a[i].x);
-            h_p_v[i].y += (dt2/6 * h_a1[i].y) + (dt/2 * h_a[i].y);
-            h_p_v[i].z += (dt2/6 * h_a1[i].z) + (dt/2 * h_a[i].z);
-
-        }
-        #else
         h_p_r[i].x = (dt3/6 * h_a1[i].x) + (dt2/2 * h_a[i].x) + (dt * h_v[i].x) + h_r[i].x;
         h_p_r[i].y = (dt3/6 * h_a1[i].y) + (dt2/2 * h_a[i].y) + (dt * h_v[i].y) + h_r[i].y;
         h_p_r[i].z = (dt3/6 * h_a1[i].z) + (dt2/2 * h_a[i].z) + (dt * h_v[i].z) + h_r[i].z;
@@ -406,62 +332,6 @@ predicted_pos_vel(double ITIME)
         h_p_v[i].x = (dt2/2 * h_a1[i].x) + (dt * h_a[i].x) + h_v[i].x;
         h_p_v[i].y = (dt2/2 * h_a1[i].y) + (dt * h_a[i].y) + h_v[i].y;
         h_p_v[i].z = (dt2/2 * h_a1[i].z) + (dt * h_a[i].z) + h_v[i].z;
-        #endif
-
-    }
-}
-
-/*
- * @fn predicted_pos_vel_kepler()
- *
- * @brief
- *  Perform the calculation of the predicted position
- *    and velocity using the Kepler's equation.
- *
- */
-void predicted_pos_vel_kepler(double ITIME, int total)
-{
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] predicted_pos_vel_kepler()\n");
-    #endif
-    for (int i = 0; i < total; i++)
-    {
-        int k = h_move[i];
-        double dt = ITIME - h_t[k];
-        //double time = 0.0;
-
-
-        double rx = h_r[k].x - h_r[0].x;
-        double ry = h_r[k].y - h_r[0].y;
-        double rz = h_r[k].z - h_r[0].z;
-
-        double vx = h_v[k].x - h_v[0].x;
-        double vy = h_v[k].y - h_v[0].y;
-        double vz = h_v[k].z - h_v[0].z;
-        #ifdef DEBUG_KEPLER
-        printf("Particle %d\n", k);
-        printf("[Old position] %.15f %.15f %.15f\n", h_r[k].x, h_r[k].y, h_r[k].z);
-        printf("[Old velocity] %.15f %.15f %.15f\n", h_v[k].x, h_v[k].y, h_v[k].z);
-        #endif
-
-        //for (time = h_t[k]; time < ITIME; time+=dt)
-        //{
-        //    kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, dt, k);
-        //}
-        kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, dt, k);
-
-        h_p_r[k].x = rx;
-        h_p_r[k].y = ry;
-        h_p_r[k].z = rz;
-
-        h_p_v[k].x = vx;
-        h_p_v[k].y = vy;
-        h_p_v[k].z = vz;
-        #ifdef DEBUG_KEPLER
-        printf("[New position] %.15f %.15f %.15f\n", h_p_r[k].x, h_p_r[k].y, h_p_r[k].z);
-        printf("[New velocity] %.15f %.15f %.15f\n", h_p_v[k].x, h_p_v[k].y, h_p_v[k].z);
-        printf("End particle %d\n", k);
-        #endif
     }
 }
 
@@ -475,10 +345,6 @@ void predicted_pos_vel_kepler(double ITIME, int total)
  */
 void correction_pos_vel(double ITIME, int total)
 {
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] correction_pos_vel()\n");
-    #endif
-
     for (int k = 0; k < total; k++)
     {
         int i = h_move[k];
@@ -490,26 +356,14 @@ void correction_pos_vel(double ITIME, int total)
         double dt5 = dt4 * dt1;
 
         // Acceleration 2nd derivate
-        #ifdef USE_KEPLER
-        h_a2[i].x += (-6 * (h_old_a[i].x - h_a[i].x ) - dt1 * (4 * h_old_a1[i].x + 2 * h_a1[i].x) ) / dt2;
-        h_a2[i].y += (-6 * (h_old_a[i].y - h_a[i].y ) - dt1 * (4 * h_old_a1[i].y + 2 * h_a1[i].y) ) / dt2;
-        h_a2[i].z += (-6 * (h_old_a[i].z - h_a[i].z ) - dt1 * (4 * h_old_a1[i].z + 2 * h_a1[i].z) ) / dt2;
-        #else
         h_a2[i].x = (-6 * (h_old_a[i].x - h_a[i].x ) - dt1 * (4 * h_old_a1[i].x + 2 * h_a1[i].x) ) / dt2;
         h_a2[i].y = (-6 * (h_old_a[i].y - h_a[i].y ) - dt1 * (4 * h_old_a1[i].y + 2 * h_a1[i].y) ) / dt2;
         h_a2[i].z = (-6 * (h_old_a[i].z - h_a[i].z ) - dt1 * (4 * h_old_a1[i].z + 2 * h_a1[i].z) ) / dt2;
-        #endif
 
         // Acceleration 3rd derivate
-        #ifdef USE_KEPLER
-        h_a3[i].x += (12 * (h_old_a[i].x - h_a[i].x ) + 6 * dt1 * (h_old_a1[i].x + h_a1[i].x) ) / dt3;
-        h_a3[i].y += (12 * (h_old_a[i].y - h_a[i].y ) + 6 * dt1 * (h_old_a1[i].y + h_a1[i].y) ) / dt3;
-        h_a3[i].z += (12 * (h_old_a[i].z - h_a[i].z ) + 6 * dt1 * (h_old_a1[i].z + h_a1[i].z) ) / dt3;
-        #else
         h_a3[i].x = (12 * (h_old_a[i].x - h_a[i].x ) + 6 * dt1 * (h_old_a1[i].x + h_a1[i].x) ) / dt3;
         h_a3[i].y = (12 * (h_old_a[i].y - h_a[i].y ) + 6 * dt1 * (h_old_a1[i].y + h_a1[i].y) ) / dt3;
         h_a3[i].z = (12 * (h_old_a[i].z - h_a[i].z ) + 6 * dt1 * (h_old_a1[i].z + h_a1[i].z) ) / dt3;
-        #endif
 
         // Correcting position
         h_r[i].x = h_p_r[i].x + (dt4/24)*h_a2[i].x + (dt5/120)*h_a3[i].x;
@@ -523,31 +377,14 @@ void correction_pos_vel(double ITIME, int total)
 
         h_t[i] = ITIME;
         double normal_dt  = get_timestep_normal(i);
-        #ifdef USE_KEPLER
-        double central_dt = get_timestep_central(i);
-        if(normal_dt > central_dt)
-        {
-            central_dt = normalize_dt(central_dt, h_dt[i], h_t[i], i);
-            h_dt[i] = central_dt;
-        }
-        else
-        {
-            normal_dt = normalize_dt(normal_dt, h_dt[i], h_t[i], i);
-            h_dt[i] = normal_dt;
-        }
-        #else
-            normal_dt = normalize_dt(normal_dt, h_dt[i], h_t[i], i);
-            h_dt[i] = normal_dt;
-        #endif
+        normal_dt = normalize_dt(normal_dt, h_dt[i], h_t[i], i);
+        h_dt[i] = normal_dt;
 
     }
 }
 
 double get_timestep_normal(int i)
 {
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] get_timestep_normal()\n");
-    #endif
     // Calculating a_{1,i}^{(2)} = a_{0,i}^{(2)} + dt * a_{0,i}^{(3)}
     double ax1_2 = h_a2[i].x + h_dt[i] * h_a3[i].x;
     double ay1_2 = h_a2[i].y + h_dt[i] * h_a3[i].y;
@@ -574,9 +411,6 @@ double get_timestep_normal(int i)
 
 double get_timestep_central(int i)
 {
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] get_timestep_central()\n");
-    #endif
     double r = get_magnitude(h_r[i].x, h_r[i].y, h_r[i].z);
     double r3 = r*r*r;
     double central_dt = ((2.0 * M_PI )/NSTEPS * sqrt(r3/(G * h_m[0])));
@@ -586,9 +420,6 @@ double get_timestep_central(int i)
 
 double normalize_dt(double new_dt, double old_dt, double t, int i)
 {
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] normalize_dt()\n");
-    #endif
     if (new_dt <= old_dt/8)
     {
         new_dt = D_TIME_MIN;
@@ -621,11 +452,11 @@ double normalize_dt(double new_dt, double old_dt, double t, int i)
             new_dt = old_dt;
         }
     }
-    //else
-    //{
-    //    //fprintf(stderr, "gravidy: Undefined treatment for the time-step of (%d)",i);
-    //    new_dt = old_dt;
-    //}
+    else
+    {
+        fprintf(stderr, "gravidy: Undefined treatment for the time-step of (%d)",i);
+        new_dt = old_dt;
+    }
 
     if (new_dt < D_TIME_MIN)
     {
@@ -638,20 +469,3 @@ double normalize_dt(double new_dt, double old_dt, double t, int i)
 
     return new_dt;
 }
-
-//    Point p = get_center_of_density();
-//    for (int i = 0; i < n; i++) {
-//        double rx = h_r[i].x - p.x;
-//        double ry = h_r[i].y - p.y;
-//        double rz = h_r[i].z - p.z;
-//        double d  = get_magnitude(rx, ry, rz);
-//        printf("%d %.6f\n",i, d);
-//    }
-
-//    float t_rh = get_relaxation_time();
-//    float t_cr = get_crossing_time();
-//
-//    std::cout << "T_rh : " << t_rh << std::endl;
-//    std::cout << "T_cr : " << t_cr << std::endl;
-//    std::cout << "T_cc : " << 17 * t_rh << std::endl;
-//
