@@ -21,6 +21,22 @@ void alloc_vectors_gpu()
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_dt,    d1_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_m,     f1_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_move,  i1_size));
+
+    /*
+     * Memset
+     */
+    CUDA_SAFE_CALL(cudaMemset(d_r, 0, d4_size));
+    CUDA_SAFE_CALL(cudaMemset(d_v, 0, d4_size));
+    CUDA_SAFE_CALL(cudaMemset(d_a, 0, d4_size));
+    CUDA_SAFE_CALL(cudaMemset(d_a1,0, d4_size));
+    CUDA_SAFE_CALL(cudaMemset(d_p_r, 0, d4_size));
+    CUDA_SAFE_CALL(cudaMemset(d_p_v, 0, d4_size));
+    CUDA_SAFE_CALL(cudaMemset(d_ekin,  0,d1_size));
+    CUDA_SAFE_CALL(cudaMemset(d_epot,  0,d1_size));
+    CUDA_SAFE_CALL(cudaMemset(d_t,     0,d1_size));
+    CUDA_SAFE_CALL(cudaMemset(d_dt,    0,d1_size));
+    CUDA_SAFE_CALL(cudaMemset(d_m,     0,f1_size));
+    CUDA_SAFE_CALL(cudaMemset(d_move,  0,i1_size));
 }
 
 

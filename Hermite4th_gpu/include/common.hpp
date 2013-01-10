@@ -7,6 +7,10 @@
 #include <cassert>
 #include <vector_types.h>
 
+//// Fix GCC 4.7
+//#undef _GLIBCXX_ATOMIC_BUILTINS
+//#undef _GLIBCXX_USE_INT128
+
 /*********************************
  *  Preprocessor directives
  *********************************/
@@ -96,6 +100,7 @@ extern std::string output_file;       // Output filename for general info.
 extern FILE *out;                     // Out file for debugging.
 extern float total_mass;              // Total mass of the particles
                                       // (In N-body units will be 1)
+
 extern double int_time;               // Integration clock time
 extern double ini_time, end_time;     // Initial and Final clock time stamps
 extern double ekin, epot;             // Kinetic and Potential energy
@@ -106,6 +111,7 @@ extern float  softening, eta;         // Softening and ETA parameters
                                       // (This parameters takes the previous
                                       // setted values E, and ETA_N or the
                                       // parameters give by the command line)
+
 extern float t_rh;                    // Half-mass relaxation time
 extern float t_cr;                    // Crossing time
 extern size_t d1_size, d4_size;       // double and double4 size

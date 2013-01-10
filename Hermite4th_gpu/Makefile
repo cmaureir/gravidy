@@ -2,7 +2,8 @@ CUDA_PATH=/opt/cuda
 
 CC=         g++
 NVCC=       nvcc
-NVFLAGS=    -O3 -m64 -G -g -arch=sm_20
+NVFLAGS=    --pre-include gcc4.7_nvcc_fix.h -O3 -m64 -G -g -arch=sm_20
+#NVFLAGS=    -O3 -m64 -G -g -arch=sm_20
 #NVFLAGS=    -O3 -m64 -G -g -arch=sm_20 --ptxas-options="-v -dlcm=cg"
 CXXFLAGS=   -O3 -m64 -Wall -lgomp -pg -fopenmp
 CPPFLAGS=   -L$(CUDA_PATH)/lib64 -I$(CUDA_PATH)/include -lcuda -lcudart -lboost_program_options

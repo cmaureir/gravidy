@@ -16,6 +16,7 @@ void integrate_cpu()
     energy_tmp = energy_ini; // Saving initial energy, to calculate errors
 
     get_energy_log(ITIME, iterations, nsteps, out); // First log of the integration
+    print_all(n,0);
 
     while (ITIME < int_time)
     {
@@ -36,8 +37,9 @@ void integrate_cpu()
 
         nsteps += nact;                        // Update nsteps with nact
         iterations++;                          // Increase iterations
-        printf("# %d %d %.10f\n", iterations, nact, ITIME);
-        print_all(n,ITIME);
-        if(iterations == 50) ITIME = int_time;
+//        printf("# %d %d %.10f\n", iterations, nact, ITIME);
+//        print_all(n,ITIME);
+//        if(iterations == 50) ITIME = int_time;
     }
+    print_all(n,0);
 }

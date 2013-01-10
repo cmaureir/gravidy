@@ -109,10 +109,11 @@ void print_movement(int limit, int total, float ITIME)
 
 void print_particle(int i)
 {
-    printf("%5d %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
+    printf("%5d %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
             i,
             h_r[i].x, h_r[i].y, h_r[i].z, h_v[i].x, h_v[i].y, h_v[i].z,
-            h_a[i].x, h_a[i].y, h_a[i].z, h_a1[i].x, h_a1[i].y, h_a1[i].z);
+            h_a[i].x, h_a[i].y, h_a[i].z, h_a1[i].x, h_a1[i].y, h_a1[i].z,
+            h_dt[i]);
 
 }
 

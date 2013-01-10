@@ -39,10 +39,9 @@ int find_particles_to_move(double ITIME)
         {
             h_move[j] = i;
             j++;
-            printf("%d ", i);
         }
     }
-    printf("\n");
+//    printf("\n");
     return j;
 }
 

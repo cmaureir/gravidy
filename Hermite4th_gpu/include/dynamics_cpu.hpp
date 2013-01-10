@@ -18,5 +18,4 @@ void save_old(int);
 void predicted_pos_vel(double);
 void correction_pos_vel(double,int);
 double get_timestep_normal(int);
-double get_timestep_central(int);
 double normalize_dt(double, double, double, int);
