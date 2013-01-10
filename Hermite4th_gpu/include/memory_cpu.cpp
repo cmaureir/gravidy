@@ -1,10 +1,10 @@
-#include "memory.hpp"
+#include "memory_cpu.hpp"
 
 /*
- * @fn init_vectors()
+ * @fn alloc_vectors_cpu()
  *
  */
-void init_vectors()
+void alloc_vectors_cpu()
 {
     d4_size = n * sizeof(double4);
     d1_size = n * sizeof(double);
@@ -30,22 +30,6 @@ void init_vectors()
     h_dt     =  (double*) malloc(d1_size);
     h_m      =   (float*) malloc(f1_size);
     h_move   =     (int*) malloc(i1_size);
-
-    /*
-     * GPU pointers
-     */
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_r,     d4_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_v,     d4_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_a,     d4_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_a1,    d4_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_p_r,   d4_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_p_v,   d4_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_ekin,  d1_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_epot,  d1_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_t,     d1_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_dt,    d1_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_m,     f1_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_move,  i1_size));
 
     // Empty double4
     double4 empty = {0.0, 0.0, 0.0, 0.0};
@@ -81,12 +65,12 @@ void init_vectors()
 
 
 /*
- * @fn clean_vectors()
+ * @fn clean_vectors_cpu()
  *
  * @brief
- *  Free memory on the GPU and CPU
+ *  Free memory on the CPU
  */
-void clean_vectors()
+void free_vectors_cpu()
 {
     free(h_m);
     free(h_r);
@@ -104,17 +88,4 @@ void clean_vectors()
     free(h_ekin);
     free(h_epot);
     free(h_move);
-
-    CUDA_SAFE_CALL(cudaFree(d_r));
-    CUDA_SAFE_CALL(cudaFree(d_v));
-    CUDA_SAFE_CALL(cudaFree(d_a));
-    CUDA_SAFE_CALL(cudaFree(d_a1));
-    CUDA_SAFE_CALL(cudaFree(d_m));
-    CUDA_SAFE_CALL(cudaFree(d_t));
-    CUDA_SAFE_CALL(cudaFree(d_p_r));
-    CUDA_SAFE_CALL(cudaFree(d_p_v));
-    CUDA_SAFE_CALL(cudaFree(d_dt));
-    CUDA_SAFE_CALL(cudaFree(d_ekin));
-    CUDA_SAFE_CALL(cudaFree(d_epot));
-    CUDA_SAFE_CALL(cudaFree(d_move));
 }

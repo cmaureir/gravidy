@@ -1,7 +1,8 @@
 #include "include/options_parser.hpp"
 #include "include/file_utils.hpp"
-#include "include/memory.hpp"
-#include "include/hermite.hpp"
+#include "include/memory_cpu.hpp"
+#include "include/memory_gpu.cuh"
+#include "include/hermite.cuh"
 
 #include <iostream>
 #include <iomanip>
@@ -23,9 +24,6 @@ float softening, eta;
 std::vector<particle> part;
 double4  *h_old_a, *h_old_a1;
 double4 *h_p_r, *h_p_v;
-double4 *d_old_a, *d_old_a1;
-double4 *d_p_r, *d_p_v;
-
 
 // Host pointers
 double *h_ekin, *h_epot;
@@ -33,28 +31,27 @@ double *h_t, *h_dt;
 float   *h_m;
 int *h_move;
 double4 *h_r, *h_v, *h_a, *h_a1;
-//double4 *h_new_a, *h_new_j;
 double4 *h_a2, *h_a3;
 
-// Device pointers
 double *d_ekin, *d_epot;
-double *d_t, *d_dt;
+double  *d_t, *d_dt;
+double4 *d_r, *d_v;
+double4 *d_a, *d_a1;
 float   *d_m;
 int *d_move;
-double4 *d_r, *d_v, *d_a, *d_j;
-//double4 *d_new_a, *d_new_j;
+double4 *d_p_r;
+double4 *d_p_v;
 
 // System times
 float t_rh, t_cr;
 
 // Options strings
 std::string input_file, output_file;
+FILE *out;
 
-size_t nthreads, nblocks;
 size_t d1_size, d4_size;
 size_t f1_size, i1_size;
-double4 *tmp_red;
-float *ftmp_red;
+size_t nthreads, nblocks;
 /*
  * Main
  */
@@ -65,7 +62,8 @@ main(int argc, char *argv[])
     if(!check_options(argc,argv)) return 1;
 
     read_input_file(input_file);
-    init_vectors();
+    alloc_vectors_cpu();
+    alloc_vectors_gpu();
     // TMP
     ini_time = (float)clock()/CLOCKS_PER_SEC;
 
@@ -78,7 +76,8 @@ main(int argc, char *argv[])
 
     fclose(out);
     //write_output_file(output_file);
-    clean_vectors();
+    free_vectors_cpu();
+    free_vectors_gpu();
 
     return 0;
 }

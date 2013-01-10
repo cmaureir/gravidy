@@ -38,9 +38,11 @@ int find_particles_to_move(double ITIME)
         if (h_t[i] + h_dt[i] == ITIME)
         {
             h_move[j] = i;
+            printf("%d ", i);
             j++;
         }
     }
+    printf("\n");
     return j;
 }
 

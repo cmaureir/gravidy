@@ -11,7 +11,7 @@
  *********************************/
 
 #define INIT_PARTICLE 0
-#define RADIUS_MASS_PORCENTAGE 0.4 // for 1024 particles
+#define RADIUS_MASS_PORCENTAGE 0.2 // for 1024 particles
 
 #define J 10 // Neighbour amount to calculate the center of density
 

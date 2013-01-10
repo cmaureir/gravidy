@@ -3,8 +3,6 @@
 #include "common.hpp"
 #endif
 
-#include <thrust/device_ptr.h>
-#include <thrust/reduce.h>
 #include "extra_utils.hpp"
 #include "dynamics_gpu_kernels.cuh"
 

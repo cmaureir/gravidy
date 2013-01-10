@@ -36,5 +36,8 @@ void integrate_cpu()
 
         nsteps += nact;                        // Update nsteps with nact
         iterations++;                          // Increase iterations
+        printf("# %d %d %.10f\n", iterations, nact, ITIME);
+        print_all(n,ITIME);
+        if(iterations == 50) ITIME = int_time;
     }
 }

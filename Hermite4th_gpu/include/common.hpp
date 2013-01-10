@@ -5,7 +5,7 @@
 #include <ctime>
 #include <omp.h>
 #include <cassert>
-//#include <thrust/host_vector.h>
+#include <vector_types.h>
 
 /*********************************
  *  Preprocessor directives
@@ -17,6 +17,7 @@
 //#define KERNEL_ERROR_DEBUG 1
 
 #define INIT_PARTICLE 0  // Starting from 0 to include all the particles
+#define RADIUS_MASS_PORCENTAGE 0.2
 
 #define J 10 // Neighbour amount to calculate the center of density
 
@@ -59,14 +60,14 @@
 #define NJBLOCK 16  // Block size of the shared memory loading j-particles
 
 // Macro from cutil.h to debug the CUDA calls
-#  define CUDA_SAFE_CALL_NO_SYNC( call) do {                          \
+#define CUDA_SAFE_CALL_NO_SYNC( call) do {                          \
     cudaError err = call;                                             \
     if( cudaSuccess != err) {                                         \
         fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", \
                 __FILE__, __LINE__, cudaGetErrorString( err) );       \
         exit(EXIT_FAILURE);                                           \
     } } while (0)
-#  define CUDA_SAFE_CALL( call)     CUDA_SAFE_CALL_NO_SYNC(call);
+#define CUDA_SAFE_CALL( call)     CUDA_SAFE_CALL_NO_SYNC(call);
 
 /*****************************************
  * General variables of the integrator
@@ -74,8 +75,6 @@
 
 /*
  *  Particle structure to read the input file
- *  (double4 is used instead of double3 to copy the data easily to the
- *  real integrator arrays)
  */
 typedef struct particle
 {
@@ -122,17 +121,18 @@ extern size_t nthreads, nblocks;      // Dynamical number of threads and blocks
  * Host pointers
  * (Particles attribute arrays)
  */
-extern double *h_ekin, *h_epot; // Kinetic and Potential energy
-extern double  *h_t, *h_dt;     // Time and time-step
 extern double4 *h_r, *h_v;      // Position and Velocity
 extern double4 *h_a, *h_a1;     // Acceleration and its first derivative (Jerk)
-extern float   *h_m;            // Masses of the particles
-extern int *h_move;             // Particles id to move in each iteration time
 extern double4 *h_a2, *h_a3;    // 2nd and 3rd acceleration derivatives.
 extern double4 *h_old_a;        // Previous step value of the Acceleration
 extern double4 *h_old_a1;       // Previous step value of the Jerk
 extern double4 *h_p_r;          // Predicted Position
 extern double4 *h_p_v;          // Predicted Velocity
+
+extern double *h_ekin, *h_epot; // Kinetic and Potential energy
+extern double  *h_t, *h_dt;     // Time and time-step
+extern float   *h_m;            // Masses of the particles
+extern int *h_move;             // Particles id to move in each iteration time
 
 /*
  * Device pointers

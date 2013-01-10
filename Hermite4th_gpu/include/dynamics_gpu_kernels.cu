@@ -31,6 +31,213 @@ k_energy(double4 *r, double4 *v, double *ekin, double *epot, float *m, int n)
     }
 }
 
+__global__ void k_update_acc_jrk_simple
+(double4 *r, double4 *v, double4 *a, double4 *j, float *m, int *move, int n, int total)
+{
+
+    double4 aa  = {0.0, 0.0, 0.0, 0.0};
+    double4 jj  = {0.0, 0.0, 0.0, 0.0};
+    double4 pos = {0.0, 0.0, 0.0, 0.0};
+    double4 vel = {0.0, 0.0, 0.0, 0.0};
+    float mj;
+
+    int id = threadIdx.x + blockDim.x * blockIdx.x;
+
+    if (id < total)
+    {
+        int id_move = move[id];
+        int k;
+        pos = r[id_move];
+        vel = v[id_move];
+        mj  = m[id_move];
+        for (k = INIT_PARTICLE; k < n; k++)
+        {
+            if(id == k) continue;
+            k_force_calculation(pos, vel, r[k], v[k], aa, jj, mj);
+        }
+
+     a[id_move] = aa;
+     j[id_move] = jj;
+    }
+}
+// ***
+//__global__ void k_update_acc_jrk_simple
+//(double4 *r, double4 *v, double4 *a, double4 *j, float *m, int *move, int n, int total)
+//{
+//    extern __shared__ double4 sh[];
+//    double4 *sr = (double4*)sh;
+//    double4 *sv = (double4*)&sr[blockDim.x];
+//
+//    double4 aa  = {0.0, 0.0, 0.0, 0.0};
+//    double4 jj  = {0.0, 0.0, 0.0, 0.0};
+//    double4 pos = {0.0, 0.0, 0.0, 0.0};
+//    double4 vel = {0.0, 0.0, 0.0, 0.0};
+//    float mj;
+//
+//    int id = threadIdx.x + blockDim.x * blockIdx.x;
+//    int tx = threadIdx.x;
+//
+//    int id_move = move[id];
+//
+//    //if(id_move != -1)
+//    //{
+//        pos = r[id_move];
+//        vel = v[id_move];
+//    //}
+//
+//    int tile = 0;
+//    for (int i = 0; i < n; i += BSIZE)
+//    {
+//        int idx = tile * BSIZE + tx;
+//
+//        sr[tx]   = r[idx];
+//        sv[tx]   = v[idx];
+//        mj = m[idx];
+//        __syncthreads();
+//
+//        for (int k = 0; k < BSIZE; k++)
+//        {
+//            if(id_move != -1)
+//            {
+//                k_force_calculation(pos, vel, sr[k], sv[k], aa, jj, mj);
+//            }
+//        }
+//        __syncthreads();
+//        tile++;
+//    }
+//
+//    if(id_move != -1)
+//    {
+//        a[id_move] = aa;
+//        j[id_move] = jj;
+//    }
+//}
+//
+/*
+ * @fn k_init_acc_jrk
+ *
+ * @param to do
+ *
+ * @desc GPU Kernel to perform the calculation of the initial acceleration
+ *       and jerk of the system.
+ *
+ * @note Working properly
+ */
+__global__ void k_init_acc_jrk
+(double4 *r, double4 *v, double4 *a, double4 *j, float *m, int n)
+{
+
+    extern __shared__ double4 sh[];
+    double4 *sr = (double4*)sh;
+    double4 *sv = (double4*)&sr[blockDim.x];
+
+    double4 aa = {0.0, 0.0, 0.0, 0.0};
+    double4 jj = {0.0, 0.0, 0.0, 0.0};
+    float mj;
+
+    int id = threadIdx.x + blockDim.x * blockIdx.x;
+    int tx = threadIdx.x;
+
+    if (id < n)
+    {
+        double4 pos = r[id];
+        double4 vel = v[id];
+
+        int tile = 0;
+        for (int i = 0; i < n; i += BSIZE)
+        {
+            int idx = tile * BSIZE + tx;
+
+            sr[tx]   = r[idx];
+            sv[tx]   = v[idx];
+            mj = m[idx];
+            __syncthreads();
+
+            for (int k = 0; k < BSIZE; k++)
+            {
+                k_force_calculation(pos, vel, sr[k], sv[k], aa, jj, mj);
+            }
+            __syncthreads();
+            tile++;
+        }
+
+        a[id] = aa;
+        j[id] = jj;
+    }
+}
+
+/*
+ * @fn k_force_calculation
+ *
+ * @desc GPU Kernel which calculates the interaction between
+ *       a i-particle and a j-particle.
+ *
+ * @note Working properly.
+ *
+ */
+__device__ void k_force_calculation(double4 i_pos, double4 i_vel,
+                                    double4 j_pos, double4 j_vel,
+                                    double4 &acc,  double4 &jrk,
+                                    float   j_mass)
+{
+    double rx = j_pos.x - i_pos.x;
+    double ry = j_pos.y - i_pos.y;
+    double rz = j_pos.z - i_pos.z;
+
+    double vx = j_vel.x - i_vel.x;
+    double vy = j_vel.y - i_vel.y;
+    double vz = j_vel.z - i_vel.z;
+
+    double r2 = rx*rx + ry*ry + rz*rz + E2;
+    double rinv = rsqrt(r2);
+    double r2inv = rinv  * rinv;
+    double r3inv = r2inv * rinv;
+    double r5inv = r2inv * r3inv;
+    double mr3inv = r3inv * j_mass;
+    double mr5inv = r5inv * j_mass;
+
+    double rv = rx*vx + ry*vy + rz*vz;
+
+    acc.x += (rx * mr3inv);
+    acc.y += (ry * mr3inv);
+    acc.z += (rz * mr3inv);
+
+    jrk.x += (vx * mr3inv - (3 * rv) * rx * mr5inv);
+    jrk.y += (vy * mr3inv - (3 * rv) * ry * mr5inv);
+    jrk.z += (vz * mr3inv - (3 * rv) * rz * mr5inv);
+}
+
+/*
+ * @fn k_predicted_pos_vel
+ *
+ * @param to do
+ *
+ * @desc GPU Kernel to calculate the predicted position and velocity
+ *       of all the particles.
+ *
+ * @note Working properly.
+ */
+__global__ void
+k_predicted_pos_vel(double4 *d_r,   double4 *d_v,   double4 *d_a, double4 *d_a1,
+                    double4 *d_p_r, double4 *d_p_v, double *d_t, double ITIME, int n)
+{
+    int i = threadIdx.x + blockDim.x * blockIdx.x;
+
+    if (i < n)
+    {
+        double dt = ITIME - d_t[i];
+        double dt2 = (dt  * dt);
+        double dt3 = (dt2 * dt);
+
+        d_p_r[i].x = (dt3/6 * d_a1[i].x) + (dt2/2 * d_a[i].x) + (dt * d_v[i].x) + d_r[i].x;
+        d_p_r[i].y = (dt3/6 * d_a1[i].y) + (dt2/2 * d_a[i].y) + (dt * d_v[i].y) + d_r[i].y;
+        d_p_r[i].z = (dt3/6 * d_a1[i].z) + (dt2/2 * d_a[i].z) + (dt * d_v[i].z) + d_r[i].z;
+
+        d_p_v[i].x = (dt2/2 * d_a1[i].x) + (dt  * d_a[i].x) + d_v[i].x;
+        d_p_v[i].y = (dt2/2 * d_a1[i].y) + (dt  * d_a[i].y) + d_v[i].y;
+        d_p_v[i].z = (dt2/2 * d_a1[i].z) + (dt  * d_a[i].z) + d_v[i].z;
+    }
+}
 //__global__ void k_update_acc_jrk_single
 //(double4 *new_a, double4 *new_j, double4 *r, double4 *v, float *m, int n, int current)
 //{
@@ -158,182 +365,3 @@ k_energy(double4 *r, double4 *v, double *ekin, double *epot, float *m, int n)
 //    if(tid == 0) d_out[blockIdx.x] = sdata[0];
 //}
 //
-__global__ void k_update_acc_jrk_simple
-(double4 *r, double4 *v, double4 *a, double4 *j, float *m, int *move, int n, int total)
-{
-    extern __shared__ double4 sh[];
-    double4 *sr = (double4*)sh;
-    double4 *sv = (double4*)&sr[blockDim.x];
-
-    double4 aa  = {0.0, 0.0, 0.0, 0.0};
-    double4 jj  = {0.0, 0.0, 0.0, 0.0};
-    double4 pos = {0.0, 0.0, 0.0, 0.0};
-    double4 vel = {0.0, 0.0, 0.0, 0.0};
-    float mj;
-
-    int id = threadIdx.x + blockDim.x * blockIdx.x;
-    int tx = threadIdx.x;
-
-    int id_move = move[id];
-
-    if(id_move != -1)
-    {
-        pos = r[id_move];
-        vel = v[id_move];
-    }
-
-    int tile = 0;
-    for (int i = 0; i < n; i += BSIZE)
-    {
-        int idx = tile * BSIZE + tx;
-
-        sr[tx]   = r[idx];
-        sv[tx]   = v[idx];
-        mj = m[idx];
-        __syncthreads();
-
-        for (int k = 0; k < BSIZE; k++)
-        {
-            //if(id_move != -1)
-            //{
-                k_force_calculation(pos, vel, sr[k], sv[k], aa, jj, mj);
-            //}
-        }
-        __syncthreads();
-        tile++;
-    }
-
-    if(id_move != -1)
-    {
-        a[id_move] = aa;
-        j[id_move] = jj;
-    }
-}
-
-/*
- * @fn k_init_acc_jrk
- *
- * @param to do
- *
- * @desc GPU Kernel to perform the calculation of the initial acceleration
- *       and jerk of the system.
- *
- * @note Working properly
- */
-__global__ void k_init_acc_jrk
-(double4 *r, double4 *v, double4 *a, double4 *j, float *m, int n)
-{
-
-    extern __shared__ double4 sh[];
-    double4 *sr = (double4*)sh;
-    double4 *sv = (double4*)&sr[blockDim.x];
-
-    double4 aa = {0.0, 0.0, 0.0, 0.0};
-    double4 jj = {0.0, 0.0, 0.0, 0.0};
-    float mj;
-
-    int id = threadIdx.x + blockDim.x * blockIdx.x;
-    int tx = threadIdx.x;
-
-    if (id < n)
-    {
-        double4 pos = r[id];
-        double4 vel = v[id];
-
-        int tile = 0;
-        for (int i = 0; i < n; i += BSIZE)
-        {
-            int idx = tile * BSIZE + tx;
-
-            sr[tx]   = r[idx];
-            sv[tx]   = v[idx];
-            mj = m[idx];
-            __syncthreads();
-
-            for (int k = 0; k < BSIZE; k++)
-            {
-                k_force_calculation(pos, vel, sr[k], sv[k], aa, jj, mj);
-            }
-            __syncthreads();
-            tile++;
-        }
-
-        a[id] = aa;
-        j[id] = jj;
-    }
-}
-
-/*
- * @fn k_force_calculation
- *
- * @param to do
- *
- * @desc GPU Kernel which calculates the interaction between
- *       a i-particle and a j-particle.
- *
- * @note Working properly.
- *
- */
-__device__ void k_force_calculation(double4 i_pos, double4 i_vel,
-                                    double4 j_pos, double4 j_vel,
-                                    double4 &acc,  double4 &jrk,
-                                    float   j_mass)
-{
-    double rx = j_pos.x - i_pos.x;
-    double ry = j_pos.y - i_pos.y;
-    double rz = j_pos.z - i_pos.z;
-
-    double vx = j_vel.x - i_vel.x;
-    double vy = j_vel.y - i_vel.y;
-    double vz = j_vel.z - i_vel.z;
-
-    double r2 = rx*rx + ry*ry + rz*rz + E2;
-    double rinv = rsqrt(r2);
-    double r2inv = rinv  * rinv;
-    double r3inv = r2inv * rinv;
-    double r5inv = r2inv * r3inv;
-    double mr3inv = r3inv * j_mass;
-    double mr5inv = r5inv * j_mass;
-
-    double rv = rx*vx + ry*vy + rz*vz;
-
-    acc.x += (rx * mr3inv);
-    acc.y += (ry * mr3inv);
-    acc.z += (rz * mr3inv);
-
-    jrk.x += (vx * mr3inv - (3 * rv) * rx * mr5inv);
-    jrk.y += (vy * mr3inv - (3 * rv) * ry * mr5inv);
-    jrk.z += (vz * mr3inv - (3 * rv) * rz * mr5inv);
-}
-
-/*
- * @fn k_predicted_pos_vel
- *
- * @param to do
- *
- * @desc GPU Kernel to calculate the predicted position and velocity
- *       of all the particles.
- *
- * @note Working properly.
- */
-__global__ void
-k_predicted_pos_vel(double4 *d_r,   double4 *d_v,   double4 *d_a, double4 *d_a1,
-                    double4 *d_p_r, double4 *d_p_v, double *d_t, double ITIME, int n)
-{
-    int i = threadIdx.x + blockDim.x * blockIdx.x;
-
-    if (i < n)
-    {
-        double dt = ITIME - d_t[i];
-        double dt2 = (dt  * dt)/2;
-        double dt3 = (dt2 * dt)/6;
-
-        d_p_r[i].x = (dt3 * d_a1[i].x) + (dt2 * d_a[i].x) + (dt * d_v[i].x) + d_r[i].x;
-        d_p_r[i].y = (dt3 * d_a1[i].y) + (dt2 * d_a[i].y) + (dt * d_v[i].y) + d_r[i].y;
-        d_p_r[i].z = (dt3 * d_a1[i].z) + (dt2 * d_a[i].z) + (dt * d_v[i].z) + d_r[i].z;
-
-        d_p_v[i].x = (dt2 * d_a1[i].x) + (dt  * d_a[i].x) + d_v[i].x;
-        d_p_v[i].y = (dt2 * d_a1[i].y) + (dt  * d_a[i].y) + d_v[i].y;
-        d_p_v[i].z = (dt2 * d_a1[i].z) + (dt  * d_a[i].z) + d_v[i].z;
-    }
-}

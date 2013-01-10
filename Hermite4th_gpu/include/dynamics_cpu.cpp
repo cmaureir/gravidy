@@ -37,10 +37,12 @@ int find_particles_to_move(double ITIME)
         h_move[i] = -1;
         if (h_t[i] + h_dt[i] == ITIME)
         {
-                h_move[j] = i;
-                j++;
+            h_move[j] = i;
+            j++;
+            printf("%d ", i);
         }
     }
+    printf("\n");
     return j;
 }
 
@@ -89,8 +91,10 @@ void init_dt2(double *ATIME)
     // Get Snap and Crackle
     int i = 0;
     int j = 0;
-    for (i = INIT_PARTICLE; i < n; i++) {
-        for (j = INIT_PARTICLE; i < n; i++) {
+    for (i = INIT_PARTICLE; i < n; i++)
+    {
+        for (j = INIT_PARTICLE; i < n; i++)
+        {
             double rx = h_r[j].x - h_r[i].x;
             double ry = h_r[j].y - h_r[i].y;
             double rz = h_r[j].z - h_r[i].z;
@@ -115,24 +119,25 @@ void init_dt2(double *ATIME)
             double beta = alpha*alpha + r2inv * (v2 + ra);
             double gamma = 3 * va + rj * r2inv + alpha * (3*beta - 4*alpha*alpha);
 
-            h_a2[i].x += mr3inv*h_a[i].x - 6*alpha*h_a1[i].x - 3*beta*h_a[i].x;
-            h_a2[i].y += mr3inv*h_a[i].y - 6*alpha*h_a1[i].y - 3*beta*h_a[i].y;
-            h_a2[i].z += mr3inv*h_a[i].z - 6*alpha*h_a1[i].z - 3*beta*h_a[i].z;
+            h_a2[i].x += mr3inv*h_a[i].x  - 6 * alpha*h_a1[i].x - 3 * beta*h_a[i].x;
+            h_a2[i].y += mr3inv*h_a[i].y  - 6 * alpha*h_a1[i].y - 3 * beta*h_a[i].y;
+            h_a2[i].z += mr3inv*h_a[i].z  - 6 * alpha*h_a1[i].z - 3 * beta*h_a[i].z;
 
-            h_a3[i].x += mr3inv*h_a1[i].x - 9*alpha*h_a2[i].x - 9*beta*h_a1[i].x -3*gamma*h_a[i].x;
-            h_a3[i].y += mr3inv*h_a1[i].y - 9*alpha*h_a2[i].y - 9*beta*h_a1[i].y -3*gamma*h_a[i].y;
-            h_a3[i].z += mr3inv*h_a1[i].z - 9*alpha*h_a2[i].z - 9*beta*h_a1[i].z -3*gamma*h_a[i].z;
+            h_a3[i].x += mr3inv*h_a1[i].x - 9 * alpha*h_a2[i].x - 9 * beta*h_a1[i].x - 3 * gamma*h_a[i].x;
+            h_a3[i].y += mr3inv*h_a1[i].y - 9 * alpha*h_a2[i].y - 9 * beta*h_a1[i].y - 3 * gamma*h_a[i].y;
+            h_a3[i].z += mr3inv*h_a1[i].z - 9 * alpha*h_a2[i].z - 9 * beta*h_a1[i].z - 3 * gamma*h_a[i].z;
         }
     }
     // Get Timesteps
-    for (i = 0; i < n; i++) {
-        double m_a = get_magnitude(h_a[i].x, h_a[i].y, h_a[i].z);
-        double m_a1 = get_magnitude(h_a1[i].x, h_a1[i].y, h_a1[i].z);
-        double m_a2 = get_magnitude(h_a2[i].x, h_a2[i].y, h_a2[i].z);
-        double m_a3 = get_magnitude(h_a3[i].x, h_a3[i].y, h_a3[i].z);
+    for (i = 0; i < n; i++)
+    {
+        double m_a    = get_magnitude(h_a[i].x,  h_a[i].y,  h_a[i].z);
+        double m_a1   = get_magnitude(h_a1[i].x, h_a1[i].y, h_a1[i].z);
+        double m_a2   = get_magnitude(h_a2[i].x, h_a2[i].y, h_a2[i].z);
+        double m_a3   = get_magnitude(h_a3[i].x, h_a3[i].y, h_a3[i].z);
         double tmp_dt = sqrt(ETA_S * (m_a * m_a2 + m_a1*m_a1)/(m_a1*m_a3+m_a2*m_a2));
-        int exp = (int)(std::ceil(log(tmp_dt)/log(2.0))-1);
-        tmp_dt = pow(2,exp);
+        int exp       = (int)(std::ceil(log(tmp_dt)/log(2.0))-1);
+        tmp_dt        = pow(2,exp);
 
         if (tmp_dt < D_TIME_MIN)
             tmp_dt = D_TIME_MIN;
@@ -140,7 +145,7 @@ void init_dt2(double *ATIME)
             tmp_dt = D_TIME_MAX;
 
         h_dt[i] = tmp_dt;
-        h_t[i] = 0.0;
+        h_t[i]  = 0.0;
 
         // Obtaining the first integration time
         if(tmp_dt < *ATIME)
@@ -158,11 +163,11 @@ void force_calculation(int i, int j)
     double vy = h_p_v[j].y - h_p_v[i].y;
     double vz = h_p_v[j].z - h_p_v[i].z;
 
-    double r2 = rx*rx + ry*ry + rz*rz + softening*softening;
-    double rinv = 1/sqrt(r2);
-    double r2inv = rinv  * rinv;
-    double r3inv = r2inv * rinv;
-    double r5inv = r2inv * r3inv;
+    double r2     = rx*rx + ry*ry + rz*rz + softening*softening;
+    double rinv   = 1.0/sqrt(r2);
+    double r2inv  = rinv  * rinv;
+    double r3inv  = r2inv * rinv;
+    double r5inv  = r2inv * r3inv;
     double mr3inv = r3inv * h_m[j];
     double mr5inv = r5inv * h_m[j];
 
@@ -179,10 +184,10 @@ void force_calculation(int i, int j)
 
 void init_acc_jrk()
 {
-    int j;
+    //#pragma omp parallel for private(j)
     for (int i = INIT_PARTICLE; i < n; i++)
     {
-        for (j = INIT_PARTICLE; j < n; j++)
+        for (int j = INIT_PARTICLE; j < n; j++)
         {
             if(i == j) continue;
             force_calculation(i,j);
@@ -207,9 +212,9 @@ void update_acc_jrk(int total)
     for (int k = 0; k < total; k++)
     {
         i = h_move[k];
-        h_a[i].x = 0.0;
-        h_a[i].y = 0.0;
-        h_a[i].z = 0.0;
+        h_a[i].x  = 0.0;
+        h_a[i].y  = 0.0;
+        h_a[i].z  = 0.0;
         h_a1[i].x = 0.0;
         h_a1[i].y = 0.0;
         h_a1[i].z = 0.0;
@@ -250,6 +255,7 @@ double energy()
             double ry = h_r[j].y - h_r[i].y;
             double rz = h_r[j].z - h_r[i].z;
             double r2 = rx*rx + ry*ry + rz*rz;
+
             epot_tmp -= (h_m[i] * h_m[j]) / sqrt(r2);
         }
 
@@ -257,6 +263,7 @@ double energy()
         double vy = h_v[i].y * h_v[i].y;
         double vz = h_v[i].z * h_v[i].z;
         double v2 = vx + vy + vz;
+
         ekin_tmp = 0.5 * h_m[i] * v2;
 
         ekin += ekin_tmp;
@@ -271,15 +278,14 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
     double relative_error   = abs((energy_end-energy_tmp)/energy_ini);
     double cumulative_error = abs((energy_end-energy_ini)/energy_ini);
     energy_tmp = energy_end;
+    float time = (float)clock()/CLOCKS_PER_SEC - ini_time;
 
-    printf("% 6d % 10d % 10d % .6f % .6f % .6f % .15e % .15e % .15e 00\n",
-    //fprintf(out, "% 6d % 10d % 10d % .6f % .6f % .6f % .15e % .15e % .15e 00\n",
+    printf("# t = % 3d % 10d % 10d % 6.2f % .15e % .15e % .15e\n",
+    //fprintf(out, "# t = % 3d % 10d % 10d % 6.2f % .15e % .15e % .15e\n",
             (int)ITIME,
             iterations,
             nsteps,
-            eta,
-            softening,
-            (float)clock()/CLOCKS_PER_SEC - ini_time,
+            time,
             energy_end,
             relative_error,
             cumulative_error);
@@ -319,9 +325,10 @@ void save_old(int total)
 void
 predicted_pos_vel(double ITIME)
 {
+    //#pragma omp parallel for
     for (int i = INIT_PARTICLE; i < n; i++)
     {
-        double dt = ITIME - h_t[i];
+        double dt  = ITIME - h_t[i];
         double dt2 = (dt  * dt);
         double dt3 = (dt2 * dt);
 
@@ -332,6 +339,7 @@ predicted_pos_vel(double ITIME)
         h_p_v[i].x = (dt2/2 * h_a1[i].x) + (dt * h_a[i].x) + h_v[i].x;
         h_p_v[i].y = (dt2/2 * h_a1[i].y) + (dt * h_a[i].y) + h_v[i].y;
         h_p_v[i].z = (dt2/2 * h_a1[i].z) + (dt * h_a[i].z) + h_v[i].z;
+
     }
 }
 
@@ -407,15 +415,6 @@ double get_timestep_normal(int i)
 
 
     return normal_dt;
-}
-
-double get_timestep_central(int i)
-{
-    double r = get_magnitude(h_r[i].x, h_r[i].y, h_r[i].z);
-    double r3 = r*r*r;
-    double central_dt = ((2.0 * M_PI )/NSTEPS * sqrt(r3/(G * h_m[0])));
-
-    return central_dt;
 }
 
 double normalize_dt(double new_dt, double old_dt, double t, int i)
