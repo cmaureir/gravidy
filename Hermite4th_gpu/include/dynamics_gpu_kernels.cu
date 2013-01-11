@@ -31,42 +31,9 @@ k_energy(double4 *r, double4 *v, double *ekin, double *epot, float *m, int n)
     }
 }
 
-__global__ void k_update_acc_jrk_simple
-(double4 *r, double4 *v, double4 *a, double4 *j, float *m, int *move, int n, int total)
-{
-
-    double4 aa  = {0.0, 0.0, 0.0, 0.0};
-    double4 jj  = {0.0, 0.0, 0.0, 0.0};
-    double4 pos = {0.0, 0.0, 0.0, 0.0};
-    double4 vel = {0.0, 0.0, 0.0, 0.0};
-    float mj;
-
-    int id = threadIdx.x + blockDim.x * blockIdx.x;
-
-    if (id < total)
-    {
-        int id_move = move[id];
-        int k;
-        pos = r[id_move];
-        vel = v[id_move];
-        mj  = m[id_move];
-        for (k = INIT_PARTICLE; k < n; k++)
-        {
-            if(id == k) continue;
-            k_force_calculation(pos, vel, r[k], v[k], aa, jj, mj);
-        }
-
-     a[id_move] = aa;
-     j[id_move] = jj;
-    }
-}
-// ***
 //__global__ void k_update_acc_jrk_simple
 //(double4 *r, double4 *v, double4 *a, double4 *j, float *m, int *move, int n, int total)
 //{
-//    extern __shared__ double4 sh[];
-//    double4 *sr = (double4*)sh;
-//    double4 *sv = (double4*)&sr[blockDim.x];
 //
 //    double4 aa  = {0.0, 0.0, 0.0, 0.0};
 //    double4 jj  = {0.0, 0.0, 0.0, 0.0};
@@ -75,43 +42,76 @@ __global__ void k_update_acc_jrk_simple
 //    float mj;
 //
 //    int id = threadIdx.x + blockDim.x * blockIdx.x;
-//    int tx = threadIdx.x;
 //
-//    int id_move = move[id];
-//
-//    //if(id_move != -1)
-//    //{
+//    if (id < total)
+//    {
+//        int id_move = move[id];
+//        int k;
 //        pos = r[id_move];
 //        vel = v[id_move];
-//    //}
-//
-//    int tile = 0;
-//    for (int i = 0; i < n; i += BSIZE)
-//    {
-//        int idx = tile * BSIZE + tx;
-//
-//        sr[tx]   = r[idx];
-//        sv[tx]   = v[idx];
-//        mj = m[idx];
-//        __syncthreads();
-//
-//        for (int k = 0; k < BSIZE; k++)
+//        mj  = m[id_move];
+//        for (k = INIT_PARTICLE; k < n; k++)
 //        {
-//            if(id_move != -1)
-//            {
-//                k_force_calculation(pos, vel, sr[k], sv[k], aa, jj, mj);
-//            }
+//            if(id == k) continue;
+//            k_force_calculation(pos, vel, r[k], v[k], aa, jj, mj);
 //        }
-//        __syncthreads();
-//        tile++;
-//    }
 //
-//    if(id_move != -1)
-//    {
 //        a[id_move] = aa;
 //        j[id_move] = jj;
 //    }
 //}
+// ***
+__global__ void k_update_acc_jrk_simple
+(double4 *r, double4 *v, double4 *a, double4 *j, float *m, int *move, int n, int total)
+{
+    extern __shared__ double4 sh[];
+    double4 *sr = (double4*)sh;
+    double4 *sv = (double4*)&sr[blockDim.x];
+
+    double4 aa  = {0.0, 0.0, 0.0, 0.0};
+    double4 jj  = {0.0, 0.0, 0.0, 0.0};
+    double4 pos = {0.0, 0.0, 0.0, 0.0};
+    double4 vel = {0.0, 0.0, 0.0, 0.0};
+    float mj;
+
+    int id = threadIdx.x + blockDim.x * blockIdx.x;
+    int tx = threadIdx.x;
+
+    int id_move = move[id];
+
+    //if(id_move != -1)
+    //{
+        pos = r[id_move];
+        vel = v[id_move];
+    //}
+
+    int tile = 0;
+    for (int i = 0; i < n; i += BSIZE)
+    {
+        int idx = tile * BSIZE + tx;
+
+        sr[tx]   = r[idx];
+        sv[tx]   = v[idx];
+        mj = m[idx];
+        __syncthreads();
+
+        for (int k = 0; k < BSIZE; k++)
+        {
+            if(id_move != -1)
+            {
+                k_force_calculation(pos, vel, sr[k], sv[k], aa, jj, mj);
+            }
+        }
+        __syncthreads();
+        tile++;
+    }
+
+    if(id_move != -1)
+    {
+        a[id_move] = aa;
+        j[id_move] = jj;
+    }
+}
 //
 /*
  * @fn k_init_acc_jrk

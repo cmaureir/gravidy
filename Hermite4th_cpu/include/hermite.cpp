@@ -16,7 +16,6 @@ void integrate_cpu()
     energy_tmp = energy_ini; // Saving initial energy, to calculate errors
 
     get_energy_log(ITIME, iterations, nsteps, out); // First log of the integration
-    print_all(n,0);
 
     while (ITIME < int_time)
     {
