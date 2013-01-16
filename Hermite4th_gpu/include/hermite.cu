@@ -35,7 +35,7 @@ void integrate_gpu()
         nact = find_particles_to_move(ITIME);  // Find particles to move (nact)
         save_old(nact);                        // Save old information
 
-        if (nact < n * 0.1)
+        if (nact < 500)
         {
             predicted_pos_vel(ITIME);
             update_acc_jrk(nact);
