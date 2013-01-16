@@ -28,34 +28,41 @@ void integrate_gpu()
 
     get_energy_log(ITIME, iterations, nsteps, out); // First log of the integration
 
-    CUDA_SAFE_CALL(cudaMemcpy(d_t,  h_t,  d1_size,cudaMemcpyHostToDevice));
+    //////CUDA_SAFE_CALL(cudaMemcpy(d_t,  h_t,  d1_size,cudaMemcpyHostToDevice));
     while (ITIME < int_time)
     {
         ITIME = ATIME;                         // New integration time
         nact = find_particles_to_move(ITIME);  // Find particles to move (nact)
         save_old(nact);                        // Save old information
 
-        // Copying the index of the particles to move from the CPU to the GPU
-        CUDA_SAFE_CALL(cudaMemcpy(d_move, h_move, i1_size, cudaMemcpyHostToDevice));
-
-
-        gpu_predicted_pos_vel(ITIME);          // Predict all the particles
-        gpu_update_acc_jrk_simple(nact);     // Update a and a1 of nact particles
-        //update_acc_jrk(nact);
-        //getchar();
-
-        CUDA_SAFE_CALL(cudaMemcpy(h_p_r, d_p_r, d4_size,cudaMemcpyDeviceToHost));
-        CUDA_SAFE_CALL(cudaMemcpy(h_p_v, d_p_v, d4_size,cudaMemcpyDeviceToHost));
-        //// Copying a and a1 from the GPU to the CPU
-        CUDA_SAFE_CALL(cudaMemcpy(h_a,  d_a,  d4_size,cudaMemcpyDeviceToHost));
-        CUDA_SAFE_CALL(cudaMemcpy(h_a1, d_a1, d4_size,cudaMemcpyDeviceToHost));
-
-        correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
-
-        // Copying r, v and t from CPU to GPU
-        CUDA_SAFE_CALL(cudaMemcpy(d_r, h_r, d4_size, cudaMemcpyHostToDevice));
-        CUDA_SAFE_CALL(cudaMemcpy(d_v, h_v, d4_size, cudaMemcpyHostToDevice));
-        CUDA_SAFE_CALL(cudaMemcpy(d_t, h_t, d1_size, cudaMemcpyHostToDevice));
+        if (nact < n * 0.1)
+        {
+            predicted_pos_vel(ITIME);
+            update_acc_jrk(nact);
+            correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
+        }
+        else
+        {
+            // Copying the index of the particles to move from the CPU to the GPU
+            CUDA_SAFE_CALL(cudaMemcpy(d_move, h_move, i1_size, cudaMemcpyHostToDevice));
+            //////gpu_predicted_pos_vel(ITIME);          // Predict all the particles
+            predicted_pos_vel(ITIME);
+            CUDA_SAFE_CALL(cudaMemcpy(d_p_r, h_p_r, d4_size,cudaMemcpyHostToDevice));
+            CUDA_SAFE_CALL(cudaMemcpy(d_p_v, h_p_v, d4_size,cudaMemcpyHostToDevice));
+            gpu_update_acc_jrk_simple(nact);     // Update a and a1 of nact particles
+            //update_acc_jrk(nact);
+            //getchar();
+            //////CUDA_SAFE_CALL(cudaMemcpy(h_p_r, d_p_r, d4_size,cudaMemcpyDeviceToHost));
+            //////CUDA_SAFE_CALL(cudaMemcpy(h_p_v, d_p_v, d4_size,cudaMemcpyDeviceToHost));
+            //// Copying a and a1 from the GPU to the CPU
+            CUDA_SAFE_CALL(cudaMemcpy(h_a,  d_a,  d4_size,cudaMemcpyDeviceToHost));
+            CUDA_SAFE_CALL(cudaMemcpy(h_a1, d_a1, d4_size,cudaMemcpyDeviceToHost));
+            correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
+            // Copying r, v and t from CPU to GPU
+            CUDA_SAFE_CALL(cudaMemcpy(d_r, h_r, d4_size, cudaMemcpyHostToDevice));
+            CUDA_SAFE_CALL(cudaMemcpy(d_v, h_v, d4_size, cudaMemcpyHostToDevice));
+            //////CUDA_SAFE_CALL(cudaMemcpy(d_t, h_t, d1_size, cudaMemcpyHostToDevice));
+        }
 
         next_itime(&ATIME);                    // Find next integration time
 

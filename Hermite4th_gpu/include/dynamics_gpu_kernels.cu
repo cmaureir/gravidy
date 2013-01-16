@@ -79,11 +79,11 @@ __global__ void k_update_acc_jrk_simple
 
     int id_move = move[id];
 
-    //if(id_move != -1)
-    //{
+    if(id_move != -1)
+    {
         pos = r[id_move];
         vel = v[id_move];
-    //}
+    }
 
     int tile = 0;
     for (int i = 0; i < n; i += BSIZE)

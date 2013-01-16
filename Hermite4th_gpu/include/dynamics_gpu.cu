@@ -4,7 +4,7 @@ __host__ void gpu_init_acc_jrk()
 {
     int smem = BSIZE * 2 * sizeof(double4);
     k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_r, d_v, d_a, d_a1, d_m, n);
-    cudaThreadSynchronize();
+    //cudaThreadSynchronize();
     #ifdef KERNEL_ERROR_DEBUG
         std::cerr << "k_init_acc_jrk: " << std::endl;
         std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
@@ -34,7 +34,7 @@ __host__ void gpu_get_energy_log(double ITIME, int iterations, int nsteps)
 __host__ double gpu_energy()
 {
     k_energy <<< nblocks, nthreads >>> (d_r, d_v, d_ekin, d_epot, d_m, n);
-    cudaThreadSynchronize();
+    //cudaThreadSynchronize();
     #ifdef KERNEL_ERROR_DEBUG
         std::cerr << "k_energy: " << std::endl;
         std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
@@ -58,7 +58,7 @@ __host__ void gpu_predicted_pos_vel(float ITIME)
 {
     k_predicted_pos_vel<<< nblocks, nthreads >>> (d_r, d_v, d_a, d_a1, d_p_r, d_p_v,
                                                   d_t, ITIME, n);
-    cudaThreadSynchronize();
+    //cudaThreadSynchronize();
     #ifdef KERNEL_ERROR_DEBUG
         std::cerr << "k_predicted_pos_vel: " << std::endl;
         std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
@@ -73,7 +73,7 @@ __host__ void gpu_update_acc_jrk_simple(int total)
     int smem = BSIZE * 2 * sizeof(double4);
     k_update_acc_jrk_simple <<< nblocks, nthreads, smem >>> (d_p_r, d_p_v, d_a, d_a1,
                                                              d_m, d_move, n, total);
-    cudaThreadSynchronize();
+    //cudaThreadSynchronize();
     #ifdef KERNEL_ERROR_DEBUG
         std::cerr << "k_update_acc_jrk_simple: " << std::endl;
         std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
