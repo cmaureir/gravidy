@@ -40,5 +40,5 @@ void integrate_cpu()
 //        print_all(n,ITIME);
 //        if(iterations == 50) ITIME = int_time;
     }
-    print_all(n,0);
+    //print_all(n,0);
 }
