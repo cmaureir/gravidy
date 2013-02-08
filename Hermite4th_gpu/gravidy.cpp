@@ -7,7 +7,7 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
-#include <omp.h>
+//#include <omp.h>
 
 // General variables of the program
 int n;

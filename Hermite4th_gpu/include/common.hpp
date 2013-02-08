@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 #include <ctime>
-#include <omp.h>
+//#include <omp.h>
 #include <cassert>
 #include <vector_types.h>
 

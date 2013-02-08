@@ -25,7 +25,7 @@ __host__ void gpu_get_energy_log(double ITIME, int iterations, int nsteps)
             iterations,
             nsteps/(float)iterations,
             ETA_N,
-            omp_get_wtime() - ini_time,
+            (float)clock()/CLOCKS_PER_SEC - ini_time,
             energy_end,
             relative_error,
             energy_tmp/(int)ITIME);
