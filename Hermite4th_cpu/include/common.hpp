@@ -30,7 +30,7 @@
  * ETA_S used to obtain the firsts time-steps for all the
  * particles of the system.
  */
-#define ETA_S 0.001
+#define ETA_S 0.01
 #define ETA_N 0.01
 
 /*
@@ -68,6 +68,21 @@ typedef struct particle
     double4 v;
 } particle;
 
+typedef struct Predictor {
+    double r[3];
+    double v[3];
+} Predictor;
+
+typedef struct PosVel {
+    double r[3];
+    double v[3];
+} PosVel;
+
+typedef struct Forces {
+    double a[3];
+    double a1[3];
+} Forces;
+
 extern std::vector<particle> part; // Vector to save the input file data
 
 
@@ -103,12 +118,11 @@ extern size_t f1_size, i1_size;       // float and int size
  * (Particles attribute arrays)
  */
 extern double4 *h_r, *h_v;      // Position and Velocity
-extern double4 *h_a, *h_a1;     // Acceleration and its first derivative (Jerk)
+extern Forces *h_f;     // Acceleration and its first derivative (Jerk)
 extern double4 *h_a2, *h_a3;    // 2nd and 3rd acceleration derivatives.
 extern double4 *h_old_a;        // Previous step value of the Acceleration
 extern double4 *h_old_a1;       // Previous step value of the Jerk
-extern double4 *h_p_r;          // Predicted Position
-extern double4 *h_p_v;          // Predicted Velocity
+extern Predictor *h_p;
 
 extern double *h_ekin, *h_epot; // Kinetic and Potential energy
 extern double  *h_t, *h_dt;     // Time and time-step

@@ -8,8 +8,8 @@ void print_all(int limit, float ITIME)
                 i,
                 h_r[i].x, h_r[i].y, h_r[i].z,
                 h_v[i].x, h_v[i].y, h_v[i].z,
-                h_a[i].x, h_a[i].y, h_a[i].z,
-                h_a1[i].x, h_a1[i].y, h_a1[i].z,
+                h_f[i].a[0], h_f[i].a[1], h_f[i].a[2],
+                h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2],
                 h_dt[i]);
     }
 }
@@ -30,14 +30,14 @@ void print_velocities(int limit)
 void print_accelerations(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.10f %.10f %.10f\n", i, h_a[i].x, h_a[i].y, h_a[i].z );
+        printf("%6d %.10f %.10f %.10f\n", i, h_f[i].a[0], h_f[i].a[1], h_f[i].a[2] );
     }
 
 }
 void print_jrks(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.10f %.10f %.10f\n", i, h_a1[i].x, h_a1[i].y, h_a1[i].z );
+        printf("%6d %.10f %.10f %.10f\n", i, h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2] );
     }
 }
 
@@ -46,8 +46,8 @@ void print_accjrk(int limit)
     for (int i = 0; i < limit; i++) {
         printf("%6d %4.10f %4.10f %4.10f %4.10f %4.10f %4.10f\n",
                 i,
-                h_a[i].x, h_a[i].y, h_a[i].z,
-                h_a1[i].x, h_a1[i].y, h_a1[i].z
+                h_f[i].a[0], h_f[i].a[1], h_f[i].a[2],
+                h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2]
                 );
     }
 }
@@ -73,7 +73,7 @@ void print_old(int limit)
     for (int i = 0; i < limit; i++) {
         printf("%6d %.10f %.10f %.10f %.10f %.10f %.10f\n",
                 i,
-                h_old_a[i].x, h_old_a[i].y, h_old_a[i].z,
+                 h_old_a[i].x,  h_old_a[i].y,  h_old_a[i].z,
                 h_old_a1[i].x, h_old_a1[i].y, h_old_a1[i].z);
     }
 }
@@ -83,8 +83,8 @@ void print_predicted(int limit)
     for (int i = 0; i < limit; i++) {
         printf("%6d %.10f %.10f %.10f %.10f %.10f %.10f\n",
                 i,
-                h_p_r[i].x, h_p_r[i].y, h_p_r[i].z,
-                h_p_v[i].x, h_p_v[i].y, h_p_v[i].z);
+                h_p[i].r[0], h_p[i].r[1], h_p[i].r[2],
+                h_p[i].v[0], h_p[i].v[1], h_p[i].v[2]);
     }
 }
 
@@ -112,7 +112,7 @@ void print_particle(int i)
     printf("%5d %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
             i,
             h_r[i].x, h_r[i].y, h_r[i].z, h_v[i].x, h_v[i].y, h_v[i].z,
-            h_a[i].x, h_a[i].y, h_a[i].z, h_a1[i].x, h_a1[i].y, h_a1[i].z,
+            h_f[i].a[0], h_f[i].a[1], h_f[i].a[2], h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2],
             h_dt[i]);
 
 }

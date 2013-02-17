@@ -22,17 +22,15 @@ float softening, eta;
 // Struct vector to read the input file
 std::vector<particle> part;
 double4  *h_old_a, *h_old_a1;
-double4 *h_p_r, *h_p_v;
-double4 *d_old_a, *d_old_a1;
-double4 *d_p_r, *d_p_v;
-
+Predictor *h_p;
 
 // Host pointers
 double *h_ekin, *h_epot;
 double *h_t, *h_dt;
 float   *h_m;
 int *h_move;
-double4 *h_r, *h_v, *h_a, *h_a1;
+double4 *h_r, *h_v;
+Forces *h_f;
 double4 *h_a2, *h_a3;
 
 // System times
@@ -55,18 +53,16 @@ main(int argc, char *argv[])
 
     read_input_file(input_file);
     alloc_vectors_cpu();
-    // TMP
-    ini_time = (float)clock()/CLOCKS_PER_SEC;
 
     // Opening output file for debugging
     out = fopen(output_file.c_str(), "w");
 
+    ini_time = (float)clock()/CLOCKS_PER_SEC;
     integrate_cpu();
-
-    end_time = (ini_time - (float)clock()/CLOCKS_PER_SEC);
+    end_time = (float)clock()/CLOCKS_PER_SEC;
 
     fclose(out);
-    //write_output_file(output_file);
+    write_output_file(output_file);
     free_vectors_cpu();
 
     return 0;

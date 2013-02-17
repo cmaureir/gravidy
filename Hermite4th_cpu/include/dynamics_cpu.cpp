@@ -39,6 +39,7 @@ int find_particles_to_move(double ITIME)
         {
             h_move[j] = i;
             j++;
+//            printf("%d ",i);
         }
     }
 //    printf("\n");
@@ -62,8 +63,8 @@ void init_dt(double *ATIME)
     double tmp_dt;
     for (int i = INIT_PARTICLE; i < n; i++)
     {
-        double a2 = get_magnitude(h_a[i].x, h_a[i].y, h_a[i].z);
-        double j2 = get_magnitude(h_a1[i].x, h_a1[i].y, h_a1[i].z);
+        double a2 = get_magnitude(h_f[i].a[0], h_f[i].a[1],h_f[i].a[2]);
+        double j2 = get_magnitude(h_f[i].a1[0], h_f[i].a1[1],h_f[i].a1[2]);
         tmp_dt = ETA_S * (a2/j2);
 
         // Adjusting to block timesteps
@@ -109,29 +110,29 @@ void init_dt2(double *ATIME)
             double mr3inv = r3inv * h_m[j];
 
             double rv = rx*vx + ry*vy + rz*vz;
-            double ra = rx*h_a[i].x + ry*h_a[i].y + rz*h_a[i].z;
+            double ra = rx*h_f[i].a[0] + ry*h_f[i].a[1] + rz*h_f[i].a[2];
             double v2 = vx*vx + vy*vy + vz*vz;
-            double va = h_a[i].x*vx + h_a[i].y*vy + h_a[i].z*vz;
-            double rj = rx*h_a1[i].x + ry*h_a1[i].y + rz*h_a1[i].z;
+            double va = h_f[i].a[0]*vx + h_f[i].a[1]*vy + h_f[i].a[2]*vz;
+            double rj = rx*h_f[i].a1[0] + ry*h_f[i].a1[1] + rz*h_f[i].a1[2];
 
             double alpha = rv * r2inv;
             double beta = alpha*alpha + r2inv * (v2 + ra);
             double gamma = 3 * va + rj * r2inv + alpha * (3*beta - 4*alpha*alpha);
 
-            h_a2[i].x += mr3inv*h_a[i].x  - 6 * alpha*h_a1[i].x - 3 * beta*h_a[i].x;
-            h_a2[i].y += mr3inv*h_a[i].y  - 6 * alpha*h_a1[i].y - 3 * beta*h_a[i].y;
-            h_a2[i].z += mr3inv*h_a[i].z  - 6 * alpha*h_a1[i].z - 3 * beta*h_a[i].z;
+            h_a2[i].x += mr3inv*h_f[i].a[0]  - 6 * alpha*h_f[i].a1[0] - 3 * beta*h_f[i].a[0];
+            h_a2[i].y += mr3inv*h_f[i].a[1]  - 6 * alpha*h_f[i].a1[1] - 3 * beta*h_f[i].a[1];
+            h_a2[i].z += mr3inv*h_f[i].a[2]  - 6 * alpha*h_f[i].a1[2] - 3 * beta*h_f[i].a[2];
 
-            h_a3[i].x += mr3inv*h_a1[i].x - 9 * alpha*h_a2[i].x - 9 * beta*h_a1[i].x - 3 * gamma*h_a[i].x;
-            h_a3[i].y += mr3inv*h_a1[i].y - 9 * alpha*h_a2[i].y - 9 * beta*h_a1[i].y - 3 * gamma*h_a[i].y;
-            h_a3[i].z += mr3inv*h_a1[i].z - 9 * alpha*h_a2[i].z - 9 * beta*h_a1[i].z - 3 * gamma*h_a[i].z;
+            h_a3[i].x += mr3inv*h_f[i].a1[0] - 9 * alpha*h_a2[i].x - 9 * beta*h_f[i].a1[0] - 3 * gamma*h_f[i].a[0];
+            h_a3[i].y += mr3inv*h_f[i].a1[1] - 9 * alpha*h_a2[i].y - 9 * beta*h_f[i].a1[1] - 3 * gamma*h_f[i].a[1];
+            h_a3[i].z += mr3inv*h_f[i].a1[2] - 9 * alpha*h_a2[i].z - 9 * beta*h_f[i].a1[2] - 3 * gamma*h_f[i].a[2];
         }
     }
     // Get Timesteps
     for (i = 0; i < n; i++)
     {
-        double m_a    = get_magnitude(h_a[i].x,  h_a[i].y,  h_a[i].z);
-        double m_a1   = get_magnitude(h_a1[i].x, h_a1[i].y, h_a1[i].z);
+        double m_a    = get_magnitude(h_f[i].a[0],  h_f[i].a[1],  h_f[i].a[2]);
+        double m_a1   = get_magnitude(h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2]);
         double m_a2   = get_magnitude(h_a2[i].x, h_a2[i].y, h_a2[i].z);
         double m_a3   = get_magnitude(h_a3[i].x, h_a3[i].y, h_a3[i].z);
         double tmp_dt = sqrt(ETA_S * (m_a * m_a2 + m_a1*m_a1)/(m_a1*m_a3+m_a2*m_a2));
@@ -154,13 +155,13 @@ void init_dt2(double *ATIME)
 
 void force_calculation(int i, int j)
 {
-    double rx = h_p_r[j].x - h_p_r[i].x;
-    double ry = h_p_r[j].y - h_p_r[i].y;
-    double rz = h_p_r[j].z - h_p_r[i].z;
+    double rx = h_p[j].r[0] - h_p[i].r[0];
+    double ry = h_p[j].r[1] - h_p[i].r[1];
+    double rz = h_p[j].r[2] - h_p[i].r[2];
 
-    double vx = h_p_v[j].x - h_p_v[i].x;
-    double vy = h_p_v[j].y - h_p_v[i].y;
-    double vz = h_p_v[j].z - h_p_v[i].z;
+    double vx = h_p[j].v[0] - h_p[i].v[0];
+    double vy = h_p[j].v[1] - h_p[i].v[1];
+    double vz = h_p[j].v[2] - h_p[i].v[2];
 
     double r2     = rx*rx + ry*ry + rz*rz + softening*softening;
     double rinv   = 1.0/sqrt(r2);
@@ -172,13 +173,13 @@ void force_calculation(int i, int j)
 
     double rv = rx*vx + ry*vy + rz*vz;
 
-    h_a[i].x += (rx * mr3inv);
-    h_a[i].y += (ry * mr3inv);
-    h_a[i].z += (rz * mr3inv);
+    h_f[i].a[0] += (rx * mr3inv);
+    h_f[i].a[1] += (ry * mr3inv);
+    h_f[i].a[2] += (rz * mr3inv);
 
-    h_a1[i].x += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
-    h_a1[i].y += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
-    h_a1[i].z += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
+    h_f[i].a1[0] += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
+    h_f[i].a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
+    h_f[i].a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
 }
 
 void init_acc_jrk()
@@ -211,18 +212,21 @@ void update_acc_jrk(int total)
     for (int k = 0; k < total; k++)
     {
         i = h_move[k];
-        h_a[i].x  = 0.0;
-        h_a[i].y  = 0.0;
-        h_a[i].z  = 0.0;
-        h_a1[i].x = 0.0;
-        h_a1[i].y = 0.0;
-        h_a1[i].z = 0.0;
+        h_f[i].a[0]  = 0.0;
+        h_f[i].a[1]  = 0.0;
+        h_f[i].a[2]  = 0.0;
+        h_f[i].a1[0] = 0.0;
+        h_f[i].a1[1] = 0.0;
+        h_f[i].a1[2] = 0.0;
 
         for (j = INIT_PARTICLE; j < n; j++)
         {
             if(i == j) continue;
             force_calculation(i,j);
         }
+//        printf("Updating %d - %f\t%f\t%f - %f\t%f\t%f\n", i, h_a[k].x, h_a[k].y, h_a[k].z, h_a1[k].x, h_a1[k].y, h_a1[k].z);
+
+//        getchar();
     }
 }
 
@@ -279,8 +283,8 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
     energy_tmp = energy_end;
     float time = (float)clock()/CLOCKS_PER_SEC - ini_time;
 
-    printf("# t = % 3d % 10d % 10d % 6.2f % .15e % .15e % .15e\n",
-    //fprintf(out, "# t = % 3d % 10d % 10d % 6.2f % .15e % .15e % .15e\n",
+    //printf("# t = % 3d % 10d % 10d % 6.2f % .15e % .15e % .15e\n",
+    fprintf(out, "# t = % 3d % 10d % 10d % 6.2f % .15e % .15e % .15e\n",
             (int)ITIME,
             iterations,
             nsteps,
@@ -303,13 +307,13 @@ void save_old(int total)
     for (int k = INIT_PARTICLE; k < total; k++)
     {
         int i = h_move[k];
-        h_old_a[i].x = h_a[i].x;
-        h_old_a[i].y = h_a[i].y;
-        h_old_a[i].z = h_a[i].z;
+        h_old_a[i].x = h_f[i].a[0];
+        h_old_a[i].y = h_f[i].a[1];
+        h_old_a[i].z = h_f[i].a[2];
 
-        h_old_a1[i].x = h_a1[i].x;
-        h_old_a1[i].y = h_a1[i].y;
-        h_old_a1[i].z = h_a1[i].z;
+        h_old_a1[i].x = h_f[i].a1[0];
+        h_old_a1[i].y = h_f[i].a1[1];
+        h_old_a1[i].z = h_f[i].a1[2];
     }
 }
 
@@ -331,13 +335,13 @@ predicted_pos_vel(double ITIME)
         double dt2 = (dt  * dt);
         double dt3 = (dt2 * dt);
 
-        h_p_r[i].x = (dt3/6 * h_a1[i].x) + (dt2/2 * h_a[i].x) + (dt * h_v[i].x) + h_r[i].x;
-        h_p_r[i].y = (dt3/6 * h_a1[i].y) + (dt2/2 * h_a[i].y) + (dt * h_v[i].y) + h_r[i].y;
-        h_p_r[i].z = (dt3/6 * h_a1[i].z) + (dt2/2 * h_a[i].z) + (dt * h_v[i].z) + h_r[i].z;
+        h_p[i].r[0] = (dt3/6 * h_f[i].a1[0]) + (dt2/2 * h_f[i].a[0]) + (dt * h_v[i].x) + h_r[i].x;
+        h_p[i].r[1] = (dt3/6 * h_f[i].a1[1]) + (dt2/2 * h_f[i].a[1]) + (dt * h_v[i].y) + h_r[i].y;
+        h_p[i].r[2] = (dt3/6 * h_f[i].a1[2]) + (dt2/2 * h_f[i].a[2]) + (dt * h_v[i].z) + h_r[i].z;
 
-        h_p_v[i].x = (dt2/2 * h_a1[i].x) + (dt * h_a[i].x) + h_v[i].x;
-        h_p_v[i].y = (dt2/2 * h_a1[i].y) + (dt * h_a[i].y) + h_v[i].y;
-        h_p_v[i].z = (dt2/2 * h_a1[i].z) + (dt * h_a[i].z) + h_v[i].z;
+        h_p[i].v[0] = (dt2/2 * h_f[i].a1[0]) + (dt * h_f[i].a[0]) + h_v[i].x;
+        h_p[i].v[1] = (dt2/2 * h_f[i].a1[1]) + (dt * h_f[i].a[1]) + h_v[i].y;
+        h_p[i].v[2] = (dt2/2 * h_f[i].a1[2]) + (dt * h_f[i].a[2]) + h_v[i].z;
 
     }
 }
@@ -363,24 +367,24 @@ void correction_pos_vel(double ITIME, int total)
         double dt5 = dt4 * dt1;
 
         // Acceleration 2nd derivate
-        h_a2[i].x = (-6 * (h_old_a[i].x - h_a[i].x ) - dt1 * (4 * h_old_a1[i].x + 2 * h_a1[i].x) ) / dt2;
-        h_a2[i].y = (-6 * (h_old_a[i].y - h_a[i].y ) - dt1 * (4 * h_old_a1[i].y + 2 * h_a1[i].y) ) / dt2;
-        h_a2[i].z = (-6 * (h_old_a[i].z - h_a[i].z ) - dt1 * (4 * h_old_a1[i].z + 2 * h_a1[i].z) ) / dt2;
+        h_a2[i].x = (-6 * (h_old_a[i].x - h_f[i].a[0] ) - dt1 * (4 * h_old_a1[i].x + 2 * h_f[i].a1[0]) ) / dt2;
+        h_a2[i].y = (-6 * (h_old_a[i].y - h_f[i].a[1] ) - dt1 * (4 * h_old_a1[i].y + 2 * h_f[i].a1[1]) ) / dt2;
+        h_a2[i].z = (-6 * (h_old_a[i].z - h_f[i].a[2] ) - dt1 * (4 * h_old_a1[i].z + 2 * h_f[i].a1[2]) ) / dt2;
 
         // Acceleration 3rd derivate
-        h_a3[i].x = (12 * (h_old_a[i].x - h_a[i].x ) + 6 * dt1 * (h_old_a1[i].x + h_a1[i].x) ) / dt3;
-        h_a3[i].y = (12 * (h_old_a[i].y - h_a[i].y ) + 6 * dt1 * (h_old_a1[i].y + h_a1[i].y) ) / dt3;
-        h_a3[i].z = (12 * (h_old_a[i].z - h_a[i].z ) + 6 * dt1 * (h_old_a1[i].z + h_a1[i].z) ) / dt3;
+        h_a3[i].x = (12 * (h_old_a[i].x - h_f[i].a[0] ) + 6 * dt1 * (h_old_a1[i].x + h_f[i].a1[0]) ) / dt3;
+        h_a3[i].y = (12 * (h_old_a[i].y - h_f[i].a[1] ) + 6 * dt1 * (h_old_a1[i].y + h_f[i].a1[1]) ) / dt3;
+        h_a3[i].z = (12 * (h_old_a[i].z - h_f[i].a[2] ) + 6 * dt1 * (h_old_a1[i].z + h_f[i].a1[2]) ) / dt3;
 
         // Correcting position
-        h_r[i].x = h_p_r[i].x + (dt4/24)*h_a2[i].x + (dt5/120)*h_a3[i].x;
-        h_r[i].y = h_p_r[i].y + (dt4/24)*h_a2[i].y + (dt5/120)*h_a3[i].y;
-        h_r[i].z = h_p_r[i].z + (dt4/24)*h_a2[i].z + (dt5/120)*h_a3[i].z;
+        h_r[i].x = h_p[i].r[0] + (dt4/24)*h_a2[i].x + (dt5/120)*h_a3[i].x;
+        h_r[i].y = h_p[i].r[1] + (dt4/24)*h_a2[i].y + (dt5/120)*h_a3[i].y;
+        h_r[i].z = h_p[i].r[2] + (dt4/24)*h_a2[i].z + (dt5/120)*h_a3[i].z;
 
         // Correcting velocity
-        h_v[i].x = h_p_v[i].x + (dt3/6)*h_a2[i].x + (dt4/24)*h_a3[i].x;
-        h_v[i].y = h_p_v[i].y + (dt3/6)*h_a2[i].y + (dt4/24)*h_a3[i].y;
-        h_v[i].z = h_p_v[i].z + (dt3/6)*h_a2[i].z + (dt4/24)*h_a3[i].z;
+        h_v[i].x = h_p[i].v[0] + (dt3/6)*h_a2[i].x + (dt4/24)*h_a3[i].x;
+        h_v[i].y = h_p[i].v[1] + (dt3/6)*h_a2[i].y + (dt4/24)*h_a3[i].y;
+        h_v[i].z = h_p[i].v[2] + (dt3/6)*h_a2[i].z + (dt4/24)*h_a3[i].z;
 
         h_t[i] = ITIME;
         double normal_dt  = get_timestep_normal(i);
@@ -398,9 +402,9 @@ double get_timestep_normal(int i)
     double az1_2 = h_a2[i].z + h_dt[i] * h_a3[i].z;
 
     // |a_{1,i}|
-    double abs_a1 = get_magnitude(h_a[i].x, h_a[i].y, h_a[i].z);
+    double abs_a1 = get_magnitude(h_f[i].a[0], h_f[i].a[1], h_f[i].a[2]);
     // |j_{1,i}|
-    double abs_j1 = get_magnitude(h_a1[i].x, h_a1[i].y, h_a1[i].z);
+    double abs_j1 = get_magnitude(h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2]);
     // |j_{1,i}|^{2}
     double abs_j12  = abs_j1 * abs_j1;
     // a_{1,i}^{(3)} = a_{0,i}^{(3)} because the 3rd-order interpolation

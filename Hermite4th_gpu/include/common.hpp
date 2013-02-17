@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 #include <ctime>
-//#include <omp.h>
+#include <omp.h>
 #include <cassert>
 #include <vector_types.h>
 
@@ -40,7 +40,7 @@
  * ETA_S used to obtain the firsts time-steps for all the
  * particles of the system.
  */
-#define ETA_S 0.001
+#define ETA_S 0.01
 #define ETA_N 0.01
 
 /*
@@ -60,7 +60,7 @@
 /*
  * CUDA Configuration
  */
-#define BSIZE   64  // Block size on kernels calls
+#define BSIZE   128  // Block size on kernels calls
 #define NJBLOCK 16  // Block size of the shared memory loading j-particles
 
 // Macro from cutil.h to debug the CUDA calls
@@ -86,6 +86,21 @@ typedef struct particle
     double4 r;
     double4 v;
 } particle;
+
+typedef struct Predictor {
+    double r[3];
+    double v[3];
+} Predictor;
+
+typedef struct PosVel {
+    double r[3];
+    double v[3];
+} PosVel;
+
+typedef struct Forces {
+    double a[3];
+    double a1[3];
+} Forces;
 
 extern std::vector<particle> part; // Vector to save the input file data
 
@@ -128,12 +143,11 @@ extern size_t nthreads, nblocks;      // Dynamical number of threads and blocks
  * (Particles attribute arrays)
  */
 extern double4 *h_r, *h_v;      // Position and Velocity
-extern double4 *h_a, *h_a1;     // Acceleration and its first derivative (Jerk)
+extern Forces *h_f;     // Acceleration and its first derivative (Jerk)
 extern double4 *h_a2, *h_a3;    // 2nd and 3rd acceleration derivatives.
 extern double4 *h_old_a;        // Previous step value of the Acceleration
 extern double4 *h_old_a1;       // Previous step value of the Jerk
-extern double4 *h_p_r;          // Predicted Position
-extern double4 *h_p_v;          // Predicted Velocity
+extern Predictor *h_p;
 
 extern double *h_ekin, *h_epot; // Kinetic and Potential energy
 extern double  *h_t, *h_dt;     // Time and time-step
@@ -147,12 +161,16 @@ extern int *h_move;             // Particles id to move in each iteration time
 extern double *d_ekin, *d_epot; // Kinetic and Potential energy
 extern double  *d_t, *d_dt;     // Time and time-step
 extern double4 *d_r, *d_v;      // Position and Velocity
-extern double4 *d_a, *d_a1;     // Acceleration and its first derivative (Jerk)
+extern Forces *d_f;     // Acceleration and its first derivative (Jerk)
 extern float   *d_m;            // Masses of the particles
 extern int *d_move;             // Particles id to move in each iteration time
-extern double4 *d_p_r;          // Predicted Position
-extern double4 *d_p_v;          // Predicted Velocity
 
+extern Predictor *d_p;
+
+// test
+extern Predictor *d_i, *h_i;
+//extern Forces *d_fout[NJBLOCK], *h_fout[NJBLOCK];
+extern Forces *d_fout, *h_fout;
 
 
 /************************************************

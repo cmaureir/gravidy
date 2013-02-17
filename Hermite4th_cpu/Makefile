@@ -1,5 +1,5 @@
 CC=        g++
-CXXFLAGS=  -O3 -Wall -lgomp -fopenmp
+CXXFLAGS=  -O3 -Wall -lgomp -fopenmp -pg
 
 CPPFLAGS= -lboost_program_options
 

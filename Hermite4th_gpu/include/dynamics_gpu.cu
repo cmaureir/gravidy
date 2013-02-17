@@ -2,9 +2,8 @@
 
 __host__ void gpu_init_acc_jrk()
 {
-    int smem = BSIZE * 2 * sizeof(double4);
-    k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_r, d_v, d_a, d_a1, d_m, n);
-    //cudaThreadSynchronize();
+    int smem = BSIZE * 2* sizeof(double4);
+    k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_r, d_v, d_f, d_m, n);
     #ifdef KERNEL_ERROR_DEBUG
         std::cerr << "k_init_acc_jrk: " << std::endl;
         std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
@@ -34,7 +33,6 @@ __host__ void gpu_get_energy_log(double ITIME, int iterations, int nsteps)
 __host__ double gpu_energy()
 {
     k_energy <<< nblocks, nthreads >>> (d_r, d_v, d_ekin, d_epot, d_m, n);
-    //cudaThreadSynchronize();
     #ifdef KERNEL_ERROR_DEBUG
         std::cerr << "k_energy: " << std::endl;
         std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
@@ -54,24 +52,14 @@ __host__ double gpu_energy()
     return ekin + epot;
 }
 
-__host__ void gpu_predicted_pos_vel(float ITIME)
-{
-    k_predicted_pos_vel<<< nblocks, nthreads >>> (d_r, d_v, d_a, d_a1, d_p_r, d_p_v,
-                                                  d_t, ITIME, n);
-    //cudaThreadSynchronize();
-    #ifdef KERNEL_ERROR_DEBUG
-        std::cerr << "k_predicted_pos_vel: " << std::endl;
-        std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
-    #endif
-}
+__host__ void gpu_update_acc_jrk_simple(int total) {
 
+    int smem = BSIZE * sizeof(Predictor);
+    //Predictor tmp[total];
 
-__host__ void gpu_update_acc_jrk_simple(int total)
-{
-    //CUDA_SAFE_CALL(cudaMemcpy(d_move, h_move, i1_size, cudaMemcpyHostToDevice));
-
-    int smem = BSIZE * 2 * sizeof(double4);
-    k_update_acc_jrk_simple <<< nblocks, nthreads, smem >>> (d_p_r, d_p_v, d_a, d_a1,
+    //dim3 nthreads(BSIZE, 1, 1);
+    //dim3 nblocks(1 + (total-1)/BSIZE,NJBLOCK, 1);
+    k_update_acc_jrk_simple <<< nblocks, nthreads, smem >>> (d_p, d_f,
                                                              d_m, d_move, n, total);
     //cudaThreadSynchronize();
     #ifdef KERNEL_ERROR_DEBUG
@@ -80,114 +68,50 @@ __host__ void gpu_update_acc_jrk_simple(int total)
     #endif
 }
 
+__host__ void gpu_update(int total) {
 
-//__host__ void gpu_update_acc_jrk(int total)
-//{
-//    //int smem     = BSIZE * 2 * sizeof(double4);
-//    CUDA_SAFE_CALL(cudaMemcpy(d_move, h_move, i1_size, cudaMemcpyHostToDevice));
-//
-//    for (int k = 0; k < total; k++)
-//    {
-//        int i = h_move[k];
-//        k_update_acc_jrk_single <<< nblocks, nthreads  >>> (d_new_a, d_new_j,
-//                                                           d_p_r, d_p_v, d_m, n, i);
-//
-//        cudaThreadSynchronize();
-//        #ifdef KERNEL_ERROR_DEBUG
-//            std::cerr << "k_update_acc_jrk_single: " << std::endl;
-//            std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
-//        #endif
-//
-//        cudaMemcpy(h_new_a,d_new_a,d4_size,cudaMemcpyDeviceToHost);
-//        cudaMemcpy(h_new_j,d_new_j,d4_size,cudaMemcpyDeviceToHost);
-//
-//        h_a[i].x = 0.0;
-//        h_a[i].y = 0.0;
-//        h_a[i].z = 0.0;
-//
-//        h_a1[i].x = 0.0;
-//        h_a1[i].y = 0.0;
-//        h_a1[i].z = 0.0;
-//
-//
-//        for (int iii = 0; iii < n; iii++) {
-//            h_a[i] += h_new_a[iii];
-//            h_a1[i] += h_new_j[iii];
-//        }
-//
-////        k_reduce<<< nblocks, nthreads, smem >>> (d_new_a, tmp_red, n);
-////        cudaThreadSynchronize();
-////        k_reduce<<< 1, nthreads, smem >>> (tmp_red, tmp_red + nblocks, nblocks);
-////        cudaMemcpy(h_a + i,tmp_red + nblocks,sizeof(double4),cudaMemcpyDeviceToHost);
-////
-////        k_reduce<<< nblocks, nthreads, smem >>> (d_new_j, tmp_red, n);
-////        cudaThreadSynchronize();
-////        k_reduce<<< 1, nthreads, smem >>> (tmp_red, tmp_red + nblocks, nblocks);
-////        cudaMemcpy(h_a1 + i,tmp_red + nblocks,sizeof(double4),cudaMemcpyDeviceToHost);
-////
-//        //cudaMemcpy(h_a + i , d_a + i, sizeof(double4), cudaMemcpyDeviceToHost);
-//        //cudaMemcpy(h_a1 + i , d_a1 + i, sizeof(double4), cudaMemcpyDeviceToHost);
-//    }
-//}
-//__host__ void gpu_update_2d(int total)
-//{
-//    // i-threads = number of particles to move (total)
-//    // j-threads = particles per block to calculate force on i (~ 32)
-//    ////////ENVIAR SOLO PARTICULAS QUE SE MUEVEN
-//    cudaMemcpy(d_move, h_move, n * sizeof(int), cudaMemcpyHostToDevice);
-//
-//    dim3 nb(1+(total-1)/BSIZE, NJBLOCK,1);
-//    dim3 nt(BSIZE, 1 ,1);
-//    printf("Moving: %4d using Blocks(%3d, %3d. 1)  Threads(%4d, 1, 1)\n",
-//            total, nb.x, nb.y, nt.x);
-//    k_update_2d <<< nb, nt  >>> (d_move, d_new_a, d_new_j, d_p_r, d_p_v, d_m, n, total);
-//    cudaThreadSynchronize();
-//    std::cerr << "k_update_2d: " << cudaGetErrorString(cudaGetLastError()) <<  std::endl;
-//
-//    cudaMemcpy(h_new_a,d_new_a,sizeof(double4) * n * NJBLOCK,cudaMemcpyDeviceToHost);
-//    cudaMemcpy(h_new_j,d_new_j,sizeof(double4) * n * NJBLOCK,cudaMemcpyDeviceToHost);
-//
-//    for (int k = 0; k < n; k++) {
-//        int i = h_move[k];
-//        for (int j = 0; j < NJBLOCK; j++) {
-//            printf("%f %f %f\n",h_new_a[i + n * j].x, h_new_a[i + n * j].y, h_new_a[i + n*j].z );
-//        }
-//        printf("\n");
-//    }
-//
-//        getchar();
-//}
-//
-
-
-/*
- * @fn gpu_update_acc_jrk()
- *
- * @param total amount of particles to update
- *
- * @brief
- *  Host function which call the kernel to calculate
- *  the new acceleration and jrk.
- */
- /*
-__host__ void gpu_update_acc_jrk(int total)
-{
-    int smem     = BSIZE * 2 * sizeof(double4);
-
-    CUDA_SAFE_CALL(cudaMemcpy(d_move, h_move, i1_size, cudaMemcpyHostToDevice));
-
-    k_update_acc_jrk <<< nblocks, nthreads, smem >>> (d_p_r, d_p_v, d_a, d_a1, d_m,
-                                                            d_move, n, total);
-    cudaThreadSynchronize();
-    #ifdef KERNEL_ERROR_DEBUG
-        std::cerr << "k_update_acc_jrk: " << cudaGetErrorString(cudaGetLastError()) <<"TpB: " << nthreads << " BpG: " << nblocks << "Smem: " << smem <<  std::endl;
-    #endif
-
-    for (int i = 0; i < total; i++)
-    {
-        int j = h_move[i];
-        CUDA_SAFE_CALL(cudaMemcpy(&h_a[j], &d_a[j], sizeof(double4), cudaMemcpyDeviceToHost));
-        CUDA_SAFE_CALL(cudaMemcpy(&h_a1[j], &d_a1[j], sizeof(double4), cudaMemcpyDeviceToHost));
+    int smem = BSIZE * sizeof(Predictor);
+    for (int i = 0; i < total; i++) {
+        int id = h_move[i];
+        h_i[i] = h_p[id];
     }
+    CUDA_SAFE_CALL(cudaMemcpy(d_i, h_i, sizeof(Predictor) * total, cudaMemcpyHostToDevice));
+    dim3 nblocks2(1 + (total-1)/BSIZE,NJBLOCK, 1);
+    dim3 nthreads2(BSIZE, 1, 1);
+    k_update <<< nblocks2, nthreads2, smem >>> (d_i, d_p, d_fout,d_m, n, total);
+    #ifdef KERNEL_ERROR_DEBUG
+        std::cerr << "k_update: " << std::endl;
+        std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
+    #endif
+    CUDA_SAFE_CALL(cudaMemcpy(h_fout, d_fout, sizeof(Forces) * total * NJBLOCK, cudaMemcpyDeviceToHost));
+    //CUDA_SAFE_CALL(cudaMemcpy(h_fout, d_fout, sizeof(Forces) * n * NJBLOCK, cudaMemcpyDeviceToHost));
+
+    for (int i = 0; i < total * NJBLOCK; i++) {
+        printf("%f ", h_fout[i].a[0]);
+        if (i%NJBLOCK == 0) printf("||\n");
+    }
+    getchar();
+    // Reduction
+    Forces tmp_f;
+    for (int i = 0; i < total; i++) {
+        int id = h_move[i];
+        tmp_f.a[0] = 0.0;
+        tmp_f.a[1] = 0.0;
+        tmp_f.a[2] = 0.0;
+        tmp_f.a1[0] = 0.0;
+        tmp_f.a1[1] = 0.0;
+        tmp_f.a1[2] = 0.0;
+        for (int j = 0; j < NJBLOCK; j++) {
+            tmp_f.a[0]  += h_fout[i * NJBLOCK + j].a[0];
+            tmp_f.a[1]  += h_fout[i * NJBLOCK + j].a[1];
+            tmp_f.a[2]  += h_fout[i * NJBLOCK + j].a[2];
+            tmp_f.a1[0] += h_fout[i * NJBLOCK + j].a1[0];
+            tmp_f.a1[1] += h_fout[i * NJBLOCK + j].a1[1];
+            tmp_f.a1[2] += h_fout[i * NJBLOCK + j].a1[2];
+        }
+        h_f[id] = tmp_f;
+    printf("Updating %d - %f\t%f\t%f - %f\t%f\t%f\n", id, h_f[id].a[0], h_f[id].a[1], h_f[id].a[2], h_f[id].a1[0], h_f[id].a1[1], h_f[id].a1[2]);
+    getchar();
+    }
+
 }
-*/
