@@ -60,7 +60,7 @@
 /*
  * CUDA Configuration
  */
-#define BSIZE   128  // Block size on kernels calls
+#define BSIZE   64  // Block size on kernels calls
 #define NJBLOCK 16  // Block size of the shared memory loading j-particles
 
 // Macro from cutil.h to debug the CUDA calls

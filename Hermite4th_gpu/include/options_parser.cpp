@@ -158,6 +158,18 @@ bool check_options(int argc, char *argv[])
         eta = vm["eta"].as<float>();
     }
 
+    std::ostringstream ss;
+    ss << "_t";
+    ss << int_time;
+    ss << "_s";
+    ss << softening;
+    ss << "_e";
+    ss << eta;
+    ss << ".out";
+    std::string ext(ss.str());
+
+    output_file = input_file+ext;
+
 
     return true;
 }

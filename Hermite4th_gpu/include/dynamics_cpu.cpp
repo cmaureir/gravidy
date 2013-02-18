@@ -280,8 +280,8 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
     energy_tmp = energy_end;
     float time = (float)clock()/CLOCKS_PER_SEC - ini_time;
 
-    printf("# t = % 3d % 10d % 10d % 6.2f % .15e % .15e % .15e\n",
-    //fprintf(out, "# t = % 3d % 10d % 10d % 6.2f % .15e % .15e % .15e\n",
+    //printf("# t = % 3d % 10d % 10d % 6.2f % .15e % .15e % .15e\n",
+    fprintf(out, "# t = % 3d % 10d % 10d % 6.2f % .15e % .15e % .15e\n",
             (int)ITIME,
             iterations,
             nsteps,

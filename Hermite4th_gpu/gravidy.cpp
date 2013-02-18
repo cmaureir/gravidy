@@ -61,6 +61,18 @@ Predictor *d_i, *h_i;
 //Forces *d_fout[NJBLOCK], *h_fout[NJBLOCK];
 Forces *d_fout, *h_fout;
 
+#include <time.h>
+
+string getTime ()
+{
+    time_t timeObj;
+    time(&timeObj);
+    tm *pTime = gmtime(&timeObj);
+    char buffer[100];
+    sprintf(buffer, "%d-%d-%d_%d:%d:%d", pTime->tm_mday, pTime->tm_mon, 1900+pTime->tm_year, pTime->tm_hour, pTime->tm_min, pTime->tm_sec);
+    return buffer;
+}
+
 
 /*
  * Main
@@ -78,6 +90,9 @@ main(int argc, char *argv[])
     ini_time = (float)clock()/CLOCKS_PER_SEC;
 
     // Opening output file for debugging
+    output_file += "_";
+    output_file += getTime();
+    output_file += ".out.gpu";
     out = fopen(output_file.c_str(), "w");
 
     ini_time = (float)clock()/CLOCKS_PER_SEC;

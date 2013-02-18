@@ -42,6 +42,19 @@ FILE *out;
 
 size_t d1_size, d4_size;
 size_t f1_size, i1_size;
+
+#include <time.h>
+
+string getTime ()
+{
+    time_t timeObj;
+    time(&timeObj);
+    tm *pTime = gmtime(&timeObj);
+    char buffer[100];
+    sprintf(buffer, "%d-%d-%d_%d:%d:%d", pTime->tm_mday, pTime->tm_mon, 1900+pTime->tm_year, pTime->tm_hour, pTime->tm_min, pTime->tm_sec);
+    return buffer;
+}
+
 /*
  * Main
  */
@@ -55,14 +68,19 @@ main(int argc, char *argv[])
     alloc_vectors_cpu();
 
     // Opening output file for debugging
+    //output_file = input_file;
+    output_file += "_";
+    output_file += getTime();
+    output_file += ".out.cpu";
     out = fopen(output_file.c_str(), "w");
+
 
     ini_time = (float)clock()/CLOCKS_PER_SEC;
     integrate_cpu();
     end_time = (float)clock()/CLOCKS_PER_SEC;
 
     fclose(out);
-    write_output_file(output_file);
+    //write_output_file(output_file);
     free_vectors_cpu();
 
     return 0;
