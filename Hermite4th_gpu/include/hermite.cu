@@ -27,6 +27,9 @@ void integrate_gpu()
 
     get_energy_log(ITIME, iterations, nsteps, out); // First log of the integration
 
+    float tmp_time = 0.0f;
+    gpu_time = 0.0f;
+
     //////CUDA_SAFE_CALL(cudaMemcpy(d_t,  h_t,  d1_size,cudaMemcpyHostToDevice));
     while (ITIME < int_time)
     {
@@ -39,9 +42,11 @@ void integrate_gpu()
             predicted_pos_vel(ITIME);
             update_acc_jrk(nact);
             correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
+            cpu_iterations++;
         }
         else
         {
+            tmp_time = (float)clock()/CLOCKS_PER_SEC;
             CUDA_SAFE_CALL(cudaMemcpy(d_move, h_move, i1_size, cudaMemcpyHostToDevice));
             predicted_pos_vel(ITIME);
             CUDA_SAFE_CALL(cudaMemcpy(d_p, h_p, sizeof(Predictor) * n,cudaMemcpyHostToDevice));
@@ -51,6 +56,8 @@ void integrate_gpu()
             correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
             //CUDA_SAFE_CALL(cudaMemcpy(d_r, h_r, d4_size, cudaMemcpyHostToDevice));
             //CUDA_SAFE_CALL(cudaMemcpy(d_v, h_v, d4_size, cudaMemcpyHostToDevice));
+            gpu_time += (float)clock()/CLOCKS_PER_SEC - tmp_time;
+            gpu_iterations++;
         }
 
         next_itime(&ATIME);                    // Find next integration time

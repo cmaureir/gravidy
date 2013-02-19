@@ -3,7 +3,6 @@
 #include <vector>
 #include <string>
 #include <ctime>
-#include <omp.h>
 #include <cassert>
 #include <vector_types.h>
 
@@ -115,6 +114,8 @@ extern std::string output_file;       // Output filename for general info.
 extern FILE *out;                     // Out file for debugging.
 extern float total_mass;              // Total mass of the particles
                                       // (In N-body units will be 1)
+extern int cpu_iterations, gpu_iterations;
+extern float gpu_time;
 
 extern double int_time;               // Integration clock time
 extern double ini_time, end_time;     // Initial and Final clock time stamps

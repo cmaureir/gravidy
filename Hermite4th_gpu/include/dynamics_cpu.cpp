@@ -281,10 +281,27 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
     float time = (float)clock()/CLOCKS_PER_SEC - ini_time;
 
     //printf("# t = % 3d % 10d % 10d % 6.2f % .15e % .15e % .15e\n",
-    fprintf(out, "# t = % 3d % 10d % 10d % 6.2f % .15e % .15e % .15e\n",
+    if((int)ITIME == 0)
+    {
+        fprintf(out, "#%3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
+                "#Time",
+                "CpuIte",
+                "GpuIte",
+                "Ite",
+                "Nsteps",
+                "GpuT",
+                "TTime",
+                "Energy",
+                "RelErr",
+                "CumErr");
+    }
+    fprintf(out, "#% 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
             (int)ITIME,
+            cpu_iterations,
+            gpu_iterations,
             iterations,
             nsteps,
+            gpu_time,
             time,
             energy_end,
             relative_error,
