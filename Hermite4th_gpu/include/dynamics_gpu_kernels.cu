@@ -244,12 +244,26 @@ __global__ void k_update(Predictor *d_i,
                 Predictor jp = jpshare[jj];
                 k_force_calculation2(ip, jp, fo, mj);
             }
-        }else{
+        }
+        else{
             for(int jj=0; jj<BSIZE; jj++){
                 Predictor jp = jpshare[jj];
                 k_force_calculation2(ip, jp, fo, mj);
             }
         }
     }
-    d_fout[iaddr*NJBLOCK + jbid] = fo;
+    Forces foo;
+    foo.a[0] = 1.0;
+    foo.a[1]  = 1.0;
+    foo.a[2]  = 1.0;
+    foo.a1[0] = 1.0;
+    foo.a1[1] = 1.0;
+    foo.a1[2] = 1.0;
+
+    if(iaddr == 0)
+        d_fout[iaddr*NJBLOCK + jbid] = foo;
+    else
+        d_fout[iaddr*NJBLOCK + jbid] = fo;
+    //d_fout[iaddr*NJBLOCK + jbid] = foo;
+
 }

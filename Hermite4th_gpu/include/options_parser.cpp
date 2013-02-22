@@ -119,18 +119,6 @@ bool check_options(int argc, char *argv[])
         return false;
     }
 
-    // Output option
-    output_file = input_file+std::string(".output");
-    if (vm.count("output"))
-    {
-        output_file = vm["output"].as<std::string>();
-    }
-    //else
-    //{
-    //    std::cerr << "gravidy: option requires an argument -- 'output'" << std::endl;
-    //    std::cerr << desc << std::endl;
-    //    return false;
-    //}
 
     // Time option
     if (vm.count("time"))
@@ -168,7 +156,20 @@ bool check_options(int argc, char *argv[])
     ss << ".out";
     std::string ext(ss.str());
 
-    output_file = input_file+ext;
+    // Output option
+    if (vm.count("output"))
+    {
+        output_file = vm["output"].as<std::string>();
+        output_file = output_file+ext;
+    }
+    else
+    {
+        output_file = input_file+ext;
+    //    std::cerr << "gravidy: option requires an argument -- 'output'" << std::endl;
+    //    std::cerr << desc << std::endl;
+    //    return false;
+    }
+
 
 
     return true;

@@ -35,10 +35,6 @@ void read_input_file(std::string path)
 
     file.close();
     n = (int)part.size();
-
-    // Fixing ntreads and nblocks
-    nthreads = BSIZE;
-    nblocks = ceil(n/(float)nthreads);
 }
 
 

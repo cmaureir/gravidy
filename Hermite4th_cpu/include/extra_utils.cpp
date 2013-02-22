@@ -73,7 +73,7 @@ void print_old(int limit)
     for (int i = 0; i < limit; i++) {
         printf("%6d %.10f %.10f %.10f %.10f %.10f %.10f\n",
                 i,
-                 h_old_a[i].x,  h_old_a[i].y,  h_old_a[i].z,
+                h_old_a[i].x,  h_old_a[i].y,  h_old_a[i].z,
                 h_old_a1[i].x, h_old_a1[i].y, h_old_a1[i].z);
     }
 }

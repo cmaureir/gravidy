@@ -88,12 +88,12 @@ __host__ void gpu_update(int total) {
 
     for (int i = 0; i < total * NJBLOCK; i++) {
         printf("%f ", h_fout[i].a[0]);
-        if (i%NJBLOCK == 0) printf("||\n");
+        if ((i+1)%NJBLOCK == 0) printf("||\n");
     }
     getchar();
     // Reduction
     Forces tmp_f;
-    for (int i = 0; i < total; i++) {
+    for (int i = 0; i < total ; i++) {
         int id = h_move[i];
         tmp_f.a[0] = 0.0;
         tmp_f.a[1] = 0.0;
@@ -110,7 +110,9 @@ __host__ void gpu_update(int total) {
             tmp_f.a1[2] += h_fout[i * NJBLOCK + j].a1[2];
         }
         h_f[id] = tmp_f;
-    printf("Updating %d - %f\t%f\t%f - %f\t%f\t%f\n", id, h_f[id].a[0], h_f[id].a[1], h_f[id].a[2], h_f[id].a1[0], h_f[id].a1[1], h_f[id].a1[2]);
+    printf("Updating %d %f\t%f\t%f\t%f\t%f\t%f\n",
+            id, h_f[id].a[0],  h_f[id].a[1],  h_f[id].a[2],
+                h_f[id].a1[0], h_f[id].a1[1], h_f[id].a1[2]);
     getchar();
     }
 

@@ -39,10 +39,10 @@ int find_particles_to_move(double ITIME)
         {
             h_move[j] = i;
             j++;
-//            printf("%d ",i);
+            printf("%d ",i);
         }
     }
-//    printf("\n");
+    printf("\n");
     return j;
 }
 
@@ -280,10 +280,10 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
     energy_tmp = energy_end;
     float time = (float)clock()/CLOCKS_PER_SEC - ini_time;
 
-    //printf("# t = % 3d % 10d % 10d % 6.2f % .15e % .15e % .15e\n",
     if((int)ITIME == 0)
     {
-        fprintf(out, "#%3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
+        //fprintf(out, "#%3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
+        printf("#%3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
                 "#Time",
                 "CpuIte",
                 "GpuIte",
@@ -295,7 +295,8 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
                 "RelErr",
                 "CumErr");
     }
-    fprintf(out, "#% 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
+    //fprintf(out, "#% 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
+    printf("#% 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
             (int)ITIME,
             cpu_iterations,
             gpu_iterations,
@@ -306,7 +307,7 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
             energy_end,
             relative_error,
             cumulative_error);
-    fflush(out);
+    //fflush(out);
 }
 
 /*

@@ -184,7 +184,7 @@ void force_calculation(int i, int j)
 
 void init_acc_jrk()
 {
-    //#pragma omp parallel for private(j)
+    //#pragma omp parallel for
     for (int i = INIT_PARTICLE; i < n; i++)
     {
         for (int j = INIT_PARTICLE; j < n; j++)
@@ -224,8 +224,10 @@ void update_acc_jrk(int total)
             if(i == j) continue;
             force_calculation(i,j);
         }
-//        printf("Updating %d - %f\t%f\t%f - %f\t%f\t%f\n", i, h_a[k].x, h_a[k].y, h_a[k].z, h_a1[k].x, h_a1[k].y, h_a1[k].z);
-
+//        printf("Updating %d %f\t%f\t%f\t%f\t%f\t%f\n",
+//                i, h_f[k].a[0],  h_f[k].a[1], h_f[k].a[2],
+//                   h_f[k].a1[0], h_f[k].a[1], h_f[k].a[2]);
+//
 //        getchar();
     }
 }
@@ -283,8 +285,20 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
     energy_tmp = energy_end;
     float time = (float)clock()/CLOCKS_PER_SEC - ini_time;
 
-    //printf("# t = % 3d % 10d % 10d % 6.2f % .15e % .15e % .15e\n",
-    fprintf(out, "# t = % 3d % 10d % 10d % 6.2f % .15e % .15e % .15e\n",
+    if((int)ITIME == 0)
+    {
+        fprintf(out, "#%3s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\n",
+        //printf("#%3s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\n",
+                "#Time",
+                "Ite",
+                "Nsteps",
+                "TTime",
+                "Energy",
+                "RelErr",
+                "CumErr");
+	}
+    fprintf(out, "#% 3d\t % 10d\t % 10d\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
+	//printf("#% 3d\t % 10d\t % 10d\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
             (int)ITIME,
             iterations,
             nsteps,
@@ -293,6 +307,7 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
             relative_error,
             cumulative_error);
     fflush(out);
+    print_all(n,ITIME);
 }
 
 /*
