@@ -21,6 +21,7 @@ double ekin, epot;
 float softening, eta;
 int cpu_iterations, gpu_iterations;
 float gpu_time;
+float alpha;
 
 // Struct vector to read the input file
 std::vector<particle> part;

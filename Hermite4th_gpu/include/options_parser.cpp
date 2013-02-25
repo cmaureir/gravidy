@@ -83,6 +83,7 @@ bool check_options(int argc, char *argv[])
         ("time,t",      po::value<float>(),       "Integration time")
         ("softening,s", po::value<float>(),       "Softening")
         ("eta,e",       po::value<float>(),       "ETA of time-step calculation")
+        ("alpha,a",     po::value<float>(),       "Use CPU when Nact < alpha * N")
     ;
 
     po::variables_map vm;
@@ -168,6 +169,12 @@ bool check_options(int argc, char *argv[])
     //    std::cerr << "gravidy: option requires an argument -- 'output'" << std::endl;
     //    std::cerr << desc << std::endl;
     //    return false;
+    }
+
+    alpha = 0.05;
+    if (vm.count("alpha"))
+    {
+        alpha = vm["alpha"].as<float>();
     }
 
 
