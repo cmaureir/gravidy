@@ -8,6 +8,10 @@ void integrate_gpu()
     int nsteps   = 0;       // Amount of steps per particles on the system
     iterations   = 0;       // Iterations of the integration
 
+    // Tmp setting nblocks and nthreads
+    nthreads = BSIZE;
+    nblocks = ceil(n/(float)nthreads);
+
     // Copying the input file information from the CPU to the GPU
     CUDA_SAFE_CALL(cudaMemcpy(d_r,  h_r,  d4_size,cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(d_v,  h_v,  d4_size,cudaMemcpyHostToDevice));

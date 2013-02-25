@@ -208,10 +208,10 @@ void init_acc_jrk()
  */
 void update_acc_jrk(int total)
 {
-    int i, j;
+    #pragma omp parallel for
     for (int k = 0; k < total; k++)
     {
-        i = h_move[k];
+        int i = h_move[k];
         h_f[i].a[0]  = 0.0;
         h_f[i].a[1]  = 0.0;
         h_f[i].a[2]  = 0.0;
@@ -219,7 +219,7 @@ void update_acc_jrk(int total)
         h_f[i].a1[1] = 0.0;
         h_f[i].a1[2] = 0.0;
 
-        for (j = INIT_PARTICLE; j < n; j++)
+        for (int j = INIT_PARTICLE; j < n; j++)
         {
             if(i == j) continue;
             force_calculation(i,j);
@@ -287,8 +287,8 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
 
     if((int)ITIME == 0)
     {
-        fprintf(out, "#%3s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\n",
-        //printf("#%3s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\n",
+        //fprintf(out, "#%3s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\n",
+        printf("#%3s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\n",
                 "#Time",
                 "Ite",
                 "Nsteps",
@@ -297,8 +297,8 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
                 "RelErr",
                 "CumErr");
 	}
-    fprintf(out, "#% 3d\t % 10d\t % 10d\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
-	//printf("#% 3d\t % 10d\t % 10d\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
+    //fprintf(out, "#% 3d\t % 10d\t % 10d\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
+	printf("#% 3d\t % 10d\t % 10d\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
             (int)ITIME,
             iterations,
             nsteps,
@@ -307,7 +307,7 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
             relative_error,
             cumulative_error);
     fflush(out);
-    print_all(n,ITIME);
+    //print_all(n,ITIME);
 }
 
 /*

@@ -17,9 +17,6 @@ void integrate_cpu()
 
     get_energy_log(ITIME, iterations, nsteps, out); // First log of the integration
 
-    std::cout << get_relaxation_time() << std::endl;
-    ITIME = int_time;
-
     while (ITIME < int_time)
     {
         ITIME = ATIME;                         // New integration time

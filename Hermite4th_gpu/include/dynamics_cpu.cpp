@@ -39,10 +39,10 @@ int find_particles_to_move(double ITIME)
         {
             h_move[j] = i;
             j++;
-            printf("%d ",i);
+    //        printf("%d ",i);
         }
     }
-    printf("\n");
+   // printf("\n");
     return j;
 }
 
@@ -471,7 +471,7 @@ double normalize_dt(double new_dt, double old_dt, double t, int i)
     }
     else
     {
-        fprintf(stderr, "gravidy: Undefined treatment for the time-step of (%d)",i);
+        //fprintf(stderr, "gravidy: Undefined treatment for the time-step of (%d)",i);
         new_dt = old_dt;
     }
 

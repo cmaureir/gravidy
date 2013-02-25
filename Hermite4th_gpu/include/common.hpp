@@ -10,6 +10,8 @@
 //#undef _GLIBCXX_ATOMIC_BUILTINS
 //#undef _GLIBCXX_USE_INT128
 
+#define gettime (float)clock()/CLOCKS_PER_SEC
+
 /*********************************
  *  Preprocessor directives
  *********************************/
