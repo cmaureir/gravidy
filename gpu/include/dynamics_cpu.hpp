@@ -13,7 +13,6 @@ void init_dt2(double*);
 void init_acc_jrk();
 void update_acc_jrk(int);
 double energy();
-void get_energy_log(double,int, int, FILE*);
 void save_old(int);
 void predicted_pos_vel(double);
 void correction_pos_vel(double,int);

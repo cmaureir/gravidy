@@ -252,18 +252,18 @@ __global__ void k_update(Predictor *d_i,
             }
         }
     }
-    Forces foo;
-    foo.a[0] = 1.0;
-    foo.a[1]  = 1.0;
-    foo.a[2]  = 1.0;
-    foo.a1[0] = 1.0;
-    foo.a1[1] = 1.0;
-    foo.a1[2] = 1.0;
+    //Forces foo;
+    //foo.a[0] = 1.0;
+    //foo.a[1]  = 1.0;
+    //foo.a[2]  = 1.0;
+    //foo.a1[0] = 1.0;
+    //foo.a1[1] = 1.0;
+    //foo.a1[2] = 1.0;
 
-    if(iaddr == 0)
-        d_fout[iaddr*NJBLOCK + jbid] = foo;
-    else
-        d_fout[iaddr*NJBLOCK + jbid] = fo;
-    //d_fout[iaddr*NJBLOCK + jbid] = foo;
+    //if(iaddr == 0)
+    //    d_fout[iaddr*NJBLOCK + jbid] = foo;
+    //else
+    //    d_fout[iaddr*NJBLOCK + jbid] = fo;
+    d_fout[iaddr*NJBLOCK + jbid] = fo;
 
 }

@@ -29,7 +29,7 @@ void integrate_gpu()
     energy_ini = gpu_energy(); // Initial calculation of the energy of the system
     energy_tmp = energy_ini;  // Saving initial energy, to calculate errors
 
-    get_energy_log(ITIME, iterations, nsteps, out); // First log of the integration
+    get_energy_log(ITIME, iterations, nsteps, out, energy_tmp); // First log of the integration
 
     float tmp_time = 0.0f;
     gpu_time = 0.0f;
@@ -54,8 +54,8 @@ void integrate_gpu()
             CUDA_SAFE_CALL(cudaMemcpy(d_move, h_move, i1_size, cudaMemcpyHostToDevice));
             predicted_pos_vel(ITIME);
             CUDA_SAFE_CALL(cudaMemcpy(d_p, h_p, sizeof(Predictor) * n,cudaMemcpyHostToDevice));
-            gpu_update_acc_jrk_simple(nact);     // Update a and a1 of nact particles
-            //gpu_update(nact);     // Update a and a1 of nact particles
+            //gpu_update_acc_jrk_simple(nact);     // Update a and a1 of nact particles
+            gpu_update(nact);     // Update a and a1 of nact particles
             CUDA_SAFE_CALL(cudaMemcpy(h_f,  d_f,  sizeof(Forces) * n ,cudaMemcpyDeviceToHost));
             correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
             //CUDA_SAFE_CALL(cudaMemcpy(d_r, h_r, d4_size, cudaMemcpyHostToDevice));
@@ -68,14 +68,11 @@ void integrate_gpu()
 
         if(std::ceil(ITIME) == ITIME)          // Print log in every integer ITIME
         {
-           get_energy_log(ITIME, iterations, nsteps, out);
+           get_energy_log(ITIME, iterations, nsteps, out, gpu_energy());
         }
 
         //printf("%f\n", ITIME);
         nsteps += nact;                        // Update nsteps with nact
         iterations++;                          // Increase iterations
-//        printf("# %d %d %.10f\n", iterations, nact, ITIME);
-//        print_all(n, ITIME);
-//        if(iterations%100  == 0) printf("%d\n", iterations);
     }
 }

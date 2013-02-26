@@ -76,6 +76,7 @@ __host__ void gpu_update(int total) {
         h_i[i] = h_p[id];
     }
     CUDA_SAFE_CALL(cudaMemcpy(d_i, h_i, sizeof(Predictor) * total, cudaMemcpyHostToDevice));
+    printf("Total (%d) nblocks(%d,%d,%d) nthreads(%d,%d,%d)\n",total, 1 + (total-1)/BSIZE, NJBLOCK, 1,BSIZE, 1,1 );
     dim3 nblocks2(1 + (total-1)/BSIZE,NJBLOCK, 1);
     dim3 nthreads2(BSIZE, 1, 1);
     k_update <<< nblocks2, nthreads2, smem >>> (d_i, d_p, d_fout,d_m, n, total);
@@ -86,10 +87,10 @@ __host__ void gpu_update(int total) {
     CUDA_SAFE_CALL(cudaMemcpy(h_fout, d_fout, sizeof(Forces) * total * NJBLOCK, cudaMemcpyDeviceToHost));
     //CUDA_SAFE_CALL(cudaMemcpy(h_fout, d_fout, sizeof(Forces) * n * NJBLOCK, cudaMemcpyDeviceToHost));
 
-    for (int i = 0; i < total * NJBLOCK; i++) {
-        printf("%f ", h_fout[i].a[0]);
-        if ((i+1)%NJBLOCK == 0) printf("||\n");
-    }
+    //for (int i = 0; i < total * NJBLOCK; i++) {
+    //    printf("%f ", h_fout[i].a[0]);
+    //    if ((i+1)%NJBLOCK == 0) printf("||\n");
+    //}
     getchar();
     // Reduction
     Forces tmp_f;

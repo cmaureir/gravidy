@@ -39,10 +39,10 @@ int find_particles_to_move(double ITIME)
         {
             h_move[j] = i;
             j++;
-//            printf("%d ",i);
+            printf("%d ",i);
         }
     }
-//    printf("\n");
+    printf("\n");
     return j;
 }
 
@@ -224,11 +224,14 @@ void update_acc_jrk(int total)
             if(i == j) continue;
             force_calculation(i,j);
         }
-//        printf("Updating %d %f\t%f\t%f\t%f\t%f\t%f\n",
-//                i, h_f[k].a[0],  h_f[k].a[1], h_f[k].a[2],
-//                   h_f[k].a1[0], h_f[k].a[1], h_f[k].a[2]);
-//
-//        getchar();
+        if (total > n * 0.05)
+        {
+            printf("Updating %d %f\t%f\t%f\t%f\t%f\t%f\n",
+                    i, h_f[k].a[0],  h_f[k].a[1], h_f[k].a[2],
+                       h_f[k].a1[0], h_f[k].a[1], h_f[k].a[2]);
+
+            getchar();
+        }
     }
 }
 
@@ -275,39 +278,6 @@ double energy()
         epot += epot_tmp;
     }
     return epot + ekin;
-}
-
-void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
-{
-    energy_end = energy();
-    double relative_error   = abs((energy_end-energy_tmp)/energy_ini);
-    double cumulative_error = abs((energy_end-energy_ini)/energy_ini);
-    energy_tmp = energy_end;
-    float time = (float)clock()/CLOCKS_PER_SEC - ini_time;
-
-    if((int)ITIME == 0)
-    {
-        //fprintf(out, "#%3s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\n",
-        printf("#%3s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\n",
-                "#Time",
-                "Ite",
-                "Nsteps",
-                "TTime",
-                "Energy",
-                "RelErr",
-                "CumErr");
-	}
-    //fprintf(out, "#% 3d\t % 10d\t % 10d\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
-	printf("#% 3d\t % 10d\t % 10d\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
-            (int)ITIME,
-            iterations,
-            nsteps,
-            time,
-            energy_end,
-            relative_error,
-            cumulative_error);
-    fflush(out);
-    //print_all(n,ITIME);
 }
 
 /*

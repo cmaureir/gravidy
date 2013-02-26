@@ -15,7 +15,7 @@ void integrate_cpu()
     energy_ini = energy();   // Initial calculation of the energy of the system
     energy_tmp = energy_ini; // Saving initial energy, to calculate errors
 
-    get_energy_log(ITIME, iterations, nsteps, out); // First log of the integration
+    get_energy_log(ITIME, iterations, nsteps, out, energy_tmp); // First log of the integration
 
     while (ITIME < int_time)
     {
@@ -31,7 +31,7 @@ void integrate_cpu()
 
         if(std::ceil(ITIME) == ITIME)          // Print log in every integer ITIME
         {
-           get_energy_log(ITIME, iterations, nsteps, out);
+           get_energy_log(ITIME, iterations, nsteps, out, energy());
            //print_all(n,ITIME);
         }
 
