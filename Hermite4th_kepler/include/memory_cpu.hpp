@@ -3,5 +3,5 @@
 #include "common.hpp"
 #endif
 
-void init_vectors();
-void clean_vectors();
+void alloc_vectors_cpu();
+void free_vectors_cpu();

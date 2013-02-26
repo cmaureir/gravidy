@@ -266,13 +266,13 @@ void kepler_prediction(double *rx, double *ry, double *rz,
     //v = j / (r * v * sin(acos(rv2/(r * v))));
 
     // total motion relative to fix central mass
-    h_p_r[i].x = h_p_r[0].x + (*rx);
-    h_p_r[i].y = h_p_r[0].y + (*ry);
-    h_p_r[i].z = h_p_r[0].z + (*rz);
+    h_p[i].r[0] = h_p[0].r[0] + (*rx);
+    h_p[i].r[1] = h_p[0].r[1] + (*ry);
+    h_p[i].r[2] = h_p[0].r[2] + (*rz);
 
-    h_p_v[i].x = h_p_v[0].x + (*vx);
-    h_p_v[i].y = h_p_v[0].y + (*vy);
-    h_p_v[i].z = h_p_v[0].z + (*vz);
+    h_p[i].v[0] = h_p[0].v[0] + (*vx);
+    h_p[i].v[0] = h_p[0].v[1] + (*vy);
+    h_p[i].v[0] = h_p[0].v[2] + (*vz);
 
     /*
      * Force contribution of the central mass on a particle
@@ -320,13 +320,13 @@ void kepler_prediction(double *rx, double *ry, double *rz,
                 * (-15.0 * (*vz) + 35.0 * vr * r2inv * (*rz))));
 
 
-    h_a[i].x = a0x;
-    h_a[i].y = a0y;
-    h_a[i].z = a0z;
+    h_f[i].a[0] = a0x;
+    h_f[i].a[1] = a0y;
+    h_f[i].a[2] = a0z;
 
-    h_a1[i].x = a1x;
-    h_a1[i].y = a1y;
-    h_a1[i].z = a1z;
+    h_f[i].a1[0] = a1x;
+    h_f[i].a1[1] = a1y;
+    h_f[i].a1[2] = a1z;
 
     h_a2[i].x = a2x;
     h_a2[i].y = a2y;

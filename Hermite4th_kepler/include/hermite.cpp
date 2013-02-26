@@ -9,8 +9,8 @@ void integrate_cpu()
     iterations   = 0;       // Iterations of the integration
 
     init_acc_jrk();   // Initial calculation of a and a1
-    //init_dt(&ATIME);  // Initial calculation of time-steps using simple equation
-    init_dt2(&ATIME); // Initial calculation of time-steps using complete equation
+    init_dt(&ATIME);  // Initial calculation of time-steps using simple equation
+    //init_dt2(&ATIME); // Initial calculation of time-steps using complete equation
 
     energy_ini = energy();   // Initial calculation of the energy of the system
     energy_tmp = energy_ini; // Saving initial energy, to calculate errors
@@ -35,6 +35,7 @@ void integrate_cpu()
         if(std::ceil(ITIME) == ITIME)          // Print log in every integer ITIME
         {
            get_energy_log(ITIME, iterations, nsteps, out);
+           //print_all(n,ITIME);
         }
 
         nsteps += nact;                        // Update nsteps with nact

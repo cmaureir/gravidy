@@ -208,7 +208,7 @@ void init_acc_jrk()
  */
 void update_acc_jrk(int total)
 {
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int k = 0; k < total; k++)
     {
         int i = h_move[k];

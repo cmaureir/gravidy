@@ -5,28 +5,17 @@
 #include <ctime>
 #include <omp.h>
 #include <cassert>
-//#include <thrust/host_vector.h>
 
 /*********************************
  *  Preprocessor directives
  *********************************/
 
-/*
- * Debugging options
- */
 //#define KERNEL_ERROR_DEBUG 1
 //#define DEBUG_KEPLER 1
 //#define DEBUG_HERMITE 1
-#define RADIUS_MASS_PORCENTAGE 0.4
 
-/*
- * Variable that define is we use the Keplerian correction or not.
- */
 //#define USE_KEPLER 1
 
-/*
- * Keplerian correction variables
- */
 #ifdef USE_KEPLER
     #define INIT_PARTICLE 1  // Starting from 1 to avoid including the BH
                              // in all the loops
@@ -40,6 +29,7 @@
 #define DEL_E_HYP  (2.e-15)  // Maximum error in E in hyperbolic orbits.
 #define OSTEPS     (50)      // Maximum of steps when calculating the central
                              // time-steps distribution
+#define RADIUS_MASS_PORCENTAGE 0.2 // for 1024 particles
 
 #define J 10 // Neighbour amount to calculate the center of density
 
@@ -58,7 +48,7 @@
  * ETA_S used to obtain the firsts time-steps for all the
  * particles of the system.
  */
-#define ETA_S 0.001
+#define ETA_S 0.01
 #define ETA_N 0.01
 
 /*
@@ -96,6 +86,21 @@ typedef struct particle
     double4 v;
 } particle;
 
+typedef struct Predictor {
+    double r[3];
+    double v[3];
+} Predictor;
+
+typedef struct PosVel {
+    double r[3];
+    double v[3];
+} PosVel;
+
+typedef struct Forces {
+    double a[3];
+    double a1[3];
+} Forces;
+
 extern std::vector<particle> part; // Vector to save the input file data
 
 
@@ -107,9 +112,9 @@ extern int iterations;                // Number of iterations in the integration
 extern std::string input_file;        // Input filename
 extern std::string output_file;       // Output filename for general info.
 extern FILE *out;                     // Out file for debugging.
-extern std::string run;               // Run/Execution option (CPU or GPU)
 extern float total_mass;              // Total mass of the particles
                                       // (In N-body units will be 1)
+
 extern double int_time;               // Integration clock time
 extern double ini_time, end_time;     // Initial and Final clock time stamps
 extern double ekin, epot;             // Kinetic and Potential energy
@@ -120,27 +125,26 @@ extern float  softening, eta;         // Softening and ETA parameters
                                       // (This parameters takes the previous
                                       // setted values E, and ETA_N or the
                                       // parameters give by the command line)
+
 extern float t_rh;                    // Half-mass relaxation time
 extern float t_cr;                    // Crossing time
 extern size_t d1_size, d4_size;       // double and double4 size
 extern size_t f1_size, i1_size;       // float and int size
 
-/*********************************
- *  Host and Device pointers
- *********************************/
 
-/*
- * Host pointers
- * (Particles attribute arrays)
- */
+extern double4 *h_r, *h_v;      // Position and Velocity
+extern Forces *h_f;     // Acceleration and its first derivative (Jerk)
+extern double4 *h_a2, *h_a3;    // 2nd and 3rd acceleration derivatives.
+extern double4 *h_old_a;        // Previous step value of the Acceleration
+extern double4 *h_old_a1;       // Previous step value of the Jerk
+extern Predictor *h_p;
+
 extern double *h_ekin, *h_epot; // Kinetic and Potential energy
 extern double  *h_t, *h_dt;     // Time and time-step
 extern double4 *h_r, *h_v;      // Position and Velocity
-extern double4 *h_a, *h_a1;     // Acceleration and its first derivative (Jerk)
 extern float   *h_m;            // Masses of the particles
 extern int *h_move;             // Particles id to move in each iteration time
 extern double4 *h_a2, *h_a3;    // 2nd and 3rd acceleration derivatives.
 extern double4 *h_old_a;        // Previous step value of the Acceleration
 extern double4 *h_old_a1;       // Previous step value of the Jerk
-extern double4 *h_p_r;          // Predicted Position
-extern double4 *h_p_v;          // Predicted Velocity
+

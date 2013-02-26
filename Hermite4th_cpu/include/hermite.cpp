@@ -32,13 +32,10 @@ void integrate_cpu()
         if(std::ceil(ITIME) == ITIME)          // Print log in every integer ITIME
         {
            get_energy_log(ITIME, iterations, nsteps, out);
+           //print_all(n,ITIME);
         }
 
         nsteps += nact;                        // Update nsteps with nact
         iterations++;                          // Increase iterations
-//        printf("# %d %d %.10f\n", iterations, nact, ITIME);
-//        print_all(n,ITIME);
-//        if(iterations == 50) ITIME = int_time;
     }
-    //print_all(n,0);
 }

@@ -56,6 +56,7 @@ void write_output_file(std::string path)
     {
         std::ostringstream strs;
         path = std::string("output/");
+        path.append("out.");
         path.append(input_file);
         path.append("_");
         strs << int_time;

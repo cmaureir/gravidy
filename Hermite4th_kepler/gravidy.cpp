@@ -1,6 +1,6 @@
 #include "include/options_parser.hpp"
 #include "include/file_utils.hpp"
-#include "include/memory.hpp"
+#include "include/memory_cpu.hpp"
 #include "include/hermite.hpp"
 
 #include <iostream>
@@ -22,18 +22,15 @@ float softening, eta;
 // Struct vector to read the input file
 std::vector<particle> part;
 double4  *h_old_a, *h_old_a1;
-double4 *h_p_r, *h_p_v;
-double4 *d_old_a, *d_old_a1;
-double4 *d_p_r, *d_p_v;
-
+Predictor *h_p;
 
 // Host pointers
 double *h_ekin, *h_epot;
 double *h_t, *h_dt;
 float   *h_m;
 int *h_move;
-double4 *h_r, *h_v, *h_a, *h_a1;
-//double4 *h_new_a, *h_new_j;
+double4 *h_r, *h_v;
+Forces *h_f;
 double4 *h_a2, *h_a3;
 
 // System times
@@ -45,6 +42,19 @@ FILE *out;
 
 size_t d1_size, d4_size;
 size_t f1_size, i1_size;
+
+#include <time.h>
+
+string getTime ()
+{
+    time_t timeObj;
+    time(&timeObj);
+    tm *pTime = gmtime(&timeObj);
+    char buffer[100];
+    sprintf(buffer, "%d-%d-%d_%d:%d:%d", pTime->tm_mday, pTime->tm_mon, 1900+pTime->tm_year, pTime->tm_hour, pTime->tm_min, pTime->tm_sec);
+    return buffer;
+}
+
 /*
  * Main
  */
@@ -55,20 +65,23 @@ main(int argc, char *argv[])
     if(!check_options(argc,argv)) return 1;
 
     read_input_file(input_file);
-    init_vectors();
-    // TMP
-    ini_time = (float)clock()/CLOCKS_PER_SEC;
+    alloc_vectors_cpu();
 
     // Opening output file for debugging
+    //output_file = input_file;
+    output_file += "_";
+    output_file += getTime();
+    output_file += ".out.cpu";
     out = fopen(output_file.c_str(), "w");
 
-    integrate_cpu();
 
-    end_time = (ini_time - (float)clock()/CLOCKS_PER_SEC);
+    ini_time = (float)clock()/CLOCKS_PER_SEC;
+    integrate_cpu();
+    end_time = (float)clock()/CLOCKS_PER_SEC;
 
     fclose(out);
     //write_output_file(output_file);
-    clean_vectors();
+    free_vectors_cpu();
 
     return 0;
 }
