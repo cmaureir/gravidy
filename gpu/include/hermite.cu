@@ -71,8 +71,9 @@ void integrate_gpu()
            get_energy_log(ITIME, iterations, nsteps, out, gpu_energy());
         }
 
-        //printf("%f\n", ITIME);
         nsteps += nact;                        // Update nsteps with nact
         iterations++;                          // Increase iterations
+        print_all(n, ITIME);
+        if((cpu_iterations+gpu_iterations) == 10) ITIME = int_time;
     }
 }

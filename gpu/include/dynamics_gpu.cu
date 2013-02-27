@@ -70,28 +70,41 @@ __host__ void gpu_update_acc_jrk_simple(int total) {
 
 __host__ void gpu_update(int total) {
 
+    // Fill the h_i Predictor array with the particles that we need
+    // to move in this iteration
     int smem = BSIZE * sizeof(Predictor);
     for (int i = 0; i < total; i++) {
         int id = h_move[i];
         h_i[i] = h_p[id];
     }
+
+    // Copy to the GPU (d_i) the preddictor host array (h_i)
     CUDA_SAFE_CALL(cudaMemcpy(d_i, h_i, sizeof(Predictor) * total, cudaMemcpyHostToDevice));
-    printf("Total (%d) nblocks(%d,%d,%d) nthreads(%d,%d,%d)\n",total, 1 + (total-1)/BSIZE, NJBLOCK, 1,BSIZE, 1,1 );
+
+
+    //printf("Total (%d) nblocks(%d,%d,%d) nthreads(%d,%d,%d)\n",total, 1 + (total-1)/BSIZE, NJBLOCK, 1,BSIZE, 1,1 );
+
+
+    // Blocks and Threads configuration
     dim3 nblocks2(1 + (total-1)/BSIZE,NJBLOCK, 1);
     dim3 nthreads2(BSIZE, 1, 1);
+
+    // Kernel call
     k_update <<< nblocks2, nthreads2, smem >>> (d_i, d_p, d_fout,d_m, n, total);
     #ifdef KERNEL_ERROR_DEBUG
         std::cerr << "k_update: " << std::endl;
         std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
     #endif
+
     CUDA_SAFE_CALL(cudaMemcpy(h_fout, d_fout, sizeof(Forces) * total * NJBLOCK, cudaMemcpyDeviceToHost));
     //CUDA_SAFE_CALL(cudaMemcpy(h_fout, d_fout, sizeof(Forces) * n * NJBLOCK, cudaMemcpyDeviceToHost));
 
-    //for (int i = 0; i < total * NJBLOCK; i++) {
-    //    printf("%f ", h_fout[i].a[0]);
-    //    if ((i+1)%NJBLOCK == 0) printf("||\n");
-    //}
-    getchar();
+    ///for (int i = 0; i < total * NJBLOCK; i++) {
+    ///    printf("%f ", h_fout[i].a[0]);
+    ///    if ((i+1)%NJBLOCK == 0) printf("||\n");
+    ///}
+
+    //getchar();
     // Reduction
     Forces tmp_f;
     for (int i = 0; i < total ; i++) {
@@ -111,10 +124,10 @@ __host__ void gpu_update(int total) {
             tmp_f.a1[2] += h_fout[i * NJBLOCK + j].a1[2];
         }
         h_f[id] = tmp_f;
-    printf("Updating %d %f\t%f\t%f\t%f\t%f\t%f\n",
-            id, h_f[id].a[0],  h_f[id].a[1],  h_f[id].a[2],
-                h_f[id].a1[0], h_f[id].a1[1], h_f[id].a1[2]);
-    getchar();
+    //printf("Updating %d (%f, %f, %f)\t(%f, %f, %f)\n",
+    //        id, h_f[id].a[0],  h_f[id].a[1],  h_f[id].a[2],
+    //            h_f[id].a1[0], h_f[id].a1[1], h_f[id].a1[2]);
     }
+    //getchar();
 
 }

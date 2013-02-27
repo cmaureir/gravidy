@@ -30,6 +30,21 @@ void alloc_vectors_cpu()
     //h_move   =     (int*) malloc(i1_size);
     cudaHostAlloc((void**)&h_move,  i1_size, cudaHostAllocDefault);
 
+    cudaHostAlloc((void**)&h_fout, sizeof(Forces*) * n, cudaHostAllocDefault);
+    for (int i = 0; i < n; i++)
+    {
+        cudaHostAlloc((void**)&h_fout[i], sizeof(Forces) * NJBLOCK, cudaHostAllocDefault);
+    }
+
+    memset(h_fout, 0, sizeof(Forces*) * n * NJBLOCK);
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < NJBLOCK; j++) {
+            printf("%f ",h_fout[i][j].a[0]);
+        }
+        printf("\n");
+    }
+
     // Empty double4
     double4 empty = {0.0, 0.0, 0.0, 0.0};
 

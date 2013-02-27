@@ -43,6 +43,7 @@ int find_particles_to_move(double ITIME)
         }
     }
     printf("\n");
+    //getchar();
     return j;
 }
 
