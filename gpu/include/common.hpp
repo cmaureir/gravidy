@@ -178,6 +178,7 @@ extern Predictor *d_i, *h_i;
 extern Forces *d_fout, *h_fout;
 extern Forces *d_fout_tmp, *h_fout_tmp;
 
+extern int print_log;
 
 /************************************************
  * Special operators for the double4 data type

@@ -11,7 +11,7 @@
 using namespace std;
 
 // Group of particles
-void print_all(int, float);
+void print_all(int, float, FILE*);
 void print_positions(int);
 void print_velocities(int);
 void print_accelerations(int);
