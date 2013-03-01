@@ -9,10 +9,13 @@ void alloc_vectors_gpu()
     /*
      * GPU pointers
      */
+    size_t fsize = sizeof(Forces) * n;
+    size_t psize = sizeof(Predictor) * n;
+
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_r,     d4_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_v,     d4_size));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_f,     sizeof(Forces) * n));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_p,     sizeof(Predictor) * n));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_f,     fsize));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_p,     psize));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_ekin,  d1_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_epot,  d1_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_t,     d1_size));
@@ -20,18 +23,20 @@ void alloc_vectors_gpu()
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_m,     f1_size));
     CUDA_SAFE_CALL(cudaMalloc((void**)&d_move,  i1_size));
 
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_i,    sizeof(Predictor) * n));
-    CUDA_SAFE_CALL(cudaMalloc((void**)&d_fout, sizeof(Forces) * n * NJBLOCK));
-    CUDA_SAFE_CALL(cudaMemset(d_i,  0,sizeof(Predictor) * n));
-    CUDA_SAFE_CALL(cudaMemset(d_fout,  0,sizeof(Forces) * n * NJBLOCK));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_i,    psize));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_fout, fsize * NJBLOCK));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&d_fout_tmp, fsize * NJBLOCK));
+    CUDA_SAFE_CALL(cudaMemset(d_i,  0, psize));
+    CUDA_SAFE_CALL(cudaMemset(d_fout,  0, fsize * NJBLOCK));
+    CUDA_SAFE_CALL(cudaMemset(d_fout_tmp,  0, fsize * NJBLOCK));
 
     /*
      * Memset
      */
     CUDA_SAFE_CALL(cudaMemset(d_r, 0, d4_size));
     CUDA_SAFE_CALL(cudaMemset(d_v, 0, d4_size));
-    CUDA_SAFE_CALL(cudaMemset(d_f, 0, sizeof(Forces) * n));
-    CUDA_SAFE_CALL(cudaMemset(d_p, 0, sizeof(Predictor) * n));
+    CUDA_SAFE_CALL(cudaMemset(d_f, 0, fsize));
+    CUDA_SAFE_CALL(cudaMemset(d_p, 0, psize));
     CUDA_SAFE_CALL(cudaMemset(d_ekin,  0,d1_size));
     CUDA_SAFE_CALL(cudaMemset(d_epot,  0,d1_size));
     CUDA_SAFE_CALL(cudaMemset(d_t,     0,d1_size));

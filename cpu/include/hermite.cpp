@@ -37,7 +37,7 @@ void integrate_cpu()
 
         nsteps += nact;                        // Update nsteps with nact
         iterations++;                          // Increase iterations
-        print_all(n,ITIME);
-        if(iterations == 10) ITIME = int_time;
+//        print_all(n,ITIME);
+//        if(iterations == 10) ITIME = int_time;
     }
 }

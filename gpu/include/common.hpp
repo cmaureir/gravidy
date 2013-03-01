@@ -11,6 +11,7 @@
 //#undef _GLIBCXX_USE_INT128
 
 #define gettime (float)clock()/CLOCKS_PER_SEC
+#define gettime_ms (float)clock()/(CLOCKS_PER_SEC/1000)
 
 /*********************************
  *  Preprocessor directives
@@ -62,7 +63,7 @@
  * CUDA Configuration
  */
 #define BSIZE   64  // Block size on kernels calls
-#define NJBLOCK 16  // Block size of the shared memory loading j-particles
+#define NJBLOCK 14  // Block size of the shared memory loading j-particles
 
 // Macro from cutil.h to debug the CUDA calls
 #define CUDA_SAFE_CALL_NO_SYNC( call) do {                          \
@@ -175,6 +176,7 @@ extern Predictor *d_p;
 extern Predictor *d_i, *h_i;
 //extern Forces *d_fout[NJBLOCK], *h_fout[NJBLOCK];
 extern Forces *d_fout, *h_fout;
+extern Forces *d_fout_tmp, *h_fout_tmp;
 
 
 /************************************************

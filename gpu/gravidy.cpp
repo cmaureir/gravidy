@@ -63,6 +63,7 @@ size_t nthreads, nblocks;
 Predictor *d_i, *h_i;
 //Forces *d_fout[NJBLOCK], *h_fout[NJBLOCK];
 Forces *d_fout, *h_fout;
+Forces *d_fout_tmp, *h_fout_tmp;
 
 #include <time.h>
 

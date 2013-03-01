@@ -56,7 +56,7 @@ void integrate_gpu()
             CUDA_SAFE_CALL(cudaMemcpy(d_p, h_p, sizeof(Predictor) * n,cudaMemcpyHostToDevice));
             //gpu_update_acc_jrk_simple(nact);     // Update a and a1 of nact particles
             gpu_update(nact);     // Update a and a1 of nact particles
-            CUDA_SAFE_CALL(cudaMemcpy(h_f,  d_f,  sizeof(Forces) * n ,cudaMemcpyDeviceToHost));
+            //CUDA_SAFE_CALL(cudaMemcpy(h_f,  d_f,  sizeof(Forces) * n ,cudaMemcpyDeviceToHost));
             correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
             //CUDA_SAFE_CALL(cudaMemcpy(d_r, h_r, d4_size, cudaMemcpyHostToDevice));
             //CUDA_SAFE_CALL(cudaMemcpy(d_v, h_v, d4_size, cudaMemcpyHostToDevice));
@@ -73,7 +73,7 @@ void integrate_gpu()
 
         nsteps += nact;                        // Update nsteps with nact
         iterations++;                          // Increase iterations
-        print_all(n, ITIME);
-        if((cpu_iterations+gpu_iterations) == 10) ITIME = int_time;
+        //print_all(n, ITIME);
+        //if((cpu_iterations+gpu_iterations) == 10) ITIME = int_time;
     }
 }

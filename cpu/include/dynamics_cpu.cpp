@@ -39,11 +39,11 @@ int find_particles_to_move(double ITIME)
         {
             h_move[j] = i;
             j++;
-            printf("%d ",i);
+//            printf("%d ",i);
         }
     }
-    printf("\n");
-    //getchar();
+//    printf("\n");
+//    getchar();
     return j;
 
 }
@@ -228,13 +228,13 @@ void update_acc_jrk(int total)
         }
         if (total > n * 0.05)
         {
-            //printf("Updating %d (%f, %f, %f)\t(%f, %f, %f)\n",
-            //        i, h_f[i].a[0],  h_f[i].a[1],  h_f[i].a[2],
-            //            h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2]);
+    //        printf("Updating %d (%f, %f, %f)\t(%f, %f, %f)\n",
+    //                i, h_f[i].a[0],  h_f[i].a[1],  h_f[i].a[2],
+    //                    h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2]);
 
         }
     }
-            //getchar();
+    //        getchar();
 }
 
 /*

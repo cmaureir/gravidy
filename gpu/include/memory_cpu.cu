@@ -38,6 +38,7 @@ void alloc_vectors_cpu()
 
     // test
     cudaHostAlloc((void**)&h_fout,  sizeof(Forces) * n * NJBLOCK, cudaHostAllocDefault);
+    cudaHostAlloc((void**)&h_fout_tmp,  sizeof(Forces) * n * NJBLOCK, cudaHostAllocDefault);
     cudaHostAlloc((void**)&h_i,  sizeof(Predictor) * n, cudaHostAllocDefault);
 
     // Empty double4
