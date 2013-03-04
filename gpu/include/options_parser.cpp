@@ -162,6 +162,7 @@ bool check_options(int argc, char *argv[])
     {
         output_file = vm["output"].as<std::string>();
         output_file = output_file+ext;
+        print_log = 1;
     }
     else
     {

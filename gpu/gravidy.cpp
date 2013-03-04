@@ -3,6 +3,7 @@
 #include "include/memory_cpu.hpp"
 #include "include/memory_gpu.cuh"
 #include "include/hermite.cuh"
+#include <time.h>
 
 #include <iostream>
 #include <iomanip>
@@ -58,14 +59,13 @@ size_t d1_size, d4_size;
 size_t f1_size, i1_size;
 size_t nthreads, nblocks;
 
+int print_log;
 
 // test
 Predictor *d_i, *h_i;
 //Forces *d_fout[NJBLOCK], *h_fout[NJBLOCK];
 Forces *d_fout, *h_fout;
 Forces *d_fout_tmp, *h_fout_tmp;
-
-#include <time.h>
 
 string getTime ()
 {
@@ -84,6 +84,7 @@ string getTime ()
 int
 main(int argc, char *argv[])
 {
+    print_log = 0;
     // Read parameters
     if(!check_options(argc,argv)) return 1;
 
@@ -94,17 +95,23 @@ main(int argc, char *argv[])
     ini_time = (float)clock()/CLOCKS_PER_SEC;
 
     // Opening output file for debugging
-    output_file += "_";
-    output_file += getTime();
-    output_file += ".out.gpu";
-    out = fopen(output_file.c_str(), "w");
+    //if (print_log)
+    //{
+        output_file += "_";
+        output_file += getTime();
+        output_file += ".out.gpu";
+        out = fopen(output_file.c_str(), "w");
+    //}
 
     ini_time = (float)clock()/CLOCKS_PER_SEC;
     integrate_gpu();
     end_time = (float)clock()/CLOCKS_PER_SEC;
 
-    fclose(out);
-    //write_output_file(output_file);
+    //if(print_log)
+    //{
+        //write_output_file(output_file);
+        fclose(out);
+    //}
     free_vectors_cpu();
     free_vectors_gpu();
 

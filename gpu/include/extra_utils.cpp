@@ -1,16 +1,33 @@
 #include "extra_utils.hpp"
 
-void print_all(int limit, float ITIME)
+void print_all(int limit, float ITIME, FILE *out)
 {
-    for (int i = 0; i < limit; i++) {
-        printf("%.10f %6d %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
-                ITIME,
-                i,
-                h_r[i].x, h_r[i].y, h_r[i].z,
-                h_v[i].x, h_v[i].y, h_v[i].z,
-                h_f[i].a[0], h_f[i].a[1], h_f[i].a[2],
-                h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2],
-                h_dt[i]);
+
+    if (out == NULL)
+    {
+        for (int i = 0; i < limit; i++) {
+            printf("%.10f %6d %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
+                    ITIME,
+                    i,
+                    h_r[i].x, h_r[i].y, h_r[i].z,
+                    h_v[i].x, h_v[i].y, h_v[i].z,
+                    h_f[i].a[0], h_f[i].a[1], h_f[i].a[2],
+                    h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2],
+                    h_dt[i]);
+        }
+    }
+    else if (out != NULL)
+    {
+        for (int i = 0; i < limit; i++) {
+            fprintf(out,"%.10f %6d %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
+                    ITIME,
+                    i,
+                    h_r[i].x, h_r[i].y, h_r[i].z,
+                    h_v[i].x, h_v[i].y, h_v[i].z,
+                    h_f[i].a[0], h_f[i].a[1], h_f[i].a[2],
+                    h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2],
+                    h_dt[i]);
+        }
     }
 }
 
@@ -134,8 +151,8 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
 
     if((int)ITIME == 0)
     {
-        //fprintf(out, "#%3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
-        printf("# %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
+        fprintf(out, "# %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
+        //printf("# %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
                 "Time",
                 "CpuIte",
                 "GpuIte",
@@ -147,8 +164,8 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
                 "RelErr",
                 "CumErr");
     }
-    //fprintf(out, "#% 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
-    printf("#% 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
+    fprintf(out, "# % 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
+    //printf("#% 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
             (int)ITIME,
             cpu_iterations,
             gpu_iterations,
@@ -159,6 +176,11 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
             energy_end,
             relative_error,
             cumulative_error);
+
+    if (print_log)
+    {
+        print_all(n,ITIME,out);
+    }
     //fflush(out);
 }
 
