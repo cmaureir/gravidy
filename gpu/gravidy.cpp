@@ -73,7 +73,7 @@ string getTime ()
     time(&timeObj);
     tm *pTime = gmtime(&timeObj);
     char buffer[100];
-    sprintf(buffer, "%d-%d-%d_%d:%d:%d", pTime->tm_mday, pTime->tm_mon, 1900+pTime->tm_year, pTime->tm_hour, pTime->tm_min, pTime->tm_sec);
+    sprintf(buffer, "%02d-%02d-%04d_%02d:%02d:%02d", pTime->tm_mday, pTime->tm_mon, 1900+pTime->tm_year, pTime->tm_hour, pTime->tm_min, pTime->tm_sec);
     return buffer;
 }
 
