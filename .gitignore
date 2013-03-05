@@ -1,5 +1,8 @@
 *.o
+*.cuo
 *.out
 *.in
 *~
 gravidy
+*.o*
+*.e*
