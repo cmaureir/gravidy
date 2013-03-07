@@ -51,6 +51,8 @@ bool check_options_noboost(int argc, char *argv[])
     ss << softening;
     ss << "_e";
     ss << eta;
+    ss << "_a";
+    ss << alpha;
     ss << ".out";
     std::string ext(ss.str());
 
