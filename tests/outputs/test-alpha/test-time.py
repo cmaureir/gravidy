@@ -12,7 +12,8 @@ alpha      = np.array([0.01, 0.02, 0.03, 0.04, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.
 data_n = []
 import subprocess
 
-p1 = subprocess.Popen(['ls', '-1','-I','*.py'], stdout=subprocess.PIPE)
+#p1 = subprocess.Popen(['ls', '-1','-I','*.py'], stdout=subprocess.PIPE)
+p1 = subprocess.Popen(['ls', '-1','-I','*.py','-I','*.gpu'], stdout=subprocess.PIPE)
 
 time = []
 for directory in p1.stdout:
@@ -43,7 +44,7 @@ f1.plot(data_n , time                 , 'o-')
 f1.plot(nn     , 0.0000048*(nn**2)    , '--'   , color='cyan')
 f1.plot(nn     , 0.00000003*(nn**3)   , '--'   , color='green')
 f1.plot(nn     , 0.0007*nn*np.log(nn) , '--'   , color='red')
-f1.set_ylabel(r'Clock time $[sec]$', fontsize=15)
+f1.set_ylabel(r'Clock time $(s)$', fontsize=15)
 f1.set_xlabel(r'$N$', fontsize=15)
 f1.set_xlim(900,x_upper)
 f1.set_ylim(5,y_upper)

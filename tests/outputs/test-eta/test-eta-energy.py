@@ -42,7 +42,7 @@ f, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(3, 2, sharex='col', share
 ax = [ax1, ax2, ax3, ax4, ax5, ax6]
 for i,j in zip(ax,data_n):
     y = rel_e[j]
-    i.plot(etas, y, '*-',label=r'$n='+str(j)+'$')
+    i.plot(etas, y, '*-',label=r'$N='+str(j)+'$')
     i.legend(loc='lower right')
     i.set_yscale('log')
     i.set_ylim(10**-9,10**-3)

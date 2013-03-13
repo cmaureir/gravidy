@@ -60,13 +60,14 @@ fig = plt.figure()
 f1 = fig.add_subplot(111)
 for i in data_n:
     y = cpu_time[i] + gpu_time[i]
-    #y = gpu_time[i]
+    #y = cpu_time[i]
     #print(y)
-    f1.plot(alpha, y, '*-',label=r'$n='+str(i)+'$')
-f1.set_ylabel(r'Clock time $[sec]$', fontsize=15)
+    f1.plot(alpha, y, '*-',label=r'$N='+str(i)+'$')
+f1.set_ylabel(r'Clock time $(s)$', fontsize=15)
 f1.set_xlabel(r'Alpha Parameter $(\alpha)$', fontsize=15)
 #f1.set_xlim(0,0.055)
-f1.set_ylim(-(10**1),10**5)
+#f1.set_ylim(-(10**1),10**5)
+#f1.legend(loc='lower right',ncol=2)
 f1.legend(loc='lower right',ncol=2)
 f1.grid(True, which='both')
 f1.set_yscale('log')

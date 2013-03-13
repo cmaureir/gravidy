@@ -38,17 +38,18 @@ for directory in p1.stdout:
         rel_e[d][pos]  = float(line[9])
         pos += 1
 
-f, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(3, 2, sharex='col', sharey='row')
-ax = [ax1, ax2, ax3, ax4, ax5, ax6]
+f, ((ax1, ax2), (ax3, ax4), (ax5, ax6),(ax7, ax8)) = plt.subplots(4, 2, sharex='col', sharey='row')
+ax = [ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8]
 for i,j in zip(ax,data_n):
+    if i == ax8: break
     y = ttime[j]
-    i.plot(etas, y, '*-',label=r'$n='+str(j)+'$')
+    i.plot(etas, y, '*-',label=r'$N='+str(j)+'$')
     i.legend(loc='upper right')
     i.set_yscale('log')
     i.set_ylim(10**0,10**5)
     i.grid(True)
 
-ax3.set_ylabel(r'Clock time ($t$)', fontsize=18)
+ax3.set_ylabel(r'Clock time $(s)$', fontsize=18)
 ax5.set_xlabel(r'$\eta$', fontsize=15)
 ax6.set_xlabel(r'$\eta$', fontsize=15)
 #f1.set_ylabel(r'$\Delta E / E_{\rm t=0}', fontsize=15)
