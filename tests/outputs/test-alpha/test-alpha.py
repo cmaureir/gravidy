@@ -26,7 +26,7 @@ cpu_time = dict()
 data_n = []
 import subprocess
 
-p1 = subprocess.Popen(['ls', '-1','-I','*.py'], stdout=subprocess.PIPE)
+p1 = subprocess.Popen(['ls', '-1','-I','*.py','-I','*.gpu'], stdout=subprocess.PIPE)
 
 for directory in p1.stdout:
     directory = directory.strip()
