@@ -112,8 +112,8 @@ main(int argc, char *argv[])
         //write_output_file(output_file);
         fclose(out);
     //}
-    free_vectors_cpu();
     free_vectors_gpu();
+    free_vectors_cpu();
 
     return 0;
 }

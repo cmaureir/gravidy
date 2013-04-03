@@ -62,6 +62,9 @@ void integrate_gpu()
             //CUDA_SAFE_CALL(cudaMemcpy(d_v, h_v, d4_size, cudaMemcpyHostToDevice));
             gpu_time += (float)clock()/CLOCKS_PER_SEC - tmp_time;
             gpu_iterations++;
+
+
+            ITIME = int_time;
         }
 
         next_itime(&ATIME);                    // Find next integration time

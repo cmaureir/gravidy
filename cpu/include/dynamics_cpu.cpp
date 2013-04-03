@@ -39,11 +39,8 @@ int find_particles_to_move(double ITIME)
         {
             h_move[j] = i;
             j++;
-//            printf("%d ",i);
         }
     }
-//    printf("\n");
-//    getchar();
     return j;
 
 }
@@ -65,8 +62,8 @@ void init_dt(double *ATIME)
     double tmp_dt;
     for (int i = INIT_PARTICLE; i < n; i++)
     {
-        double a2 = get_magnitude(h_f[i].a[0], h_f[i].a[1],h_f[i].a[2]);
-        double j2 = get_magnitude(h_f[i].a1[0], h_f[i].a1[1],h_f[i].a1[2]);
+        double a2 = get_magnitude(h_f[i].a[0],  h_f[i].a[1],  h_f[i].a[2]);
+        double j2 = get_magnitude(h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2]);
         tmp_dt = ETA_S * (a2/j2);
 
         // Adjusting to block timesteps
