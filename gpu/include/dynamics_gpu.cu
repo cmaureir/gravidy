@@ -88,79 +88,84 @@ __host__ void gpu_update_acc_jrk_simple(int total) {
     #endif
 }
 
+//#define NXREDUCE 16
+//#define NYREDUCE  8
+//
+//__global__ void reduce(Forces *d_in,
+//                       Forces *d_out,
+//                       unsigned int total)
+//{
+//    __shared__ Forces sdata[NYREDUCE * NXREDUCE];
+//
+//    const int xid = threadIdx.x;
+//    const int yid = threadIdx.y;
+//    const int bid = blockIdx.x;
+//    //const int iaddr = yid + blockDim.y * bid;
+//    const int iaddr = xid + blockDim.x * bid;
+//
+//    const int yidbl = yid*NYREDUCE;
+//
+//    if(xid < NJBLOCK){
+//        //sdata[yidbl + xid] = d_in[iaddr * NJBLOCK + xid];
+//        sdata[yidbl + xid] = d_in[iaddr + xid];
+//    }
+//    else{
+//        sdata[yidbl + xid].a[0]  = 0.0;
+//        sdata[yidbl + xid].a[1]  = 0.0;
+//        sdata[yidbl + xid].a[2]  = 0.0;
+//        sdata[yidbl + xid].a1[0] = 0.0;
+//        sdata[yidbl + xid].a1[1] = 0.0;
+//        sdata[yidbl + xid].a1[2] = 0.0;
+//    }
+//    __syncthreads();
+//
+//    Forces *fs = &sdata[yidbl];
+//    if(xid < 8) fs[xid] += fs[xid + 8];
+//    if(xid < 4) fs[xid] += fs[xid + 4];
+//    if(xid < 2) fs[xid] += fs[xid + 2];
+//    if(xid < 1) fs[xid] += fs[xid + 1];
+//
+//    if(iaddr < total){
+//        d_out[iaddr] = fs[0];
+//    }
+//
+//}
 
-/*
-#define NXREDUCE 16 // must be >NJBLOCK
-#define NYREDUCE  8
- *
-__global__ void force_reduce_kernel(
-        const int ni,
-        const Force fpart[][NJBLOCK],
-        __out Force ftot []){
-    const int xid = threadIdx.x;
-    const int yid = threadIdx.y;
-    const int bid = blockIdx.x;
-    const int iaddr = yid + blockDim.y * bid;
-
-    __shared__ Force fshare[NYREDUCE][NXREDUCE];
-    if(xid < NJBLOCK){
-        fshare[yid][xid] = fpart[iaddr][xid];
-    }else{
-        fshare[yid][xid].clear();
-    }
-    Force *fs = fshare[yid];
-#if NXREDUCE==32
-    if(xid < 16) fs[xid] += fs[xid + 16];
-#endif
-    if(xid < 8) fs[xid] += fs[xid + 8];
-    if(xid < 4) fs[xid] += fs[xid + 4];
-    if(xid < 2) fs[xid] += fs[xid + 2];
-    if(xid < 1) fs[xid] += fs[xid + 1];
-
-    if(iaddr < ni){
-        ftot[iaddr] = fs[0];
-    }
-}
-*/
-
-#define NXREDUCE 16
-#define NYREDUCE  8
-
-__global__ void reduce(Forces *d_in, Forces *d_out, unsigned int n)
+__global__ void reduce(Forces *d_in,
+                       Forces *d_out,
+                       unsigned int total)
 {
-    __shared__ Forces sdata[NYREDUCE * NXREDUCE];
+    extern __shared__ Forces sdata[];
 
-    const int xid = threadIdx.x;
-    const int yid = threadIdx.y;
-    const int bid = blockIdx.x;
-    const int iaddr = yid + blockDim.y * bid;
+    const int xid   = threadIdx.x;
+    const int bid   = blockIdx.x;
+    const int iaddr = xid + blockDim.x * bid;
 
-    if(xid < NJBLOCK){
-        //fshare[yid][xid] = fpart[iaddr][xid];
-        sdata[yid*NYREDUCE + xid] = d_in[iaddr * NYREDUCE + xid];
-    }else{
-        //fshare[yid][xid].clear();
-        sdata[yid*NYREDUCE +xid].a[0] = 0.0;
-        sdata[yid*NYREDUCE +xid].a[1] = 0.0;
-        sdata[yid*NYREDUCE +xid].a[2] = 0.0;
-        sdata[yid*NYREDUCE +xid].a1[0] = 0.0;
-        sdata[yid*NYREDUCE +xid].a1[1] = 0.0;
-        sdata[yid*NYREDUCE +xid].a1[2] = 0.0;
+    if(xid < NJBLOCK)
+    {
+        sdata[xid] = d_in[iaddr];
     }
-    //Forces *fs = fshare[yid];
-    Forces *fs = sdata;
-//#if NXREDUCE==32
-//    if(xid < 16) fs[xid] += fs[xid + 16];
-//#endif
-    if(xid < 8) fs[yid * NYREDUCE + xid] += fs[yid * NYREDUCE + xid + 8];
-    if(xid < 4) fs[yid * NYREDUCE + xid] += fs[yid * NYREDUCE + xid + 4];
-    if(xid < 2) fs[yid * NYREDUCE + xid] += fs[yid * NYREDUCE + xid + 2];
-    if(xid < 1) fs[yid * NYREDUCE + xid] += fs[yid * NYREDUCE + xid + 1];
-
-    if(iaddr < n){
-        d_out[iaddr] = fs[0];
+    else
+    {
+        sdata[xid].a[0]  = 0.0;
+        sdata[xid].a[1]  = 0.0;
+        sdata[xid].a[2]  = 0.0;
+        sdata[xid].a1[0] = 0.0;
+        sdata[xid].a1[1] = 0.0;
+        sdata[xid].a1[2] = 0.0;
     }
+    __syncthreads();
 
+    if(xid < 8) sdata[xid] += sdata[xid + 8];
+    if(xid < 4) sdata[xid] += sdata[xid + 4];
+    if(xid < 2) sdata[xid] += sdata[xid + 2];
+    if(xid < 1) sdata[xid] += sdata[xid + 1];
+
+    __syncthreads();
+
+    if(xid == 0){
+        d_out[bid] = sdata[0];
+    }
 }
 
 
@@ -178,65 +183,57 @@ __host__ void gpu_update(int total) {
 
 
     // Blocks and Threads configuration
-    dim3 nblocks2(1 + (total-1)/BSIZE,NJBLOCK, 1);
-    dim3 nthreads2(BSIZE, 1, 1);
-    int smem = BSIZE * sizeof(Predictor);
+    dim3 nblocks(1 + (total-1)/BSIZE,NJBLOCK, 1);
+    dim3 nthreads(BSIZE, 1, 1);
+    size_t smem = BSIZE * sizeof(Predictor);
 
     // Kernel call
-    k_update <<< nblocks2, nthreads2, smem >>> (d_i, d_p, d_fout,d_m, n, total);
+    k_update <<< nblocks, nthreads, smem >>> (d_i, d_p, d_fout,d_m, n, total);
     #ifdef KERNEL_ERROR_DEBUG
         std::cerr << "k_update: " << std::endl;
         std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
     #endif
 
 
-    // cpu
-    //float t1 = gettime_ms;
-    CUDA_SAFE_CALL(cudaMemcpy(h_fout, d_fout, sizeof(Forces) * total * NJBLOCK, cudaMemcpyDeviceToHost));
-    // Reduction
-    Forces tmp_f, new_f;
-    int id;
+    printf("%d\n", total);
     for (int i = 0; i < total ; i++) {
-        id = h_move[i];
-        memset(&tmp_f, 0, sizeof(Forces));
         for (int j = 0; j < NJBLOCK; j++) {
-            new_f = h_fout[i * NJBLOCK + j];
-            tmp_f  += new_f;
-            //tmp_f.a[0]  += new_f.a[0];
-            //tmp_f.a[1]  += new_f.a[1];
-            //tmp_f.a[2]  += new_f.a[2];
-            //tmp_f.a1[0] += new_f.a1[0];
-            //tmp_f.a1[1] += new_f.a1[1];
-            //tmp_f.a1[2] += new_f.a1[2];
+            //if (j%2 == 0)
+            //    h_fout[i * NJBLOCK + j].a[0] = 2.5;
+            //else
+                h_fout[i * NJBLOCK + j].a[0] = 1.0;
         }
-        h_f[id] = tmp_f;
-     //   printf("%f ", h_f[i].a[0]);
     }
-    //printf("\n");
-    //float t2 = gettime_ms;
-    //printf("Reduction CPU: %f\n", t2-t1);
-    // end cpu
+    // END TMP
 
+    CUDA_SAFE_CALL(cudaMemcpy(d_fout, h_fout, sizeof(Forces) * total * NJBLOCK, cudaMemcpyHostToDevice));
 
-    //// begin gpu
-    //t1 = gettime_ms;
-    ////size_t nb = n/NJBLOCK;
-    ////reduce <<< nb, NJBLOCK, smem >>>(d_fout, d_fout_tmp, n);
-    //const int ni8 = 1 + (total-1) / NYREDUCE;
-    //dim3 rgrid   (ni8, 1, 1);
-    //dim3 rthreads(NXREDUCE, NYREDUCE, 1);
-    //reduce <<< rgrid, rthreads >>>(d_fout, d_fout_tmp, total);
-    //CUDA_SAFE_CALL(cudaMemcpy(h_fout_tmp, d_fout_tmp, sizeof(Forces) * total * NJBLOCK, cudaMemcpyDeviceToHost));
-    //for (int i = 0; i < total; i++) {
-    //    printf("%f ", h_fout_tmp[i].a[0]);
-    //}
-    //printf("\n");
-    //t2 = gettime_ms;
-    //printf("Reduction GPU: %f\n", t2-t1);
-
-
-    //// end gpu
-
+    float sum = 0;
+    //for (int i = 0; i < total * NJBLOCK; i++) {
+    for (int i = 0; i < NJBLOCK; i++) {
+        if ( i%NJBLOCK == 0) {
+            printf(" = %f\n", sum);
+            sum = 0;
+        }
+        sum += h_fout[i].a[0];
+        printf("%f ", h_fout[i].a[0]);
+    }
+    printf("\n");
     //getchar();
 
+    dim3 rgrid   (total,   1, 1);
+    dim3 rthreads(NJBLOCK, 1, 1);
+    smem = sizeof(Forces) * NJBLOCK;
+    reduce <<< rgrid, rthreads, smem >>>(d_fout, d_fout_tmp, total);
+
+    CUDA_SAFE_CALL(cudaMemcpy(h_fout_tmp, d_fout_tmp, sizeof(Forces) * total * NJBLOCK, cudaMemcpyDeviceToHost));
+
+
+    printf("\n");
+    for (int i = 0; i < total; i++) {
+        if(i%8 == 0) printf("\n");
+        printf("%f ", h_fout_tmp[i].a[0]);
+    }
+    printf("\n");
+    //getchar();
 }

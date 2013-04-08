@@ -1,5 +1,11 @@
 #include "extra_utils.hpp"
 
+/*
+ * @fn print_all()
+ *
+ * @brief Print all the information of each Particle.
+ *
+ */
 void print_all(int limit, float ITIME, FILE *out)
 {
 
@@ -31,70 +37,46 @@ void print_all(int limit, float ITIME, FILE *out)
     }
 }
 
-void print_positions(int limit)
+/*
+ * @fn print_forces()
+ *
+ * @brief Print acceleration and its first derivative for all the particles
+ *
+ */
+void print_forces(int limit)
 {
     for (int i = 0; i < limit; i++) {
-        printf("%6d %.10f %.10f %.10f\n", i, h_r[i].x, h_r[i].y, h_r[i].z );
-    }
-}
-
-void print_velocities(int limit)
-{
-    for (int i = 0; i < limit; i++) {
-        printf("%6d %.10f %.10f %.10f\n", i, h_v[i].x, h_v[i].y, h_v[i].z );
-    }
-}
-void print_accelerations(int limit)
-{
-    for (int i = 0; i < limit; i++) {
-        printf("%6d %.10f %.10f %.10f\n", i, h_f[i].a[0], h_f[i].a[1], h_f[i].a[2] );
-    }
-
-}
-void print_jrks(int limit)
-{
-    for (int i = 0; i < limit; i++) {
-        printf("%6d %.10f %.10f %.10f\n", i, h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2] );
-    }
-}
-
-void print_accjrk(int limit)
-{
-    for (int i = 0; i < limit; i++) {
-        printf("%6d %4.10f %4.10f %4.10f %4.10f %4.10f %4.10f\n",
+        printf("%6d %.10f %.10f %.10f %.10f %.10f %.10f\n",
                 i,
                 h_f[i].a[0], h_f[i].a[1], h_f[i].a[2],
-                h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2]
-                );
+                h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2] );
     }
-}
-void print_masses(int limit)
-{
-    for (int i = 0; i < limit; i++) {
-        printf("%6d %.10f\n", i, h_m[i] );
-    }
+
 }
 
+/*
+ * @fn print_times()
+ *
+ * @brief Print the iteration time, timestep, power of 2 exponent and time
+ *       for each particle of the system.
+ *
+ */
 void print_times(int limit, float itime)
 {
     int exp = 0;
     for (int i = 0; i < limit; i++) {
         exp = (int)std::ceil(log(h_dt[i])/log(2));
-        printf("%.10f %6d %.10f %2d %.10f\n", itime, i, h_dt[i], exp, h_t[i]);
+        printf("%.10f %6d %.10f %2d %.10f\n",
+               itime, i, h_dt[i], exp, h_t[i]);
     }
 }
 
-// Print old
-void print_old(int limit)
-{
-    for (int i = 0; i < limit; i++) {
-        printf("%6d %.10f %.10f %.10f %.10f %.10f %.10f\n",
-                i,
-                h_old_a[i].x,  h_old_a[i].y,  h_old_a[i].z,
-                h_old_a1[i].x, h_old_a1[i].y, h_old_a1[i].z);
-    }
-}
-
+/*
+ * @fn print_predicted()
+ *
+ * @brief Print predicted position and velocity of all the particles
+ *
+ */
 void print_predicted(int limit)
 {
     for (int i = 0; i < limit; i++) {
@@ -105,9 +87,14 @@ void print_predicted(int limit)
     }
 }
 
+/*
+ * @fn print_movement
+ *
+ * @brief Print the particles which need to be updated in this iteration time
+ *
+ */
 void print_movement(int limit, int total, float ITIME)
 {
-    printf("%.6f ", ITIME);
     for (int i = 0; i < limit; i++)
     {
         int value = 0;
@@ -123,37 +110,67 @@ void print_movement(int limit, int total, float ITIME)
     printf("\n");
 }
 
-
+/*
+ * @fn print_particle()
+ *
+ * @brief Print information of a i-particle
+ *
+ */
 void print_particle(int i)
 {
     printf("%5d %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
             i,
-            h_r[i].x, h_r[i].y, h_r[i].z, h_v[i].x, h_v[i].y, h_v[i].z,
-            h_f[i].a[0], h_f[i].a[1], h_f[i].a[2], h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2],
+            h_r[i].x,     h_r[i].y,     h_r[i].z,
+            h_v[i].x,     h_v[i].y,     h_v[i].z,
+            h_f[i].a[0],  h_f[i].a[1],  h_f[i].a[2],
+            h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2],
             h_dt[i]);
 
 }
 
 
-
+/*
+ * @fn get_magnitude()
+ *
+ * @brief Calculate the magnitude of a 3D vector.
+ *
+ */
 double get_magnitude(double x, double y, double z)
 {
     return sqrt(x*x + y*y + z*z);
 }
 
+/*
+ * @fn get_energy_log()
+ *
+ * @brief Print a snapshoot with information of the system.
+ *        * N-body time
+ *        * CPU iterations
+ *        * GPU iterations
+ *        * Total iterations
+ *        * Amount of particles which were updated
+ *        * GPU clock time
+ *        * CPU clock time
+ *        * Total clock time
+ *        * Energy
+ *        * Relative Energy Error      (E_{t} - E_{t-1})/E_{t-1}
+ *        * Relative Cumulative Error  (E_{t} - E_{t-1})/E_{0}
+ *        * Cumulative Energy Error    (E_{t} - E_{0})/E_{0}
+ *
+ */
 void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double energy)
 {
     energy_end = energy;
-    double relative_error              = abs((energy_end-energy_tmp)/energy_tmp);
-    double cumulative_relative_error   = abs((energy_end-energy_tmp)/energy_ini);
-    double cumulative_error            = abs((energy_end-energy_ini)/energy_ini);
+    double rel_error     = abs((energy_end-energy_tmp)/energy_tmp);
+    double rel_cum_error = abs((energy_end-energy_tmp)/energy_ini);
+    double cum_error     = abs((energy_end-energy_ini)/energy_ini);
     energy_tmp = energy_end;
     float time = (float)clock()/CLOCKS_PER_SEC - ini_time;
 
     if((int)ITIME == 0)
     {
-        fprintf(out, "# %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
-        //printf("# %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
+     //fprintf(out, "00 %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
+        printf(     "00  %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
                 "Time",
                 "CpuIte",
                 "GpuIte",
@@ -166,8 +183,8 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
                 "CumRelErr",
                 "CumErr");
     }
-    fprintf(out, "# % 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
-    //printf("#% 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
+ //fprintf(out, "00 % 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
+    printf(     "00 % 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
             (int)ITIME,
             cpu_iterations,
             gpu_iterations,
@@ -176,9 +193,9 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
             gpu_time,
             time,
             energy_end,
-            relative_error,
-            cumulative_relative_error,
-            cumulative_error);
+            rel_error,
+            rel_cum_error,
+            cum_error);
 
     if (print_log)
     {

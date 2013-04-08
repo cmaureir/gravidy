@@ -170,7 +170,5 @@ bool check_options(int argc, char *argv[])
     //    return false;
     }
 
-
-
     return true;
 }
