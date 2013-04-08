@@ -46,18 +46,39 @@ def get_core_radius(rx, ry, rz, m, mp, c):
         if core_mass > mp:
             mp += 0.05
             rr.append(d[d_sort[i-1]])
+            break
         #    print("#", i-1, mp, core_mass,rr)
         core_mass += m[d_sort[i]]
 
     return rr
 
+def get_n(rx, ry, rz, radius, c):
+    # Empty distances array
+    d = np.zeros(n)
+    # Calculating the distances related to the center of density
+    for i in range(n):
+        drx = rx[i] - c[0]
+        dry = ry[i] - c[1]
+        drz = rz[i] - c[2]
+        r   = np.sqrt(drx**2 + dry**2 + drz**2)
+        d[i] = r
+    d_sort = np.argsort(d)
+    a = 0
+    for i in range(n):
+        if d[d_sort[i]] > radius:
+            break
+        a += 1
+
+    return a
+
 t = 1001
 n = 1024
 columns = 15
-t_rh = 59.689350
+t_rh = 20.24
 files = []
 #files.append('files/radii_4k.out')
 files.append('1k_1000t.out')
+mass = 0.0009765625
 
 m = np.zeros(t*n)
 rx, ry, rz = np.zeros(n), np.zeros(n), np.zeros(n)
@@ -70,7 +91,7 @@ for f in files:
 
     # Reading all the positions and velocities
     #m  = data[:,1]
-    m  = [[0.0009765625 for i in range(n)] for j in range(t)]
+    m  = [[mass for i in range(n)] for j in range(t)]
     rx, ry, rz = data[:,2], data[:,3], data[:,4]
 
     # Splitting the data by unit time
@@ -79,10 +100,20 @@ for f in files:
     ry = np.split(ry, t)
     rz = np.split(rz, t)
 
+    radius = 0
+    amount = 0
+
     for i in range(t):
         c = get_center_of_density(rx[i], ry[i], rz[i],m[i])
         rc = []
         mc = 0.05
-        rc = get_core_radius(rx[i], ry[i], rz[i], m[i], mc, c)
-        print(i/t_rh, c, rc)
+        if i == 0:
+            rc  = get_core_radius(rx[i], ry[i], rz[i], m[i], mc, c)
+            radius = rc[0]
+            print(radius)
+        amount  = get_n(rx[i], ry[i], rz[i], radius, c)
+        # Core volume
+        vol = (4.0/3.0) * np.pi * (radius ** 3)
+        density = (mass * amount) / vol
+        print i/t_rh, radius, vol, amount, density
     j += 1

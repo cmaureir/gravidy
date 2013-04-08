@@ -144,15 +144,16 @@ double get_magnitude(double x, double y, double z)
 void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double energy)
 {
     energy_end = energy;
-    double relative_error   = abs((energy_end-energy_tmp)/energy_ini);
-    double cumulative_error = abs((energy_end-energy_ini)/energy_ini);
+    double relative_error              = abs((energy_end-energy_tmp)/energy_tmp);
+    double cumulative_relative_error   = abs((energy_end-energy_tmp)/energy_ini);
+    double cumulative_error            = abs((energy_end-energy_ini)/energy_ini);
     energy_tmp = energy_end;
     float time = (float)clock()/CLOCKS_PER_SEC - ini_time;
 
     if((int)ITIME == 0)
     {
-        fprintf(out, "# %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
-        //printf("# %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
+        fprintf(out, "# %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
+        //printf("# %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
                 "Time",
                 "CpuIte",
                 "GpuIte",
@@ -162,10 +163,11 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
                 "TTime",
                 "Energy",
                 "RelErr",
+                "CumRelErr",
                 "CumErr");
     }
-    fprintf(out, "# % 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
-    //printf("#% 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
+    fprintf(out, "# % 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
+    //printf("#% 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
             (int)ITIME,
             cpu_iterations,
             gpu_iterations,
@@ -175,6 +177,7 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
             time,
             energy_end,
             relative_error,
+            cumulative_relative_error,
             cumulative_error);
 
     if (print_log)
