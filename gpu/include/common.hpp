@@ -63,7 +63,7 @@
  * CUDA Configuration
  */
 #define BSIZE   64  // Block size on kernels calls
-#define NJBLOCK 14  // Block size of the shared memory loading j-particles
+#define NJBLOCK 16  // Block size of the shared memory loading j-particles
 
 // Macro from cutil.h to debug the CUDA calls
 #define CUDA_SAFE_CALL_NO_SYNC( call) do {                          \
@@ -195,13 +195,4 @@ inline __host__ __device__ void operator+=(double4 &a, double4 &b)
     a.y += b.y;
     a.z += b.z;
     a.w += b.w;
-}
-
-inline __host__ __device__ void operator+=(volatile double4 &a, volatile double4 &b)
-{
-    a.x += b.x;
-    a.y += b.y;
-    a.z += b.z;
-    a.w += b.w;
-
 }

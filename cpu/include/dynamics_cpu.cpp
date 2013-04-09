@@ -223,15 +223,7 @@ void update_acc_jrk(int total)
             if(i == j) continue;
             force_calculation(i,j);
         }
-        if (total > n * 0.05)
-        {
-    //        printf("Updating %d (%f, %f, %f)\t(%f, %f, %f)\n",
-    //                i, h_f[i].a[0],  h_f[i].a[1],  h_f[i].a[2],
-    //                    h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2]);
-
-        }
     }
-    //        getchar();
 }
 
 /*
