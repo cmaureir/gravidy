@@ -87,7 +87,6 @@ main(int argc, char *argv[])
     print_log = 0;
     // Read parameters
     if(!check_options(argc,argv)) return 1;
-
     read_input_file(input_file);
     alloc_vectors_cpu();
     alloc_vectors_gpu();
@@ -112,8 +111,8 @@ main(int argc, char *argv[])
         //write_output_file(output_file);
         fclose(out);
     //}
-    free_vectors_cpu();
     free_vectors_gpu();
+    free_vectors_cpu();
 
     return 0;
 }
