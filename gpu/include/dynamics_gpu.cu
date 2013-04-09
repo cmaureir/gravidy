@@ -235,5 +235,5 @@ __host__ void gpu_update(int total) {
         printf("%f ", h_fout_tmp[i].a[0]);
     }
     printf("\n");
-    //getchar();
+    getchar();
 }

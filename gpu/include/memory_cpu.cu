@@ -10,20 +10,30 @@ void alloc_vectors_cpu()
     d1_size = n * sizeof(double);
     f1_size = n * sizeof(float);
     i1_size = n * sizeof(int);
-    size_t fsize = n * sizeof(Forces);
-    size_t psize = n * sizeof(Predictor);
+    int fsize = n * sizeof(Forces);
+    int psize = n * sizeof(Predictor);
 
     /*
      * CPU pointers
      */
-    cudaHostAlloc((void**)&h_r,        d4_size,         cudaHostAllocDefault);
-    cudaHostAlloc((void**)&h_v,        d4_size,         cudaHostAllocDefault);
-    cudaHostAlloc((void**)&h_f,        fsize,           cudaHostAllocDefault);
-    cudaHostAlloc((void**)&h_p,        psize,           cudaHostAllocDefault);
-    cudaHostAlloc((void**)&h_move,     i1_size,         cudaHostAllocDefault);
-    cudaHostAlloc((void**)&h_fout,     fsize * NJBLOCK, cudaHostAllocDefault);
-    cudaHostAlloc((void**)&h_fout_tmp, fsize * NJBLOCK, cudaHostAllocDefault);
-    cudaHostAlloc((void**)&h_i,        psize,           cudaHostAllocDefault);
+    //cudaHostAlloc((void**)&h_r,        d4_size,         cudaHostAllocDefault);
+    //cudaHostAlloc((void**)&h_v,        d4_size,         cudaHostAllocDefault);
+    //cudaHostAlloc((void**)&h_f,        fsize,           cudaHostAllocDefault);
+    //cudaHostAlloc((void**)&h_p,        psize,           cudaHostAllocDefault);
+    //cudaHostAlloc((void**)&h_move,     i1_size,         cudaHostAllocDefault);
+    //cudaHostAlloc((void**)&h_fout,     fsize * NJBLOCK, cudaHostAllocDefault);
+    //cudaHostAlloc((void**)&h_fout_tmp, fsize * NJBLOCK, cudaHostAllocDefault);
+    //cudaHostAlloc((void**)&h_i,        psize,           cudaHostAllocDefault);
+
+    h_r        = (double4*) malloc(d4_size);
+    h_v        = (double4*) malloc(d4_size);
+    h_f        = (Forces*) malloc(fsize);
+    h_p        = (Predictor*) malloc(psize);
+    h_move     = (int*) malloc(i1_size);
+    h_fout     = (Forces*) malloc(fsize * NJBLOCK);
+    h_fout_tmp = (Forces*) malloc(fsize * NJBLOCK);
+    h_i        = (Predictor*) malloc(psize          );
+
 
     h_a2     = (double4*) malloc(d4_size);
     h_a3     = (double4*) malloc(d4_size);
@@ -72,11 +82,16 @@ void alloc_vectors_cpu()
  */
 void free_vectors_cpu()
 {
-    cudaFreeHost(h_r);
-    cudaFreeHost(h_v);
-    cudaFreeHost(h_f);
-    cudaFreeHost(h_p);
-    cudaFreeHost(h_move);
+    //cudaFreeHost(h_r);
+    //cudaFreeHost(h_v);
+    //cudaFreeHost(h_f);
+    //cudaFreeHost(h_p);
+    //cudaFreeHost(h_move);
+    free(h_r);
+    free(h_v);
+    free(h_f);
+    free(h_p);
+    free(h_move);
 
     free(h_a2);
     free(h_a3);
@@ -88,7 +103,10 @@ void free_vectors_cpu()
     free(h_dt);
     free(h_m);
 
-    cudaFreeHost(h_fout);
-    cudaFreeHost(h_fout_tmp);
-    cudaFreeHost(h_i);
+    //cudaFreeHost(h_fout);
+    //cudaFreeHost(h_fout_tmp);
+    //cudaFreeHost(h_i);
+    free(h_fout);
+    free(h_fout_tmp);
+    free(h_i);
 }

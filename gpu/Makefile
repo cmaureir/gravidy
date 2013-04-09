@@ -2,6 +2,7 @@ CUDA_PATH=/opt/cuda
 
 CC=         g++
 NVCC=       $(CUDA_PATH)/bin/nvcc
+#NVFLAGS=    --profile -O3 -m64 -G -g -arch=sm_20
 NVFLAGS=    --pre-include gcc4.7_nvcc_fix.h --profile -O3 -m64 -G -g -arch=sm_20
 #NVFLAGS=    -O3 -m64 -G -g -arch=sm_20
 #NVFLAGS=    -O3 -m64 -G -g -arch=sm_20 --ptxas-options="-v -dlcm=cg"

@@ -35,6 +35,7 @@ void integrate_gpu()
     gpu_time = 0.0f;
 
     //////CUDA_SAFE_CALL(cudaMemcpy(d_t,  h_t,  d1_size,cudaMemcpyHostToDevice));
+    std::cout << "pre" << std::endl;
     while (ITIME < int_time)
     {
         ITIME = ATIME;                         // New integration time
@@ -64,7 +65,7 @@ void integrate_gpu()
             gpu_iterations++;
 
 
-            ITIME = int_time;
+    //        ITIME = int_time;
         }
 
         next_itime(&ATIME);                    // Find next integration time
