@@ -1,6 +1,6 @@
 #include "dynamics_gpu.cuh"
 
-inline __host__ __device__ Forces operator+(volatile Forces &a, volatile Forces &b)
+inline __host__ __device__ Forces operator+(Forces &a, Forces &b)
 {
     Forces tmp;
     tmp.a[0] = a.a[0] + b.a[0];
@@ -14,18 +14,7 @@ inline __host__ __device__ Forces operator+(volatile Forces &a, volatile Forces 
     return tmp;
 }
 
-inline __host__ __device__ void operator+=(volatile Forces &a, Forces &b)
-{
-    a.a[0] += b.a[0];
-    a.a[1] += b.a[1];
-    a.a[2] += b.a[2];
-
-    a.a1[0] += b.a1[0];
-    a.a1[1] += b.a1[1];
-    a.a1[2] += b.a1[2];
-}
-
-inline __host__ __device__ void operator+=(volatile Forces &a, volatile Forces &b)
+inline __host__ __device__ void operator+=(Forces &a, Forces &b)
 {
     a.a[0] += b.a[0];
     a.a[1] += b.a[1];
@@ -141,19 +130,7 @@ __global__ void reduce(Forces *d_in,
     const int bid   = blockIdx.x;
     const int iaddr = xid + blockDim.x * bid;
 
-    if(xid < NJBLOCK)
-    {
-        sdata[xid] = d_in[iaddr];
-    }
-    else
-    {
-        sdata[xid].a[0]  = 0.0;
-        sdata[xid].a[1]  = 0.0;
-        sdata[xid].a[2]  = 0.0;
-        sdata[xid].a1[0] = 0.0;
-        sdata[xid].a1[1] = 0.0;
-        sdata[xid].a1[2] = 0.0;
-    }
+    sdata[xid] = d_in[iaddr];
     __syncthreads();
 
     if(xid < 8) sdata[xid] += sdata[xid + 8];
@@ -161,13 +138,10 @@ __global__ void reduce(Forces *d_in,
     if(xid < 2) sdata[xid] += sdata[xid + 2];
     if(xid < 1) sdata[xid] += sdata[xid + 1];
 
-    __syncthreads();
-
     if(xid == 0){
         d_out[bid] = sdata[0];
     }
 }
-
 
 __host__ void gpu_update(int total) {
 
@@ -190,50 +164,24 @@ __host__ void gpu_update(int total) {
     // Kernel call
     k_update <<< nblocks, nthreads, smem >>> (d_i, d_p, d_fout,d_m, n, total);
     #ifdef KERNEL_ERROR_DEBUG
-        std::cerr << "k_update: " << std::endl;
+        td::cerr << "k_update: " << std::endl;
         std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
     #endif
 
-
-    printf("%d\n", total);
-    for (int i = 0; i < total ; i++) {
-        for (int j = 0; j < NJBLOCK; j++) {
-            //if (j%2 == 0)
-            //    h_fout[i * NJBLOCK + j].a[0] = 2.5;
-            //else
-                h_fout[i * NJBLOCK + j].a[0] = 1.0;
-        }
-    }
-    // END TMP
-
-    CUDA_SAFE_CALL(cudaMemcpy(d_fout, h_fout, sizeof(Forces) * total * NJBLOCK, cudaMemcpyHostToDevice));
-
-    float sum = 0;
-    //for (int i = 0; i < total * NJBLOCK; i++) {
-    for (int i = 0; i < NJBLOCK; i++) {
-        if ( i%NJBLOCK == 0) {
-            printf(" = %f\n", sum);
-            sum = 0;
-        }
-        sum += h_fout[i].a[0];
-        printf("%f ", h_fout[i].a[0]);
-    }
-    printf("\n");
-    //getchar();
-
     dim3 rgrid   (total,   1, 1);
     dim3 rthreads(NJBLOCK, 1, 1);
-    smem = sizeof(Forces) * NJBLOCK;
-    reduce <<< rgrid, rthreads, smem >>>(d_fout, d_fout_tmp, total);
+    size_t smem2 = sizeof(Forces) * NJBLOCK + 1;
+    reduce <<< rgrid, rthreads, smem2 >>>(d_fout, d_fout_tmp, total);
+    #ifdef KERNEL_ERROR_DEBUG
+        std::cerr << "k_reduce: " << std::endl;
+        std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
+    #endif
 
-    CUDA_SAFE_CALL(cudaMemcpy(h_fout_tmp, d_fout_tmp, sizeof(Forces) * total * NJBLOCK, cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(cudaMemcpy(h_fout_tmp, d_fout_tmp, sizeof(Forces) * total, cudaMemcpyDeviceToHost));
 
-
-    printf("\n");
     for (int i = 0; i < total; i++) {
-        if(i%8 == 0) printf("\n");
-        printf("%f ", h_fout_tmp[i].a[0]);
+        int id = h_move[i];
+        h_f[id] = h_fout_tmp[i];
     }
-    printf("\n");
-    getchar();
+
 }
