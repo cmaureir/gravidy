@@ -18,14 +18,14 @@ cpu_time = [
 ]
 
 gpu_time = [
-7.0700,
-22.7600,
-128.8800,
-497.7500,
-1634.1400,
-7613.2900,
-#6500,
-36892.7227]
+5.01,
+14.59,
+59.08,
+215.13,
+1066.87,
+5261.0298,
+26490.5508]
+#36892.7227]
 
 n = np.array(N)
 acc = np.array(cpu_time) / np.array(gpu_time)
@@ -36,7 +36,7 @@ f1.plot(n, acc, 'o-')
 f1.set_ylabel(r'Acceleration (CPU/GPU)', fontsize=15)
 f1.set_xlabel(r'$N$', fontsize=15)
 #f1.set_xlim(900,x_upper)
-f1.set_ylim(0,5)
+f1.set_ylim(0,10)
 #f1.legend(loc='lower right',ncol=2)
 
 f1.grid(True, which='both')

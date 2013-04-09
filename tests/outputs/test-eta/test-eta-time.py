@@ -38,10 +38,12 @@ for directory in p1.stdout:
         rel_e[d][pos]  = float(line[9])
         pos += 1
 
-f, ((ax1, ax2), (ax3, ax4), (ax5, ax6),(ax7, ax8)) = plt.subplots(4, 2, sharex='col', sharey='row')
-ax = [ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8]
+#f, ((ax1, ax2), (ax3, ax4), (ax5, ax6),(ax7, ax8)) = plt.subplots(4, 2, sharex='col', sharey='row')
+#ax = [ax1, ax2, ax3, ax4, ax5, ax6, ax7, ax8]
+f, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(3, 2, sharex='col', sharey='row')
+ax = [ax1, ax2, ax3, ax4, ax5, ax6]
 for i,j in zip(ax,data_n):
-    if i == ax8: break
+#    if i == ax8: break
     y = ttime[j]
     i.plot(etas, y, '*-',label=r'$N='+str(j)+'$')
     i.legend(loc='upper right')
