@@ -196,3 +196,29 @@ inline __host__ __device__ void operator+=(double4 &a, double4 &b)
     a.z += b.z;
     a.w += b.w;
 }
+
+inline __host__ __device__ Forces operator+(Forces &a, Forces &b)
+{
+    Forces tmp;
+    tmp.a[0] = a.a[0] + b.a[0];
+    tmp.a[1] = a.a[1] + b.a[1];
+    tmp.a[2] = a.a[2] + b.a[2];
+
+    tmp.a1[0] = a.a1[0] + b.a1[0];
+    tmp.a1[1] = a.a1[1] + b.a1[1];
+    tmp.a1[2] = a.a1[2] + b.a1[2];
+
+    return tmp;
+}
+
+inline __host__ __device__ void operator+=(Forces &a, Forces &b)
+{
+    a.a[0] += b.a[0];
+    a.a[1] += b.a[1];
+    a.a[2] += b.a[2];
+
+    a.a1[0] += b.a1[0];
+    a.a1[1] += b.a1[1];
+    a.a1[2] += b.a1[2];
+}
+

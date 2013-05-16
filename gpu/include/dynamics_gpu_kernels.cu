@@ -1,7 +1,11 @@
 #include "dynamics_gpu_kernels.cuh"
 
-__global__ void
-k_energy(double4 *r, double4 *v, double *ekin, double *epot, float *m, int n)
+__global__ void k_energy(double4 *r,
+                         double4 *v,
+                         double *ekin,
+                         double *epot,
+                         float *m,
+                         int n)
 {
     int i = threadIdx.x + blockDim.x * blockIdx.x;
     int j;
@@ -31,62 +35,11 @@ k_energy(double4 *r, double4 *v, double *ekin, double *epot, float *m, int n)
     }
 }
 
-__global__ void k_update_acc_jrk_simple
-(Predictor *d_p, Forces *d_f, float *m, int *move, int n, int total)
-{
-    extern __shared__ Predictor sh2[];
-    Predictor *sp = (Predictor*)sh2;
-
-    Forces ff;
-    ff.a[0] = 0.0;
-    ff.a[1] = 0.0;
-    ff.a[2] = 0.0;
-    ff.a1[0] = 0.0;
-    ff.a1[1] = 0.0;
-    ff.a1[2] = 0.0;
-
-    float mj;
-
-    Predictor p;
-
-    int id = threadIdx.x + blockDim.x * blockIdx.x;
-    int tx = threadIdx.x;
-
-    int id_move = move[id];
-
-    if(id_move != -1)
-    {
-        p = d_p[id_move];
-    }
-
-    int tile = 0;
-    for (int i = 0; i < n; i += BSIZE)
-    {
-        int idx = tile * BSIZE + tx;
-
-        sp[tx]   = d_p[idx];
-        mj = m[idx];
-        __syncthreads();
-
-        for (int k = 0; k < BSIZE; k++)
-        {
-            if(id_move != -1)
-            {
-                k_force_calculation2(p, sp[k], ff, mj);
-            }
-        }
-        __syncthreads();
-        tile++;
-    }
-
-    if(id_move != -1)
-    {
-        d_f[id_move] = ff;
-    }
-}
-
-__global__ void k_init_acc_jrk
-(double4 *r, double4 *v, Forces *d_f, float *m, int n)
+__global__ void k_init_acc_jrk (double4 *r,
+                                double4 *v,
+                                Forces *d_f,
+                                float *m,
+                                int n)
 {
 
     extern __shared__ double4 sh[];
@@ -129,6 +82,42 @@ __global__ void k_init_acc_jrk
         }
 
         d_f[id] = ff;
+    }
+}
+
+/*
+ * @fn k_predicted_pos_vel
+ *
+ * @param to do
+ *
+ * @desc GPU Kernel to calculate the predicted position and velocity
+ *       of all the particles.
+ *
+ * @note Working properly.
+ */
+__global__ void k_predicted_pos_vel(double4 *d_r,
+                                    double4 *d_v,
+                                    Forces *d_f,
+                                    Predictor *d_p,
+                                    double *d_t,
+                                    double ITIME,
+                                    int n)
+{
+    int i = threadIdx.x + blockDim.x * blockIdx.x;
+
+    if (i < n)
+    {
+        double dt = ITIME - d_t[i];
+        double dt2 = (dt  * dt)/2;
+        double dt3 = (dt2 * dt)/6;
+
+        d_p[i].r[0] = (dt3/6 * d_f[i].a1[0]) + (dt2/2 * d_f[i].a[0]) + (dt * d_v[i].x) + d_r[i].x;
+        d_p[i].r[1] = (dt3/6 * d_f[i].a1[1]) + (dt2/2 * d_f[i].a[1]) + (dt * d_v[i].y) + d_r[i].y;
+        d_p[i].r[2] = (dt3/6 * d_f[i].a1[2]) + (dt2/2 * d_f[i].a[2]) + (dt * d_v[i].z) + d_r[i].z;
+
+        d_p[i].v[0] = (dt2/2 * d_f[i].a1[0]) + (dt * d_f[i].a[0]) + d_v[i].x;
+        d_p[i].v[1] = (dt2/2 * d_f[i].a1[1]) + (dt * d_f[i].a[1]) + d_v[i].y;
+        d_p[i].v[2] = (dt2/2 * d_f[i].a1[2]) + (dt * d_f[i].a[2]) + d_v[i].z;
     }
 }
 
@@ -176,7 +165,7 @@ __device__ void k_force_calculation(double4 i_pos, double4 i_vel,
 __device__ void k_force_calculation2(Predictor i_p,
                                      Predictor j_p,
                                      Forces &d_f,
-                                    float   j_mass)
+                                     float   j_mass)
 {
     double rx = j_p.r[0] - i_p.r[0];
     double ry = j_p.r[1] - i_p.r[1];
@@ -254,4 +243,27 @@ __global__ void k_update(Predictor *d_i,
     }
     d_fout[iaddr*NJBLOCK + jbid] = fo;
 
+}
+
+__global__ void reduce(Forces *d_in,
+                       Forces *d_out,
+                       unsigned int total)
+{
+    extern __shared__ Forces sdata[];
+
+    const int xid   = threadIdx.x;
+    const int bid   = blockIdx.x;
+    const int iaddr = xid + blockDim.x * bid;
+
+    sdata[xid] = d_in[iaddr];
+    __syncthreads();
+
+    if(xid < 8) sdata[xid] += sdata[xid + 8];
+    if(xid < 4) sdata[xid] += sdata[xid + 4];
+    if(xid < 2) sdata[xid] += sdata[xid + 2];
+    if(xid < 1) sdata[xid] += sdata[xid + 1];
+
+    if(xid == 0){
+        d_out[bid] = sdata[0];
+    }
 }
