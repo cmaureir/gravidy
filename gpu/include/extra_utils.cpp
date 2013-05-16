@@ -169,8 +169,8 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
 
     if((int)ITIME == 0)
     {
-     //fprintf(out, "00 %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
-        printf(     "00  %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
+       fprintf(out, "00 %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
+     // printf(     "00 %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
                 "Time",
                 "CpuIte",
                 "GpuIte",
@@ -183,8 +183,8 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
                 "CumRelErr",
                 "CumErr");
     }
- //fprintf(out, "00 % 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
-    printf(     "00 % 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
+    fprintf(out, "00 % 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
+ //  printf(     "00 % 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
             (int)ITIME,
             cpu_iterations,
             gpu_iterations,
@@ -201,6 +201,6 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
     {
         print_all(n,ITIME,out);
     }
-    //fflush(out);
+    fflush(out);
 }
 

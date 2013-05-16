@@ -63,7 +63,7 @@ void write_output_file(std::string path)
         path.append(strs.str());
         path.append("t_");
         path.append("_s");
-        strs << softening;
+        strs << sqrt(e2);
         path.append(strs.str());
         path.append("_e");
         strs << eta;

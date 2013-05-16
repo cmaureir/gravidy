@@ -19,7 +19,7 @@ double ini_time, end_time;
 double init_time;
 double energy_ini, energy_end, energy_tmp;
 double ekin, epot;
-float softening, eta;
+float e2, eta;
 int cpu_iterations, gpu_iterations;
 float gpu_time;
 float alpha;

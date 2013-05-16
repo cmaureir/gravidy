@@ -77,49 +77,6 @@ __host__ void gpu_update_acc_jrk_simple(int total) {
     #endif
 }
 
-//#define NXREDUCE 16
-//#define NYREDUCE  8
-//
-//__global__ void reduce(Forces *d_in,
-//                       Forces *d_out,
-//                       unsigned int total)
-//{
-//    __shared__ Forces sdata[NYREDUCE * NXREDUCE];
-//
-//    const int xid = threadIdx.x;
-//    const int yid = threadIdx.y;
-//    const int bid = blockIdx.x;
-//    //const int iaddr = yid + blockDim.y * bid;
-//    const int iaddr = xid + blockDim.x * bid;
-//
-//    const int yidbl = yid*NYREDUCE;
-//
-//    if(xid < NJBLOCK){
-//        //sdata[yidbl + xid] = d_in[iaddr * NJBLOCK + xid];
-//        sdata[yidbl + xid] = d_in[iaddr + xid];
-//    }
-//    else{
-//        sdata[yidbl + xid].a[0]  = 0.0;
-//        sdata[yidbl + xid].a[1]  = 0.0;
-//        sdata[yidbl + xid].a[2]  = 0.0;
-//        sdata[yidbl + xid].a1[0] = 0.0;
-//        sdata[yidbl + xid].a1[1] = 0.0;
-//        sdata[yidbl + xid].a1[2] = 0.0;
-//    }
-//    __syncthreads();
-//
-//    Forces *fs = &sdata[yidbl];
-//    if(xid < 8) fs[xid] += fs[xid + 8];
-//    if(xid < 4) fs[xid] += fs[xid + 4];
-//    if(xid < 2) fs[xid] += fs[xid + 2];
-//    if(xid < 1) fs[xid] += fs[xid + 1];
-//
-//    if(iaddr < total){
-//        d_out[iaddr] = fs[0];
-//    }
-//
-//}
-
 __global__ void reduce(Forces *d_in,
                        Forces *d_out,
                        unsigned int total)

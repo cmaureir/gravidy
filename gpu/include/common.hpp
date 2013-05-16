@@ -31,8 +31,8 @@
  * Softening parameter
  * (Please note that this parameter can be modified by the command line)
  */
-#define E 1e-4
-#define E2 1e-8
+#define E 1e-5
+#define E2 1e-10
 
 /*
  * ETA_N used to obtain the new time-step for a particle
@@ -62,7 +62,7 @@
 /*
  * CUDA Configuration
  */
-#define BSIZE   64  // Block size on kernels calls
+#define BSIZE   32  // Block size on kernels calls
 #define NJBLOCK 16  // Block size of the shared memory loading j-particles
 
 // Macro from cutil.h to debug the CUDA calls
@@ -126,7 +126,7 @@ extern double ekin, epot;             // Kinetic and Potential energy
 extern double energy_ini;             // Initial energy of the system
 extern double energy_end;             // Energy at an integration time t
 extern double energy_tmp;             // Energy at an integration time t-1
-extern float  softening, eta;         // Softening and ETA parameters
+extern float  e2, eta;         // Softening^2 and ETA parameters
                                       // (This parameters takes the previous
                                       // setted values E, and ETA_N or the
                                       // parameters give by the command line)

@@ -104,7 +104,7 @@ void init_dt2(double *ATIME)
             double vy = h_v[j].y - h_v[i].y;
             double vz = h_v[j].z - h_v[i].z;
 
-            double r2 = rx*rx + ry*ry + rz*rz + softening*softening;
+            double r2 = rx*rx + ry*ry + rz*rz + e2;
             double rinv = 1/sqrt(r2);
             double r2inv = rinv  * rinv;
             double r3inv = r2inv * rinv;
@@ -164,7 +164,7 @@ void force_calculation(int i, int j)
     double vy = h_p[j].v[1] - h_p[i].v[1];
     double vz = h_p[j].v[2] - h_p[i].v[2];
 
-    double r2     = rx*rx + ry*ry + rz*rz + softening*softening;
+    double r2     = rx*rx + ry*ry + rz*rz + e2;
     double rinv   = 1.0/sqrt(r2);
     double r2inv  = rinv  * rinv;
     double r3inv  = r2inv * rinv;

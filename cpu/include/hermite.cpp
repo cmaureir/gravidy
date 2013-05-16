@@ -29,7 +29,8 @@ void integrate_cpu()
 
         next_itime(&ATIME);                    // Find next integration time
 
-        if(std::ceil(ITIME) == ITIME)          // Print log in every integer ITIME
+        //if(std::ceil(ITIME) == ITIME)          // Print log in every integer ITIME
+        if(nact == n)          // Print log in every integer ITIME
         {
            get_energy_log(ITIME, iterations, nsteps, out, energy());
         }
