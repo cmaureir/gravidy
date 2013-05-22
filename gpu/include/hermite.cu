@@ -50,11 +50,11 @@ void integrate_gpu()
         else
         {
             tmp_time = (float)clock()/CLOCKS_PER_SEC;
-            CUDA_SAFE_CALL(cudaMemcpy(d_move, h_move, i1_size, cudaMemcpyHostToDevice));
-            CUDA_SAFE_CALL(cudaMemcpy(d_t,  h_t,  d1_size, cudaMemcpyHostToDevice));
-            //predicted_pos_vel(ITIME);
-            gpu_predicted_pos_vel(ITIME);
-            //CUDA_SAFE_CALL(cudaMemcpy(d_p, h_p, sizeof(Predictor) * n,cudaMemcpyHostToDevice));
+            //CUDA_SAFE_CALL(cudaMemcpy(d_move, h_move, i1_size, cudaMemcpyHostToDevice));
+            //CUDA_SAFE_CALL(cudaMemcpy(d_t,  h_t,  d1_size, cudaMemcpyHostToDevice));
+            //gpu_predicted_pos_vel(ITIME);
+            predicted_pos_vel(ITIME);
+            CUDA_SAFE_CALL(cudaMemcpy(d_p, h_p, sizeof(Predictor) * n,cudaMemcpyHostToDevice));
             gpu_update(nact);     // Update a and a1 of nact particles
             //CUDA_SAFE_CALL(cudaMemcpy(h_f,  d_f,  sizeof(Forces) * n ,cudaMemcpyDeviceToHost));
             correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles

@@ -39,7 +39,8 @@ __global__ void k_init_acc_jrk (double4 *r,
                                 double4 *v,
                                 Forces *d_f,
                                 float *m,
-                                int n)
+                                int n,
+                                double e2)
 {
 
     extern __shared__ double4 sh[];
@@ -75,7 +76,7 @@ __global__ void k_init_acc_jrk (double4 *r,
 
             for (int k = 0; k < BSIZE; k++)
             {
-                k_force_calculation(pos, vel, sr[k], sv[k], ff, mj);
+                k_force_calculation(pos, vel, sr[k], sv[k], ff, mj,e2);
             }
             __syncthreads();
             tile++;
@@ -133,7 +134,8 @@ __global__ void k_predicted_pos_vel(double4 *d_r,
 __device__ void k_force_calculation(double4 i_pos, double4 i_vel,
                                     double4 j_pos, double4 j_vel,
                                     Forces &d_f,
-                                    float   j_mass)
+                                    float   j_mass,
+                                    double e2)
 {
     double rx = j_pos.x - i_pos.x;
     double ry = j_pos.y - i_pos.y;
@@ -143,7 +145,7 @@ __device__ void k_force_calculation(double4 i_pos, double4 i_vel,
     double vy = j_vel.y - i_vel.y;
     double vz = j_vel.z - i_vel.z;
 
-    double r2 = rx*rx + ry*ry + rz*rz + E2;
+    double r2 = rx*rx + ry*ry + rz*rz + e2;
     double rinv = rsqrt(r2);
     double r2inv = rinv  * rinv;
     double r3inv = r2inv * rinv;
@@ -165,7 +167,8 @@ __device__ void k_force_calculation(double4 i_pos, double4 i_vel,
 __device__ void k_force_calculation2(Predictor i_p,
                                      Predictor j_p,
                                      Forces &d_f,
-                                     float   j_mass)
+                                     float   j_mass,
+                                     double e2)
 {
     double rx = j_p.r[0] - i_p.r[0];
     double ry = j_p.r[1] - i_p.r[1];
@@ -175,7 +178,7 @@ __device__ void k_force_calculation2(Predictor i_p,
     double vy = j_p.v[1] - i_p.v[1];
     double vz = j_p.v[2] - i_p.v[2];
 
-    double r2 = rx*rx + ry*ry + rz*rz + E2;
+    double r2 = rx*rx + ry*ry + rz*rz + e2;
     double rinv = rsqrt(r2);
     double r2inv = rinv  * rinv;
     double r3inv = r2inv * rinv;
@@ -199,7 +202,8 @@ __global__ void k_update(Predictor *d_i,
                          Forces *d_fout,
                          float *d_m,
                          int n,
-                         int total)
+                         int total,
+                         double e2)
 {
     int ibid = blockIdx.x;
     int jbid = blockIdx.y;
@@ -231,13 +235,13 @@ __global__ void k_update(Predictor *d_i,
         if(jend-j < BSIZE){
             for(int jj=0; jj<jend-j; jj++){
                 Predictor jp = jpshare[jj];
-                k_force_calculation2(ip, jp, fo, mj);
+                k_force_calculation2(ip, jp, fo, mj, e2);
             }
         }
         else{
             for(int jj=0; jj<BSIZE; jj++){
                 Predictor jp = jpshare[jj];
-                k_force_calculation2(ip, jp, fo, mj);
+                k_force_calculation2(ip, jp, fo, mj, e2);
             }
         }
     }

@@ -31,8 +31,7 @@
  * Softening parameter
  * (Please note that this parameter can be modified by the command line)
  */
-#define E 1e-5
-#define E2 1e-10
+#define E 1e-4
 
 /*
  * ETA_N used to obtain the new time-step for a particle

@@ -4,7 +4,7 @@
 __host__ void gpu_init_acc_jrk()
 {
     int smem = BSIZE * 2* sizeof(double4);
-    k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_r, d_v, d_f, d_m, n);
+    k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_r, d_v, d_f, d_m, n,e2);
     #ifdef KERNEL_ERROR_DEBUG
         std::cerr << "k_init_acc_jrk: " << std::endl;
         std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
@@ -39,8 +39,6 @@ __host__ double gpu_energy()
 __host__ void gpu_predicted_pos_vel(float ITIME)
 {
 
-    int fsize = sizeof(Forces) * n;
-
     k_predicted_pos_vel<<< nblocks, nthreads >>> (d_r,
                                                   d_v,
                                                   d_f,
@@ -74,7 +72,7 @@ __host__ void gpu_update(int total) {
     size_t smem = BSIZE * sizeof(Predictor);
 
     // Kernel to update the forces for the particles in d_i
-    k_update <<< nblocks, nthreads, smem >>> (d_i, d_p, d_fout,d_m, n, total);
+    k_update <<< nblocks, nthreads, smem >>> (d_i, d_p, d_fout,d_m, n, total,e2);
     #ifdef KERNEL_ERROR_DEBUG
         td::cerr << "k_update: " << std::endl;
         std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
