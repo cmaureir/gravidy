@@ -167,7 +167,7 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
     energy_tmp = energy_end;
     float time = (float)clock()/CLOCKS_PER_SEC - ini_time;
 
-    if((int)ITIME == 0)
+    if(ITIME == 0.0)
     {
        fprintf(out, "00 %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
      // printf(     "00 %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
@@ -183,9 +183,9 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
                 "CumRelErr",
                 "CumErr");
     }
-    fprintf(out, "00 % 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
+    fprintf(out, "00 % 3f\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
  //  printf(     "00 % 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
-            (int)ITIME,
+            ITIME,
             cpu_iterations,
             gpu_iterations,
             iterations,

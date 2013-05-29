@@ -32,6 +32,7 @@
  * (Please note that this parameter can be modified by the command line)
  */
 #define E 1e-4
+#define E2 1e-8
 
 /*
  * ETA_N used to obtain the new time-step for a particle

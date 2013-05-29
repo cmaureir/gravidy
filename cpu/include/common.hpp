@@ -5,6 +5,14 @@
 #include <ctime>
 #include <omp.h>
 #include <cassert>
+#include <vector_types.h>
+
+//// Fix GCC 4.7
+//#undef _GLIBCXX_ATOMIC_BUILTINS
+//#undef _GLIBCXX_USE_INT128
+
+#define gettime (float)clock()/CLOCKS_PER_SEC
+#define gettime_ms (float)clock()/(CLOCKS_PER_SEC/1000)
 
 /*********************************
  *  Preprocessor directives
@@ -47,10 +55,10 @@
  */
 #define G 1
 
-typedef struct double4
-{
-    double x, y, z, w;
-} double4;
+//typedef struct double4
+//{
+//    double x, y, z, w;
+//} double4;
 
 /*****************************************
  * General variables of the integrator
@@ -83,6 +91,7 @@ typedef struct Forces {
     double a1[3];
 } Forces;
 
+extern int print_log;
 extern std::vector<particle> part; // Vector to save the input file data
 
 
@@ -103,7 +112,7 @@ extern double ekin, epot;             // Kinetic and Potential energy
 extern double energy_ini;             // Initial energy of the system
 extern double energy_end;             // Energy at an integration time t
 extern double energy_tmp;             // Energy at an integration time t-1
-extern float  softening, eta;         // Softening and ETA parameters
+extern float  e2, eta;         // Softening^2 and ETA parameters
                                       // (This parameters takes the previous
                                       // setted values E, and ETA_N or the
                                       // parameters give by the command line)

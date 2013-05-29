@@ -40,7 +40,8 @@ bool check_options_noboost(int argc, char *argv[])
 {
     input_file = std::string(argv[1]);
     int_time = atoi(argv[2]);
-    softening= atof(argv[3]);
+    float e = atof(argv[3]);
+    e2 = e*e;
     eta = atof(argv[4]);
 
     // Preparing output filename
@@ -48,7 +49,7 @@ bool check_options_noboost(int argc, char *argv[])
     ss << "_t";
     ss << int_time;
     ss << "_s";
-    ss << softening;
+    ss << e;
     ss << "_e";
     ss << eta;
     ss << ".out";
@@ -75,6 +76,7 @@ bool check_options_noboost(int argc, char *argv[])
  */
 bool check_options(int argc, char *argv[])
 {
+    float e = 0.0;
     po::options_description desc("Options");
     desc.add_options()
         ("help,h",      "Display message")
@@ -134,10 +136,11 @@ bool check_options(int argc, char *argv[])
         return false;
     }
 
-    softening = E;
+    e2 = E*E;
     if (vm.count("softening"))
     {
-        softening= vm["softening"].as<float>();
+        e = vm["softening"].as<float>();
+        e2 = e*e;
     }
 
     eta  = ETA_N;
@@ -150,7 +153,7 @@ bool check_options(int argc, char *argv[])
     ss << "_t";
     ss << int_time;
     ss << "_s";
-    ss << softening;
+    ss << e;
     ss << "_e";
     ss << eta;
     ss << ".out";
@@ -161,6 +164,7 @@ bool check_options(int argc, char *argv[])
     {
         output_file = vm["output"].as<std::string>();
         output_file = output_file+ext;
+        print_log = 1;
     }
     else
     {
@@ -169,6 +173,8 @@ bool check_options(int argc, char *argv[])
     //    std::cerr << desc << std::endl;
     //    return false;
     }
+
+
 
     return true;
 }

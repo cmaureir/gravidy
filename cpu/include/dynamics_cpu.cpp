@@ -42,7 +42,6 @@ int find_particles_to_move(double ITIME)
         }
     }
     return j;
-
 }
 
 /*
@@ -102,7 +101,7 @@ void init_dt2(double *ATIME)
             double vy = h_v[j].y - h_v[i].y;
             double vz = h_v[j].z - h_v[i].z;
 
-            double r2 = rx*rx + ry*ry + rz*rz + softening*softening;
+            double r2 = rx*rx + ry*ry + rz*rz + e2;
             double rinv = 1/sqrt(r2);
             double r2inv = rinv  * rinv;
             double r3inv = r2inv * rinv;
@@ -162,7 +161,7 @@ void force_calculation(int i, int j)
     double vy = h_p[j].v[1] - h_p[i].v[1];
     double vz = h_p[j].v[2] - h_p[i].v[2];
 
-    double r2     = rx*rx + ry*ry + rz*rz + softening*softening;
+    double r2     = rx*rx + ry*ry + rz*rz + e2;
     double rinv   = 1.0/sqrt(r2);
     double r2inv  = rinv  * rinv;
     double r3inv  = r2inv * rinv;
@@ -183,7 +182,7 @@ void force_calculation(int i, int j)
 
 void init_acc_jrk()
 {
-    //#pragma omp parallel for
+    //#pragma omp parallel for private(j)
     for (int i = INIT_PARTICLE; i < n; i++)
     {
         for (int j = INIT_PARTICLE; j < n; j++)
@@ -208,9 +207,10 @@ void init_acc_jrk()
 void update_acc_jrk(int total)
 {
     //#pragma omp parallel for
+    int i, j;
     for (int k = 0; k < total; k++)
     {
-        int i = h_move[k];
+        i = h_move[k];
         h_f[i].a[0]  = 0.0;
         h_f[i].a[1]  = 0.0;
         h_f[i].a[2]  = 0.0;
@@ -218,7 +218,7 @@ void update_acc_jrk(int total)
         h_f[i].a1[1] = 0.0;
         h_f[i].a1[2] = 0.0;
 
-        for (int j = INIT_PARTICLE; j < n; j++)
+        for (j = INIT_PARTICLE; j < n; j++)
         {
             if(i == j) continue;
             force_calculation(i,j);
@@ -432,7 +432,7 @@ double normalize_dt(double new_dt, double old_dt, double t, int i)
     }
     else
     {
-        fprintf(stderr, "gravidy: Undefined treatment for the time-step of (%d)",i);
+        //fprintf(stderr, "gravidy: Undefined treatment for the time-step of (%d)",i);
         new_dt = old_dt;
     }
 

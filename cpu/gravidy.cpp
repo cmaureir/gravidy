@@ -2,6 +2,7 @@
 #include "include/file_utils.hpp"
 #include "include/memory_cpu.hpp"
 #include "include/hermite.hpp"
+#include <time.h>
 
 #include <iostream>
 #include <iomanip>
@@ -17,7 +18,7 @@ double ini_time, end_time;
 double init_time;
 double energy_ini, energy_end, energy_tmp;
 double ekin, epot;
-float softening, eta;
+float e2, eta;
 
 // Struct vector to read the input file
 std::vector<particle> part;
@@ -43,15 +44,15 @@ FILE *out;
 size_t d1_size, d4_size;
 size_t f1_size, i1_size;
 
-#include <time.h>
+int print_log;
 
 string getTime ()
 {
     time_t timeObj;
     time(&timeObj);
-    tm *pTime = gmtime(&timeObj);
+    tm *pTime = localtime(&timeObj);
     char buffer[100];
-    sprintf(buffer, "%d-%d-%d_%d:%d:%d", pTime->tm_mday, pTime->tm_mon, 1900+pTime->tm_year, pTime->tm_hour, pTime->tm_min, pTime->tm_sec);
+    sprintf(buffer, "%02d-%02d-%04d_%02d:%02d:%02d", pTime->tm_mday, pTime->tm_mon+1, 1900+pTime->tm_year, pTime->tm_hour, pTime->tm_min, pTime->tm_sec);
     return buffer;
 }
 
@@ -61,6 +62,7 @@ string getTime ()
 int
 main(int argc, char *argv[])
 {
+    print_log = 0;
     // Read parameters
     if(!check_options(argc,argv)) return 1;
 
