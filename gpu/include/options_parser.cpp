@@ -53,7 +53,7 @@ bool check_options_noboost(int argc, char *argv[])
     ss << "_e";
     ss << eta;
     ss << "_a";
-    ss << alpha;
+    ss << beta;
     ss << ".out";
     std::string ext(ss.str());
 
@@ -87,7 +87,7 @@ bool check_options(int argc, char *argv[])
         ("time,t",      po::value<float>(),       "Integration time")
         ("softening,s", po::value<float>(),       "Softening")
         ("eta,e",       po::value<float>(),       "ETA of time-step calculation")
-        ("alpha,a",     po::value<float>(),       "Use CPU when Nact < alpha * N")
+        ("beta,b",      po::value<float>(),       "Use CPU when Nact < Beta")
     ;
 
     po::variables_map vm;
@@ -163,11 +163,12 @@ bool check_options(int argc, char *argv[])
     std::string ext(ss.str());
 
     // Output option
+    print_log = 1;
     if (vm.count("output"))
     {
         output_file = vm["output"].as<std::string>();
         output_file = output_file+ext;
-        print_log = 1;
+        //print_log = 1;
     }
     else
     {
@@ -177,10 +178,10 @@ bool check_options(int argc, char *argv[])
     //    return false;
     }
 
-    alpha = 0.05;
-    if (vm.count("alpha"))
+    beta = 20;
+    if (vm.count("beta"))
     {
-        alpha = vm["alpha"].as<float>();
+        beta = vm["beta"].as<float>();
     }
 
 

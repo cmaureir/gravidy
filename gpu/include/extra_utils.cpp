@@ -204,3 +204,39 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
     fflush(out);
 }
 
+string get_time(){
+
+    time_t timeObj;
+    char buffer[100];
+
+    time(&timeObj);
+    tm *pTime = localtime(&timeObj);
+    sprintf(buffer, "%02d-%02d-%04d_%02d:%02d:%02d", pTime->tm_mday,
+                                                     pTime->tm_mon+1,
+                                                     1900+pTime->tm_year,
+                                                     pTime->tm_hour,
+                                                     pTime->tm_min,
+                                                     pTime->tm_sec);
+    return buffer;
+}
+
+void get_kernel_error(){
+    #ifdef KERNEL_ERROR_DEBUG
+        std::cerr << "[Error] : ";
+        std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
+    #endif
+}
+
+void gpu_timer_start(){
+    cudaEventRecord(start);
+}
+
+float gpu_timer_stop(string f){
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float msec = 0;
+    cudaEventElapsedTime(&msec, start, stop);
+    //if (f != "")
+    //    std::cout << "[Time] " << f << " : " << msec << " msec" << std::endl;
+    return msec;
+    }
