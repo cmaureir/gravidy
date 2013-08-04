@@ -1,13 +1,18 @@
 CUDA_PATH=/opt/cuda
-
 CC=         g++
 NVCC=       $(CUDA_PATH)/bin/nvcc
-#NVFLAGS=    --profile -O3 -m64 -G -g -arch=sm_20
-NVFLAGS=    --pre-include gcc4.7_nvcc_fix.h --profile -O3 -m64 -G -g -arch=sm_20
-#NVFLAGS=    -O3 -m64 -G -g -arch=sm_20
-#NVFLAGS=    -O3 -m64 -G -g -arch=sm_20 --ptxas-options="-v -dlcm=cg"
-CXXFLAGS=   -O3 -m64 -Wall -lgomp -pg -fopenmp
-CPPFLAGS=   -L$(CUDA_PATH)/lib64 -I$(CUDA_PATH)/include -lcuda -lcudart -lboost_program_options
+NVFLAGS=    --pre-include gcc4.7_nvcc_fix.h -pg -O3 -m64 -arch=sm_20
+CXXFLAGS=   -L$(CUDA_PATH)/lib64     \
+            -I$(CUDA_PATH)/include   \
+            -lcuda                   \
+            -lcudart                 \
+            -lboost_program_options  \
+            -O3                      \
+            -m64                     \
+            -Wall                    \
+            -pg                      \
+            #-lgomp                   \
+            #-fopenmp
 
 OBJS_CPU=   include/options_parser.o \
 			include/file_utils.o     \

@@ -79,6 +79,7 @@ main(int argc, char *argv[])
 
     // Read the input file
     read_input_file(input_file);
+    //cudaSetDevice(1);
 
     // Memory allocation of the CPU arrays
     alloc_vectors_cpu();
