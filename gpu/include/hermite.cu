@@ -32,6 +32,11 @@ void integrate_gpu()
     float tmp_time = 0.0f;
     gpu_time = 0.0f;
 
+
+    float kernel_time_tmp = 0.0f;
+    float kernel_time = 0.0f;
+    int interactions = 0;
+
     while (ITIME < int_time)
     {
         ITIME = ATIME;                         // New integration time
@@ -40,22 +45,32 @@ void integrate_gpu()
 
         if (nact < beta)
         {
+            // Predicted r and v
             predicted_pos_vel(ITIME);
+            // Update the forces of the nact particles
             update_acc_jrk(nact);
-            correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
+            // Correct r and v
+            correction_pos_vel(ITIME, nact);
             cpu_iterations++;
         }
         else
         {
             tmp_time = (float)clock()/CLOCKS_PER_SEC;
+
             predicted_pos_vel(ITIME);
-            CUDA_SAFE_CALL(cudaMemcpy(d_p, h_p, sizeof(Predictor) * n,cudaMemcpyHostToDevice));
+
+            kernel_time_tmp = (float)clock()/CLOCKS_PER_SEC;
             gpu_update(nact);     // Update a and a1 of nact particles
+            kernel_time += (float)clock()/CLOCKS_PER_SEC - kernel_time_tmp;
+
             correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
+
             CUDA_SAFE_CALL(cudaMemcpy(d_r, h_r, d4_size, cudaMemcpyHostToDevice));
             CUDA_SAFE_CALL(cudaMemcpy(d_v, h_v, d4_size, cudaMemcpyHostToDevice));
+
             gpu_time += (float)clock()/CLOCKS_PER_SEC - tmp_time;
             gpu_iterations++;
+            interactions += nact * n;
         }
 
         next_itime(&ATIME);                    // Find next integration time
@@ -68,5 +83,7 @@ void integrate_gpu()
 
         nsteps += nact;                        // Update nsteps with nact
         iterations++;                          // Increase iterations
+        printf("%d\n", nact);
     }
+    //printf("GG: %f\n", 60.10e-9 * (interactions / kernel_time));
 }

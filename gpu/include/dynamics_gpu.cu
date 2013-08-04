@@ -9,7 +9,12 @@ __host__ void gpu_init_acc_jrk()
     k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_r, d_v, d_f, d_m, n,e2);
     cudaThreadSynchronize();
     float msec = gpu_timer_stop("k_init_acc_jrk");
+    //float bytes = n * (32 + 32 + 4 + 48);
     get_kernel_error();
+
+//    printf("Effective Bandwidth (GB/s): %f | time:%f  | bytes: %f \n", bytes/msec/1e6, msec, bytes);
+//    printf("Effective Throughput (GFLOP/s) : %f | flops: %d | bajo: %f\n", (float)(60 * n * n)/(msec * 1e6), 60*n*n, msec*1e6);
+//    printf("---\n");
 }
 
 __host__ double gpu_energy()
@@ -57,6 +62,9 @@ __host__ void gpu_predicted_pos_vel(float ITIME)
 
 __host__ void gpu_update(int total) {
 
+    // Copying to the device the predicted r and v
+    CUDA_SAFE_CALL(cudaMemcpy(d_p, h_p, sizeof(Predictor) * n,cudaMemcpyHostToDevice));
+
     // Fill the h_i Predictor array with the particles that we need
     // to move in this iteration
     for (int i = 0; i < total; i++) {
@@ -78,7 +86,8 @@ __host__ void gpu_update(int total) {
     k_update <<< nblocks, nthreads, smem >>> (d_i, d_p, d_fout,d_m, n, total,e2);
     //float msec = gpu_timer_stop("k_update");
     float msec = gpu_timer_stop("");
-    printf("Effective Bandwidth (GB/s): %f | time:%f | total:%d | bytes: %d \n", (48 * (n + total + (total*16)))/msec/1e6, msec, total, (48 * (n + total + (total*16))));
+   // printf("Effective Bandwidth (GB/s): %f | time:%f | total:%d | bytes: %d \n", (48 * (n + total + (total*16)))/msec/1e6, msec, total, (48 * (n + total + (total*16))));
+   // printf("Effective Throughput (GFLOP/s) : %f\n", (60 * n * total)/(msec * 1e6));
 
     // Blocks, threads and shared memory configuration for the reduction.
     dim3 rgrid   (total,   1, 1);
