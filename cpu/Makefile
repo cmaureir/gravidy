@@ -1,7 +1,7 @@
 CC=        g++
 CXXFLAGS=  -O3 -Wall -lgomp -fopenmp -pg
 
-CPPFLAGS= -lboost_program_options
+CPPFLAGS= -lboost_program_options -I/opt/cuda/include
 
 OBJS_CPU= include/options_parser.o   \
 	  include/file_utils.o           \

@@ -88,6 +88,7 @@ main(int argc, char *argv[])
     if(!check_options(argc,argv)) return 1;
 
     read_input_file(input_file);
+    //cudaSetDevice(1);
     alloc_vectors_cpu();
     alloc_vectors_gpu();
     // TMP

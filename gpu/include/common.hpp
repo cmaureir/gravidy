@@ -5,6 +5,8 @@
 #include <ctime>
 #include <cassert>
 #include <vector_types.h>
+//#include <cuda_runtime.h>
+//#include <cuda.h>
 
 //// Fix GCC 4.7
 //#undef _GLIBCXX_ATOMIC_BUILTINS
