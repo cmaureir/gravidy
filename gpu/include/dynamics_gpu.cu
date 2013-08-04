@@ -4,11 +4,12 @@
 __host__ void gpu_init_acc_jrk()
 {
     int smem = BSIZE * 2* sizeof(double4);
+
+    gpu_timer_start();
     k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_r, d_v, d_f, d_m, n,e2);
-    #ifdef KERNEL_ERROR_DEBUG
-        std::cerr << "k_init_acc_jrk: " << std::endl;
-        std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
-    #endif
+    cudaThreadSynchronize();
+    float msec = gpu_timer_stop("k_init_acc_jrk");
+    get_kernel_error();
 }
 
 __host__ double gpu_energy()
@@ -16,11 +17,12 @@ __host__ double gpu_energy()
 
     CUDA_SAFE_CALL(cudaMemcpy(d_r,  h_r,  d4_size,cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(d_v,  h_v,  d4_size,cudaMemcpyHostToDevice));
+
+    gpu_timer_start();
     k_energy <<< nblocks, nthreads >>> (d_r, d_v, d_ekin, d_epot, d_m, n);
-    #ifdef KERNEL_ERROR_DEBUG
-        std::cerr << "k_energy: " << std::endl;
-        std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
-    #endif
+    cudaThreadSynchronize();
+    float msec = gpu_timer_stop("k_energy");
+    get_kernel_error();
 
     CUDA_SAFE_CALL(cudaMemcpy(h_ekin, d_ekin, d1_size,cudaMemcpyDeviceToHost));
     CUDA_SAFE_CALL(cudaMemcpy(h_epot, d_epot, d1_size,cudaMemcpyDeviceToHost));
@@ -33,12 +35,14 @@ __host__ double gpu_energy()
         ekin += h_ekin[i];
         epot += h_epot[i];
     }
+
     return ekin + epot;
 }
 
 __host__ void gpu_predicted_pos_vel(float ITIME)
 {
 
+    gpu_timer_start();
     k_predicted_pos_vel<<< nblocks, nthreads >>> (d_r,
                                                   d_v,
                                                   d_f,
@@ -47,10 +51,8 @@ __host__ void gpu_predicted_pos_vel(float ITIME)
                                                   ITIME,
                                                   n);
     cudaThreadSynchronize();
-    #ifdef KERNEL_ERROR_DEBUG
-        std::cerr << "k_predicted_pos_vel: " << std::endl;
-        std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
-    #endif
+    float msec = gpu_timer_stop("k_predicted_pos_vel");
+    get_kernel_error();
 }
 
 __host__ void gpu_update(int total) {
@@ -72,11 +74,11 @@ __host__ void gpu_update(int total) {
     size_t smem = BSIZE * sizeof(Predictor);
 
     // Kernel to update the forces for the particles in d_i
+    gpu_timer_start();
     k_update <<< nblocks, nthreads, smem >>> (d_i, d_p, d_fout,d_m, n, total,e2);
-    #ifdef KERNEL_ERROR_DEBUG
-        td::cerr << "k_update: " << std::endl;
-        std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
-    #endif
+    //float msec = gpu_timer_stop("k_update");
+    float msec = gpu_timer_stop("");
+    printf("Effective Bandwidth (GB/s): %f | time:%f | total:%d | bytes: %d \n", (48 * (n + total + (total*16)))/msec/1e6, msec, total, (48 * (n + total + (total*16))));
 
     // Blocks, threads and shared memory configuration for the reduction.
     dim3 rgrid   (total,   1, 1);
@@ -84,11 +86,10 @@ __host__ void gpu_update(int total) {
     size_t smem2 = sizeof(Forces) * NJBLOCK + 1;
 
     // Kernel to reduce que temp array with the forces
+    gpu_timer_start();
     reduce <<< rgrid, rthreads, smem2 >>>(d_fout, d_fout_tmp, total);
-    #ifdef KERNEL_ERROR_DEBUG
-        std::cerr << "k_reduce: " << std::endl;
-        std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
-    #endif
+    msec = gpu_timer_stop("reduce");
+    get_kernel_error();
 
     // Copy from the GPU the new forces for the d_i particles.
     CUDA_SAFE_CALL(cudaMemcpy(h_fout_tmp, d_fout_tmp, sizeof(Forces) * total, cudaMemcpyDeviceToHost));

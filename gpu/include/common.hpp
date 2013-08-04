@@ -5,6 +5,7 @@
 #include <ctime>
 #include <cassert>
 #include <vector_types.h>
+#include <cuda_runtime_api.h>
 
 //// Fix GCC 4.7
 //#undef _GLIBCXX_ATOMIC_BUILTINS
@@ -130,7 +131,7 @@ extern float  e2, eta;         // Softening^2 and ETA parameters
                                       // (This parameters takes the previous
                                       // setted values E, and ETA_N or the
                                       // parameters give by the command line)
-extern float alpha;
+extern float beta;
 
 extern float t_rh;                    // Half-mass relaxation time
 extern float t_cr;                    // Crossing time
@@ -148,7 +149,7 @@ extern size_t nthreads, nblocks;      // Dynamical number of threads and blocks
  * (Particles attribute arrays)
  */
 extern double4 *h_r, *h_v;      // Position and Velocity
-extern Forces *h_f;     // Acceleration and its first derivative (Jerk)
+extern Forces *h_f;             // Acceleration and its first derivative (Jerk)
 extern double4 *h_a2, *h_a3;    // 2nd and 3rd acceleration derivatives.
 extern double4 *h_old_a;        // Previous step value of the Acceleration
 extern double4 *h_old_a1;       // Previous step value of the Jerk
@@ -166,19 +167,19 @@ extern int *h_move;             // Particles id to move in each iteration time
 extern double *d_ekin, *d_epot; // Kinetic and Potential energy
 extern double  *d_t, *d_dt;     // Time and time-step
 extern double4 *d_r, *d_v;      // Position and Velocity
-extern Forces *d_f;     // Acceleration and its first derivative (Jerk)
+extern Forces *d_f;             // Acceleration and its first derivative (Jerk)
 extern float   *d_m;            // Masses of the particles
 extern int *d_move;             // Particles id to move in each iteration time
 
 extern Predictor *d_p;
 
-// test
 extern Predictor *d_i, *h_i;
-//extern Forces *d_fout[NJBLOCK], *h_fout[NJBLOCK];
 extern Forces *d_fout, *h_fout;
 extern Forces *d_fout_tmp, *h_fout_tmp;
 
 extern int print_log;
+
+extern cudaEvent_t start, stop;
 
 /************************************************
  * Special operators for the double4 data type

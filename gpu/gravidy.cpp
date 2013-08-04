@@ -22,7 +22,7 @@ double ekin, epot;
 float e2, eta;
 int cpu_iterations, gpu_iterations;
 float gpu_time;
-float alpha;
+float beta;
 
 // Struct vector to read the input file
 std::vector<particle> part;
@@ -38,15 +38,20 @@ int *h_move;
 double4 *h_r, *h_v;
 Forces *h_f;
 double4 *h_a2, *h_a3;
+Predictor *h_i;
+Forces *h_fout;
+Forces *h_fout_tmp;
 
+// Device pointers
 double *d_ekin, *d_epot;
 double  *d_t, *d_dt;
 double4 *d_r, *d_v;
 Forces *d_f;
 float   *d_m;
 int *d_move;
-
-
+Predictor *d_i;
+Forces *d_fout;
+Forces *d_fout_tmp;
 
 // System times
 float t_rh, t_cr;
@@ -60,58 +65,55 @@ size_t f1_size, i1_size;
 size_t nthreads, nblocks;
 
 int print_log;
+cudaEvent_t start, stop;
 
-// test
-Predictor *d_i, *h_i;
-//Forces *d_fout[NJBLOCK], *h_fout[NJBLOCK];
-Forces *d_fout, *h_fout;
-Forces *d_fout_tmp, *h_fout_tmp;
-
-string getTime ()
-{
-    time_t timeObj;
-    time(&timeObj);
-    tm *pTime = localtime(&timeObj);
-    char buffer[100];
-    sprintf(buffer, "%02d-%02d-%04d_%02d:%02d:%02d", pTime->tm_mday, pTime->tm_mon+1, 1900+pTime->tm_year, pTime->tm_hour, pTime->tm_min, pTime->tm_sec);
-    return buffer;
-}
-
-/*
+/********************************************************
  * Main
- */
+ ********************************************************/
+
 int
 main(int argc, char *argv[])
 {
-    print_log = 0;
-    // Read parameters
+    // Read command line parameters
     if(!check_options(argc,argv)) return 1;
 
+    // Read the input file
     read_input_file(input_file);
+
+    // Memory allocation of the CPU arrays
     alloc_vectors_cpu();
+
+    // Memory allocation of the GPU arrays
     alloc_vectors_gpu();
-    // TMP
-    ini_time = (float)clock()/CLOCKS_PER_SEC;
 
     // Opening output file for debugging
-    //if (print_log)
-    //{
+    if (print_log)
+    {
         output_file += "_";
-        output_file += getTime();
+        output_file += get_time();
         output_file += ".out.gpu";
         out = fopen(output_file.c_str(), "w");
-    //}
+    }
 
+    // Create GPU timers
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
+    // Start integration process
     ini_time = (float)clock()/CLOCKS_PER_SEC;
     integrate_gpu();
     end_time = (float)clock()/CLOCKS_PER_SEC;
 
-    //if(print_log)
-    //{
+    if(print_log)
+    {
         //write_output_file(output_file);
         fclose(out);
-    //}
+    }
+
+    // Memory deallocation of the CPU arrays
     free_vectors_gpu();
+
+    // Memory deallocation of the GPU arrays
     free_vectors_cpu();
 
     return 0;
