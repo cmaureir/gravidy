@@ -11,8 +11,8 @@ CXXFLAGS=   -L$(CUDA_PATH)/lib64     \
             -m64                     \
             -Wall                    \
             -pg                      \
-            #-lgomp                   \
-            #-fopenmp
+            -lgomp                   \
+            -fopenmp
 
 OBJS_CPU=   include/options_parser.o \
 			include/file_utils.o     \

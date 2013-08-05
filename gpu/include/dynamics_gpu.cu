@@ -5,16 +5,9 @@ __host__ void gpu_init_acc_jrk()
 {
     int smem = BSIZE * 2* sizeof(double4);
 
-    gpu_timer_start();
     k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_r, d_v, d_f, d_m, n,e2);
     cudaThreadSynchronize();
-    float msec = gpu_timer_stop("k_init_acc_jrk");
-    //float bytes = n * (32 + 32 + 4 + 48);
     get_kernel_error();
-
-//    printf("Effective Bandwidth (GB/s): %f | time:%f  | bytes: %f \n", bytes/msec/1e6, msec, bytes);
-//    printf("Effective Throughput (GFLOP/s) : %f | flops: %d | bajo: %f\n", (float)(60 * n * n)/(msec * 1e6), 60*n*n, msec*1e6);
-//    printf("---\n");
 }
 
 __host__ double gpu_energy()
@@ -82,12 +75,11 @@ __host__ void gpu_update(int total) {
     size_t smem = BSIZE * sizeof(Predictor);
 
     // Kernel to update the forces for the particles in d_i
-    gpu_timer_start();
+    //gpu_timer_start();
     k_update <<< nblocks, nthreads, smem >>> (d_i, d_p, d_fout,d_m, n, total,e2);
+    cudaThreadSynchronize();
     //float msec = gpu_timer_stop("k_update");
     float msec = gpu_timer_stop("");
-   // printf("Effective Bandwidth (GB/s): %f | time:%f | total:%d | bytes: %d \n", (48 * (n + total + (total*16)))/msec/1e6, msec, total, (48 * (n + total + (total*16))));
-   // printf("Effective Throughput (GFLOP/s) : %f\n", (60 * n * total)/(msec * 1e6));
 
     // Blocks, threads and shared memory configuration for the reduction.
     dim3 rgrid   (total,   1, 1);
@@ -95,9 +87,10 @@ __host__ void gpu_update(int total) {
     size_t smem2 = sizeof(Forces) * NJBLOCK + 1;
 
     // Kernel to reduce que temp array with the forces
-    gpu_timer_start();
+    //gpu_timer_start();
     reduce <<< rgrid, rthreads, smem2 >>>(d_fout, d_fout_tmp, total);
-    msec = gpu_timer_stop("reduce");
+    cudaThreadSynchronize();
+    //msec = gpu_timer_stop("reduce");
     get_kernel_error();
 
     // Copy from the GPU the new forces for the d_i particles.

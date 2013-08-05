@@ -165,7 +165,7 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
     double rel_cum_error = abs((energy_end-energy_tmp)/energy_ini);
     double cum_error     = abs((energy_end-energy_ini)/energy_ini);
     energy_tmp = energy_end;
-    float time = (float)clock()/CLOCKS_PER_SEC - ini_time;
+    float time = omp_get_wtime() - ini_time;
 
     if(ITIME == 0.0)
     {
@@ -183,8 +183,8 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
                 "CumRelErr",
                 "CumErr");
     }
-    fprintf(out, "00 % 3f\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
- //  printf(     "00 % 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
+   fprintf(out, "00 % 3f\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
+//   printf(     "00 % 3f\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
             ITIME,
             iterations,
             0,

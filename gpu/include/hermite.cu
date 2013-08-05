@@ -29,13 +29,13 @@ void integrate_gpu()
 
     get_energy_log(ITIME, iterations, nsteps, out, energy_tmp); // First log of the integration
 
-    float tmp_time = 0.0f;
-    gpu_time = 0.0f;
+    double tmp_time = 0.0;
+    gpu_time = 0.0;
 
 
-    float kernel_time_tmp = 0.0f;
-    float kernel_time = 0.0f;
-    int interactions = 0;
+    double kernel_time_tmp = 0.0;
+    double kernel_time = 0.0;
+    static long long interactions = 0;
 
     while (ITIME < int_time)
     {
@@ -43,47 +43,33 @@ void integrate_gpu()
         nact = find_particles_to_move(ITIME);  // Find particles to move (nact)
         save_old(nact);                        // Save old information
 
-        if (nact < beta)
-        {
-            // Predicted r and v
-            predicted_pos_vel(ITIME);
-            // Update the forces of the nact particles
-            update_acc_jrk(nact);
-            // Correct r and v
-            correction_pos_vel(ITIME, nact);
-            cpu_iterations++;
-        }
-        else
-        {
-            tmp_time = (float)clock()/CLOCKS_PER_SEC;
+        tmp_time = omp_get_wtime();
 
-            predicted_pos_vel(ITIME);
+        predicted_pos_vel(ITIME);
 
-            kernel_time_tmp = (float)clock()/CLOCKS_PER_SEC;
-            gpu_update(nact);     // Update a and a1 of nact particles
-            kernel_time += (float)clock()/CLOCKS_PER_SEC - kernel_time_tmp;
+        kernel_time_tmp = omp_get_wtime();
+        gpu_update(nact);     // Update a and a1 of nact particles
+        kernel_time += (omp_get_wtime() - kernel_time_tmp);
 
-            correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
+        correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
 
-            CUDA_SAFE_CALL(cudaMemcpy(d_r, h_r, d4_size, cudaMemcpyHostToDevice));
-            CUDA_SAFE_CALL(cudaMemcpy(d_v, h_v, d4_size, cudaMemcpyHostToDevice));
+        CUDA_SAFE_CALL(cudaMemcpy(d_r, h_r, d4_size, cudaMemcpyHostToDevice));
+        CUDA_SAFE_CALL(cudaMemcpy(d_v, h_v, d4_size, cudaMemcpyHostToDevice));
 
-            gpu_time += (float)clock()/CLOCKS_PER_SEC - tmp_time;
-            gpu_iterations++;
-            interactions += nact * n;
-        }
+        gpu_time += omp_get_wtime() - tmp_time;
+        gpu_iterations++;
+        interactions += nact * n;
 
         next_itime(&ATIME);                    // Find next integration time
 
-        //if(std::ceil(ITIME) == ITIME)          // Print log in every integer ITIME
-        if(nact == n)          // Print log in every integer ITIME
+        if(std::ceil(ITIME) == ITIME)          // Print log in every integer ITIME
+        //if(nact == n)          // Print log in every integer ITIME
         {
            get_energy_log(ITIME, iterations, nsteps, out, gpu_energy());
         }
 
         nsteps += nact;                        // Update nsteps with nact
         iterations++;                          // Increase iterations
-        printf("%d\n", nact);
     }
-    //printf("GG: %f\n", 60.10e-9 * (interactions / kernel_time));
+    printf("Total Average GLOPS/s: %f \n", 60.10e-9 * (interactions / kernel_time));
 }

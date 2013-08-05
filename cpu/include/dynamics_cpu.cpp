@@ -182,10 +182,11 @@ void force_calculation(int i, int j)
 
 void init_acc_jrk()
 {
-    //#pragma omp parallel for private(j)
-    for (int i = INIT_PARTICLE; i < n; i++)
+    int i,j;
+    #pragma omp parallel for private(j) schedule(dynamic, 24)
+    for (i = INIT_PARTICLE; i < n; i++)
     {
-        for (int j = INIT_PARTICLE; j < n; j++)
+        for (j = INIT_PARTICLE; j < n; j++)
         {
             if(i == j) continue;
             force_calculation(i,j);
@@ -206,9 +207,9 @@ void init_acc_jrk()
  */
 void update_acc_jrk(int total)
 {
-    //#pragma omp parallel for
-    int i, j;
-    for (int k = 0; k < total; k++)
+    int i, j, k;
+    #pragma omp parallel for private(i,j)
+    for (k = 0; k < total; k++)
     {
         i = h_move[k];
         h_f[i].a[0]  = 0.0;
@@ -218,6 +219,7 @@ void update_acc_jrk(int total)
         h_f[i].a1[1] = 0.0;
         h_f[i].a1[2] = 0.0;
 
+        //#pragma omp parallel for
         for (j = INIT_PARTICLE; j < n; j++)
         {
             if(i == j) continue;
@@ -238,17 +240,14 @@ void update_acc_jrk(int total)
  */
 double energy()
 {
-    double ekin_tmp;
-    double epot_tmp;
-    int i, j;
-
     epot = 0.0;
     ekin = 0.0;
 
-    for (i = 0; i < n; i++)
+    #pragma omp parallel for
+    for (int i = 0; i < n; i++)
     {
-        epot_tmp = 0.0;
-        for (j = i+1; j < n; j++)
+        double epot_tmp = 0.0;
+        for (int j = i+1; j < n; j++)
         {
             double rx = h_r[j].x - h_r[i].x;
             double ry = h_r[j].y - h_r[i].y;
@@ -263,9 +262,11 @@ double energy()
         double vz = h_v[i].z * h_v[i].z;
         double v2 = vx + vy + vz;
 
-        ekin_tmp = 0.5 * h_m[i] * v2;
+        double ekin_tmp = 0.5 * h_m[i] * v2;
 
+        #pragma omp atomic
         ekin += ekin_tmp;
+        #pragma omp atomic
         epot += epot_tmp;
     }
     return epot + ekin;
@@ -304,7 +305,7 @@ void save_old(int total)
 void
 predicted_pos_vel(double ITIME)
 {
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = INIT_PARTICLE; i < n; i++)
     {
         double dt  = ITIME - h_t[i];

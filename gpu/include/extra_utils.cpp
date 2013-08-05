@@ -183,8 +183,8 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
                 "CumRelErr",
                 "CumErr");
     }
-    fprintf(out, "00 % 3f\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
- //  printf(     "00 % 3d\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
+      fprintf(out, "00 % 3f\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
+      //   printf(     "00 % 3f\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
             ITIME,
             cpu_iterations,
             gpu_iterations,

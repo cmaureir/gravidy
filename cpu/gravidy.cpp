@@ -77,9 +77,9 @@ main(int argc, char *argv[])
     out = fopen(output_file.c_str(), "w");
 
 
-    ini_time = (float)clock()/CLOCKS_PER_SEC;
+    ini_time = omp_get_wtime();
     integrate_cpu();
-    end_time = (float)clock()/CLOCKS_PER_SEC;
+    end_time = omp_get_wtime();
 
     fclose(out);
     //write_output_file(output_file);

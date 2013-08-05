@@ -4,6 +4,7 @@
 #include <string>
 #include <ctime>
 #include <cassert>
+#include <omp.h>
 #include <vector_types.h>
 #include <cuda_runtime_api.h>
 

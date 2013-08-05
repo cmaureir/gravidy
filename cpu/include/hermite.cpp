@@ -8,6 +8,10 @@ void integrate_cpu()
     int nsteps   = 0;       // Amount of steps per particles on the system
     iterations   = 0;       // Iterations of the integration
 
+    int max_threads = omp_get_max_threads();
+    omp_set_num_threads( max_threads - 1);
+    printf("Max threads: %d\n", max_threads);
+
     init_acc_jrk();   // Initial calculation of a and a1
     init_dt(&ATIME);  // Initial calculation of time-steps using simple equation
     //init_dt2(&ATIME); // Initial calculation of time-steps using complete equation

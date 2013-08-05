@@ -11,6 +11,6 @@ cd /user/c/cmaureir/GraviDy/
 
 for e in "${etas[@]}"
 do
-    (time gpu/./gravidy -i input/$file -t 1 -e $e)
+    (time gpu/./gravidy -i input/$file -t 1 -e $e -o eta_16k)
 done
 
