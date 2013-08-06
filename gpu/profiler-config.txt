@@ -1,4 +1,0 @@
-timestamp
-gpustarttimestamp
-regperthread
-dynsmemperblock
