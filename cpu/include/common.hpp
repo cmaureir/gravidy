@@ -3,13 +3,10 @@
 #include <vector>
 #include <string>
 #include <ctime>
-#include <omp.h>
 #include <cassert>
+#include <omp.h>
 #include <vector_types.h>
 
-//// Fix GCC 4.7
-//#undef _GLIBCXX_ATOMIC_BUILTINS
-//#undef _GLIBCXX_USE_INT128
 
 #define gettime (float)clock()/CLOCKS_PER_SEC
 #define gettime_ms (float)clock()/(CLOCKS_PER_SEC/1000)
@@ -91,7 +88,24 @@ typedef struct Forces {
     double a1[3];
 } Forces;
 
-extern int print_log;
+typedef struct Gtime {
+    double integration_ini;
+    double integration_end;
+    double prediction_ini;
+    double prediction_end;
+    double update_ini;
+    double update_end;
+    double correction_ini;
+    double correction_end;
+
+    double grav_ini;
+    double grav_end;
+
+    double reduce_ini;
+    double reduce_end;
+} Gtime;
+
+
 extern std::vector<particle> part; // Vector to save the input file data
 
 
@@ -105,9 +119,10 @@ extern std::string output_file;       // Output filename for general info.
 extern FILE *out;                     // Out file for debugging.
 extern float total_mass;              // Total mass of the particles
                                       // (In N-body units will be 1)
+extern Gtime gtime;                   // Global structure to store time calculation
+extern float gflops;                  // GFLOPS count
 
-extern double int_time;               // Integration clock time
-extern double ini_time, end_time;     // Initial and Final clock time stamps
+extern float itime;                   // Integration time when the it will stop
 extern double ekin, epot;             // Kinetic and Potential energy
 extern double energy_ini;             // Initial energy of the system
 extern double energy_end;             // Energy at an integration time t
@@ -127,7 +142,7 @@ extern size_t f1_size, i1_size;       // float and int size
  * (Particles attribute arrays)
  */
 extern double4 *h_r, *h_v;      // Position and Velocity
-extern Forces *h_f;     // Acceleration and its first derivative (Jerk)
+extern Forces *h_f;             // Acceleration and its first derivative (Jerk)
 extern double4 *h_a2, *h_a3;    // 2nd and 3rd acceleration derivatives.
 extern double4 *h_old_a;        // Previous step value of the Acceleration
 extern double4 *h_old_a1;       // Previous step value of the Jerk
@@ -137,3 +152,5 @@ extern double *h_ekin, *h_epot; // Kinetic and Potential energy
 extern double  *h_t, *h_dt;     // Time and time-step
 extern float   *h_m;            // Masses of the particles
 extern int *h_move;             // Particles id to move in each iteration time
+
+extern int print_log;

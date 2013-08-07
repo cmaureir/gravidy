@@ -145,7 +145,6 @@ extern float  e2, eta;         // Softening^2 and ETA parameters
                                       // (This parameters takes the previous
                                       // setted values E, and ETA_N or the
                                       // parameters give by the command line)
-extern float beta;
 
 extern float t_rh;                    // Half-mass relaxation time
 extern float t_cr;                    // Crossing time

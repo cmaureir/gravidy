@@ -13,12 +13,12 @@
 int n;
 int iterations;
 float total_mass;
-double int_time;
-double ini_time, end_time;
-double init_time;
 double energy_ini, energy_end, energy_tmp;
 double ekin, epot;
 float e2, eta;
+Gtime gtime;
+float itime;
+float gflops;
 
 // Struct vector to read the input file
 std::vector<particle> part;
@@ -46,43 +46,43 @@ size_t f1_size, i1_size;
 
 int print_log;
 
-string getTime ()
-{
-    time_t timeObj;
-    time(&timeObj);
-    tm *pTime = localtime(&timeObj);
-    char buffer[100];
-    sprintf(buffer, "%02d-%02d-%04d_%02d:%02d:%02d", pTime->tm_mday, pTime->tm_mon+1, 1900+pTime->tm_year, pTime->tm_hour, pTime->tm_min, pTime->tm_sec);
-    return buffer;
-}
-
-/*
+/********************************************************
  * Main
- */
+ ********************************************************/
+
 int
 main(int argc, char *argv[])
 {
-    print_log = 0;
-    // Read parameters
+    // Read command line parameters
     if(!check_options(argc,argv)) return 1;
 
+    // Read the input file
     read_input_file(input_file);
+
+    // Memory allocation of the CPU arrays
     alloc_vectors_cpu();
 
     // Opening output file for debugging
-    //output_file = input_file;
-    output_file += "_";
-    output_file += getTime();
-    output_file += ".out.cpu";
-    out = fopen(output_file.c_str(), "w");
+    if (print_log)
+    {
+        output_file += "_";
+        output_file += get_time();
+        output_file += ".out.gpu";
+        out = fopen(output_file.c_str(), "w");
+    }
 
 
-    ini_time = omp_get_wtime();
+    // Start integration process
+    gtime.integration_ini = omp_get_wtime();
     integrate_cpu();
-    end_time = omp_get_wtime();
+    gtime.integration_end = omp_get_wtime();
 
-    fclose(out);
-    //write_output_file(output_file);
+    if(print_log)
+    {
+        fclose(out);
+    }
+
+    // Memory deallocation of the GPU arrays
     free_vectors_cpu();
 
     return 0;

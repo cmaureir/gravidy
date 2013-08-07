@@ -8,6 +8,7 @@
 #include <iostream>
 #include <iomanip>
 #include <limits>
+#include <omp.h>
 
 // General variables of the program
 int n;
@@ -16,7 +17,6 @@ float total_mass;
 double energy_ini, energy_end, energy_tmp;
 double ekin, epot;
 float e2, eta;
-float beta;
 Gtime gtime;
 float itime;
 float gflops;

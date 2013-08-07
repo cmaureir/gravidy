@@ -52,8 +52,6 @@ bool check_options_noboost(int argc, char *argv[])
     ss << e;
     ss << "_e";
     ss << eta;
-    ss << "_a";
-    ss << beta;
     ss << ".out";
     std::string ext(ss.str());
 
@@ -196,7 +194,6 @@ bool check_options(int argc, char *argv[])
     {
         eta = vm["eta"].as<float>();
     }
-
 
 
     return true;

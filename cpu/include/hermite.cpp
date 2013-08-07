@@ -7,21 +7,20 @@ void integrate_cpu()
     int nact     = 0;       // Active particles
     int nsteps   = 0;       // Amount of steps per particles on the system
     iterations   = 0;       // Iterations of the integration
+    static long long interactions = 0;
 
     int max_threads = omp_get_max_threads();
     omp_set_num_threads( max_threads - 1);
-    printf("Max threads: %d\n", max_threads);
 
     init_acc_jrk();   // Initial calculation of a and a1
     init_dt(&ATIME);  // Initial calculation of time-steps using simple equation
-    //init_dt2(&ATIME); // Initial calculation of time-steps using complete equation
 
     energy_ini = energy();   // Initial calculation of the energy of the system
     energy_tmp = energy_ini; // Saving initial energy, to calculate errors
 
-    get_energy_log(ITIME, iterations, nsteps, out, energy_tmp); // First log of the integration
+    get_energy_log(ITIME, iterations, interactions, nsteps, out, energy_tmp);
 
-    while (ITIME < int_time)
+    while (ITIME < itime)
     {
         ITIME = ATIME;                         // New integration time
         nact = find_particles_to_move(ITIME);  // Find particles to move (nact)
@@ -31,15 +30,24 @@ void integrate_cpu()
         update_acc_jrk(nact);                  // Update a and a1 of nact particles
         correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
 
-        next_itime(&ATIME);                    // Find next integration time
 
-        //if(std::ceil(ITIME) == ITIME)          // Print log in every integer ITIME
-        if(nact == n)          // Print log in every integer ITIME
+        // Update the amount of interactions counter
+        interactions += nact * n;
+
+        // Find the next integration time
+        next_itime(&ATIME);
+
+        // Print log every integer ITIME
+        if(std::ceil(ITIME) == ITIME)
+        //if(nact == n)          // Print log in every integer ITIME
         {
-           get_energy_log(ITIME, iterations, nsteps, out, energy());
+           get_energy_log(ITIME, iterations, interactions, nsteps, out, energy());
         }
 
-        nsteps += nact;                        // Update nsteps with nact
-        iterations++;                          // Increase iterations
+        // Update nsteps with nact
+        nsteps += nact;
+
+        // Increase iteration counter
+        iterations++;
     }
 }
