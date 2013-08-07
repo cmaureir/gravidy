@@ -170,11 +170,9 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
 
     if(ITIME == 0.0)
     {
-       fprintf(out, "00 %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
-     // printf(     "00 %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
+       fprintf(out, "00 %3s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
+     // printf(     "00 %3s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
                 "Time",
-                "CpuIte",
-                "GpuIte",
                 "Ite",
                 "Nsteps",
                 "GpuT",
@@ -184,11 +182,9 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
                 "CumRelErr",
                 "CumErr");
     }
-   fprintf(out, "00 % 3f\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
-//   printf(     "00 % 3f\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
+      fprintf(out, "00 % 3f\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
+      //   printf(     "00 % 3f\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
             ITIME,
-            iterations,
-            0,
             iterations,
             nsteps,
             0.0,
@@ -205,3 +201,18 @@ void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double 
     fflush(out);
 }
 
+string get_time(){
+
+    time_t timeObj;
+    char buffer[100];
+
+    time(&timeObj);
+    tm *pTime = localtime(&timeObj);
+    sprintf(buffer, "%02d-%02d-%04d_%02d:%02d:%02d", pTime->tm_mday,
+                                                     pTime->tm_mon+1,
+                                                     1900+pTime->tm_year,
+                                                     pTime->tm_hour,
+                                                     pTime->tm_min,
+                                                     pTime->tm_sec);
+    return buffer;
+}

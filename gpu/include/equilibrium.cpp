@@ -1,5 +1,12 @@
 #include "equilibrium.hpp"
 
+
+/*
+ * @fn void get_system_info()
+ *
+ * @brief Print some general information of the N-body system
+ *
+ */
 void get_system_info()
 {
     Point p_c = get_center_of_density();
@@ -12,6 +19,12 @@ void get_system_info()
     std::cout << "Cross. time " << t_cr << std::endl;
 }
 
+/*
+ * @fn get_center_of_density()
+ *
+ * @brief Function to calculate the center of density of the system
+ *
+ */
 Point get_center_of_density()
 {
     std::vector<double> p;
@@ -65,6 +78,12 @@ Point get_center_of_density()
     return density_center;
 }
 
+/*
+ * @fn get_halfmass_radius()
+ *
+ * @brief Function to calculate the half mass radius using the center of density
+ *
+ */
 double get_halfmass_radius(Point dc)
 {
     float half_mass;
@@ -104,6 +123,12 @@ double get_halfmass_radius(Point dc)
     return r_h;
 }
 
+/*
+ * @fn get_core_radius()
+ *
+ * @brief Function to calculate the core radius
+ *
+ */
 float get_core_radius(Point pc)
 {
     std::vector<Distance> d(n);
@@ -137,6 +162,12 @@ float get_core_radius(Point pc)
     return radius;
 }
 
+/*
+ * @fn get_crossing_time()
+ *
+ * @brief Function to calculate the crossing time of the system.
+ *
+ */
 float get_crossing_time()
 {
     float M = total_mass;
@@ -150,6 +181,12 @@ float get_crossing_time()
     return t_cr;
 }
 
+/*
+ * @fn get_relaxation_time()
+ *
+ * @brief Function to calculate the half-mass relaxation time of the system.
+ *
+ */
 float get_relaxation_time()
 {
     float t_rh;

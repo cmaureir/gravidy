@@ -8,4 +8,3 @@
 #include "equilibrium.hpp"
 
 void integrate_gpu();
-void integrate_cpu();

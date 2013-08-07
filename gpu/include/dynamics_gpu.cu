@@ -1,6 +1,12 @@
 #include "dynamics_gpu.cuh"
 
 
+/*
+ * @fn __host__ void gpu_init_acc_jrk()
+ *
+ * @brief
+ *  Initial calculation of the acceleration and jerk on the GPU.
+ */
 __host__ void gpu_init_acc_jrk()
 {
     int smem = BSIZE * 2* sizeof(double4);
@@ -10,6 +16,12 @@ __host__ void gpu_init_acc_jrk()
     get_kernel_error();
 }
 
+/*
+ * @fn __host__ double gpu_energy()
+ *
+ * @brief
+ *  Energy calculation on the GPU.
+ */
 __host__ double gpu_energy()
 {
 
@@ -37,23 +49,17 @@ __host__ double gpu_energy()
     return ekin + epot;
 }
 
-__host__ void gpu_predicted_pos_vel(float ITIME)
+/*
+ * @fn __host__ void gpu_update()
+ *
+ * @brief
+ *  Gravitational interactions calculation for the nact particles
+ *  using j-parallelization, and then doing a reduction.
+ */
+__host__ void gpu_update(int total)
 {
 
-    gpu_timer_start();
-    k_predicted_pos_vel<<< nblocks, nthreads >>> (d_r,
-                                                  d_v,
-                                                  d_f,
-                                                  d_p,
-                                                  d_t,
-                                                  ITIME,
-                                                  n);
-    cudaThreadSynchronize();
-    float msec = gpu_timer_stop("k_predicted_pos_vel");
-    get_kernel_error();
-}
-
-__host__ void gpu_update(int total) {
+    gtime.update_ini = omp_get_wtime();
 
     // Copying to the device the predicted r and v
     CUDA_SAFE_CALL(cudaMemcpy(d_p, h_p, sizeof(Predictor) * n,cudaMemcpyHostToDevice));
@@ -75,11 +81,11 @@ __host__ void gpu_update(int total) {
     size_t smem = BSIZE * sizeof(Predictor);
 
     // Kernel to update the forces for the particles in d_i
-    //gpu_timer_start();
+    gtime.grav_ini = omp_get_wtime();
     k_update <<< nblocks, nthreads, smem >>> (d_i, d_p, d_fout,d_m, n, total,e2);
     cudaThreadSynchronize();
-    //float msec = gpu_timer_stop("k_update");
-    float msec = gpu_timer_stop("");
+    gtime.grav_end += omp_get_wtime() - gtime.grav_ini;
+    get_kernel_error();
 
     // Blocks, threads and shared memory configuration for the reduction.
     dim3 rgrid   (total,   1, 1);
@@ -87,10 +93,10 @@ __host__ void gpu_update(int total) {
     size_t smem2 = sizeof(Forces) * NJBLOCK + 1;
 
     // Kernel to reduce que temp array with the forces
-    //gpu_timer_start();
+    gtime.reduce_ini = omp_get_wtime();
     reduce <<< rgrid, rthreads, smem2 >>>(d_fout, d_fout_tmp, total);
     cudaThreadSynchronize();
-    //msec = gpu_timer_stop("reduce");
+    gtime.reduce_end += omp_get_wtime() - gtime.grav_ini;
     get_kernel_error();
 
     // Copy from the GPU the new forces for the d_i particles.
@@ -101,5 +107,7 @@ __host__ void gpu_update(int total) {
         int id = h_move[i];
         h_f[id] = h_fout_tmp[i];
     }
+
+    gtime.update_end += omp_get_wtime() - gtime.update_ini;
 
 }

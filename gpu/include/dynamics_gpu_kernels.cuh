@@ -17,14 +17,6 @@ __global__ void k_init_acc_jrk(double4*,
                                int,
                                double);
 
-__global__ void k_predicted_pos_vel(double4*,
-                                    double4*,
-                                    Forces*,
-                                    Predictor*,
-                                    double*,
-                                    double,
-                                    int);
-
 __device__ void k_force_calculation(double4,
                                     double4,
                                     double4,

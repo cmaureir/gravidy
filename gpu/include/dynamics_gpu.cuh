@@ -8,5 +8,4 @@
 
 __host__ void   gpu_init_acc_jrk();
 __host__ double gpu_energy();
-__host__ void gpu_predicted_pos_vel(float);
 __host__ void gpu_update(int);

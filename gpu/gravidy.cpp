@@ -13,15 +13,13 @@
 int n;
 int iterations;
 float total_mass;
-double int_time;
-double ini_time, end_time;
-double init_time;
 double energy_ini, energy_end, energy_tmp;
 double ekin, epot;
 float e2, eta;
-int cpu_iterations, gpu_iterations;
-float gpu_time;
 float beta;
+Gtime gtime;
+float itime;
+float gflops;
 
 // Struct vector to read the input file
 std::vector<particle> part;
@@ -78,7 +76,6 @@ main(int argc, char *argv[])
 
     // Read the input file
     read_input_file(input_file);
-    //cudaSetDevice(1);
 
     // Memory allocation of the CPU arrays
     alloc_vectors_cpu();
@@ -100,13 +97,12 @@ main(int argc, char *argv[])
     cudaEventCreate(&stop);
 
     // Start integration process
-    ini_time = (float)clock()/CLOCKS_PER_SEC;
+    gtime.integration_ini = omp_get_wtime();
     integrate_gpu();
-    end_time = (float)clock()/CLOCKS_PER_SEC;
+    gtime.integration_end = omp_get_wtime();
 
     if(print_log)
     {
-        //write_output_file(output_file);
         fclose(out);
     }
 

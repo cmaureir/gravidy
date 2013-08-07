@@ -7,8 +7,9 @@ void integrate_gpu()
     int nact     = 0;       // Active particles
     int nsteps   = 0;       // Amount of steps per particles on the system
     iterations   = 0;       // Iterations of the integration
+    static long long interactions = 0;
 
-    // Tmp setting nblocks and nthreads
+    // General setting nblocks and nthreads
     nthreads = BSIZE;
     nblocks = ceil(n/(float)nthreads);
 
@@ -17,59 +18,63 @@ void integrate_gpu()
     CUDA_SAFE_CALL(cudaMemcpy(d_v,  h_v,  d4_size,cudaMemcpyHostToDevice));
     CUDA_SAFE_CALL(cudaMemcpy(d_m,  h_m,  f1_size,cudaMemcpyHostToDevice));
 
-    gpu_init_acc_jrk();   // Initial calculation of a and a1
+    // Initial calculation of a and a1 on the GPU
+    gpu_init_acc_jrk();
 
     // Copying a and a1 from the GPU to the CPU
     CUDA_SAFE_CALL(cudaMemcpy(h_f,  d_f,  sizeof(Forces) * n ,cudaMemcpyDeviceToHost));
 
-    init_dt(&ATIME);  // Initial calculation of time-steps using simple equation
+    // Initial calculation of time-steps using simple equation
+    init_dt(&ATIME);
 
-    energy_ini = gpu_energy(); // Initial calculation of the energy of the system
-    energy_tmp = energy_ini;  // Saving initial energy, to calculate errors
+    // Initial calculation of the energy of the system
+    energy_ini = gpu_energy();
 
-    get_energy_log(ITIME, iterations, nsteps, out, energy_tmp); // First log of the integration
+    // Saving initial energy, to calculate errors
+    energy_tmp = energy_ini;
 
-    double tmp_time = 0.0;
-    gpu_time = 0.0;
+    // Print First log
+    get_energy_log(ITIME, iterations, interactions, nsteps, out, energy_tmp);
 
 
-    double kernel_time_tmp = 0.0;
-    double kernel_time = 0.0;
-    static long long interactions = 0;
-
-    while (ITIME < int_time)
+    while (ITIME < itime)
     {
-        ITIME = ATIME;                         // New integration time
-        nact = find_particles_to_move(ITIME);  // Find particles to move (nact)
-        save_old(nact);                        // Save old information
+        // New integration time
+        ITIME = ATIME;
 
-        tmp_time = omp_get_wtime();
+        // Find particles to update this iteration (nact)
+        nact = find_particles_to_move(ITIME);
 
+        // Save current values of the a and a1 to perform correction later
+        save_old(nact);
+
+        // Prediction of the nact particles
         predicted_pos_vel(ITIME);
 
-        kernel_time_tmp = omp_get_wtime();
-        gpu_update(nact);     // Update a and a1 of nact particles
-        kernel_time += (omp_get_wtime() - kernel_time_tmp);
+        // Update of the gravitational interactions of the nact particles
+        gpu_update(nact);
 
-        correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
+        // Correction of the nact particles
+        correction_pos_vel(ITIME, nact);
 
-        CUDA_SAFE_CALL(cudaMemcpy(d_r, h_r, d4_size, cudaMemcpyHostToDevice));
-        CUDA_SAFE_CALL(cudaMemcpy(d_v, h_v, d4_size, cudaMemcpyHostToDevice));
 
-        gpu_time += omp_get_wtime() - tmp_time;
-        gpu_iterations++;
+        // Update the amount of interactions counter
         interactions += nact * n;
 
-        next_itime(&ATIME);                    // Find next integration time
+        // Find the next integration time
+        next_itime(&ATIME);
 
-        if(std::ceil(ITIME) == ITIME)          // Print log in every integer ITIME
+        // Print log every integer ITIME
+        if(std::ceil(ITIME) == ITIME)
         //if(nact == n)          // Print log in every integer ITIME
         {
-           get_energy_log(ITIME, iterations, nsteps, out, gpu_energy());
+           get_energy_log(ITIME, iterations, interactions, nsteps, out, gpu_energy());
         }
 
-        nsteps += nact;                        // Update nsteps with nact
-        iterations++;                          // Increase iterations
+        // Update nsteps with nact
+        nsteps += nact;
+
+        // Increase iteration counter
+        iterations++;
     }
-    printf("Total Average GLOPS/s: %f \n", 60.10e-9 * (interactions / kernel_time));
 }

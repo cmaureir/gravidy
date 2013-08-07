@@ -1,5 +1,11 @@
 #include "dynamics_gpu_kernels.cuh"
 
+/*
+ * @fn k_energy
+ *
+ * @desc GPU Kernel which calculates the energy of the system.
+ *
+ */
 __global__ void k_energy(double4 *r,
                          double4 *v,
                          double *ekin,
@@ -35,6 +41,13 @@ __global__ void k_energy(double4 *r,
     }
 }
 
+/*
+ * @fn k_init_acc_jrk
+ *
+ * @desc GPU Kernel which calculates the initial acceleration and jerk
+ * of all the particles of the system.
+ *
+ */
 __global__ void k_init_acc_jrk (double4 *r,
                                 double4 *v,
                                 Forces *d_f,
@@ -87,48 +100,10 @@ __global__ void k_init_acc_jrk (double4 *r,
 }
 
 /*
- * @fn k_predicted_pos_vel
- *
- * @param to do
- *
- * @desc GPU Kernel to calculate the predicted position and velocity
- *       of all the particles.
- *
- * @note Working properly.
- */
-__global__ void k_predicted_pos_vel(double4 *d_r,
-                                    double4 *d_v,
-                                    Forces *d_f,
-                                    Predictor *d_p,
-                                    double *d_t,
-                                    double ITIME,
-                                    int n)
-{
-    int i = threadIdx.x + blockDim.x * blockIdx.x;
-
-    if (i < n)
-    {
-        double dt = ITIME - d_t[i];
-        double dt2 = (dt  * dt)/2;
-        double dt3 = (dt2 * dt)/6;
-
-        d_p[i].r[0] = (dt3/6 * d_f[i].a1[0]) + (dt2/2 * d_f[i].a[0]) + (dt * d_v[i].x) + d_r[i].x;
-        d_p[i].r[1] = (dt3/6 * d_f[i].a1[1]) + (dt2/2 * d_f[i].a[1]) + (dt * d_v[i].y) + d_r[i].y;
-        d_p[i].r[2] = (dt3/6 * d_f[i].a1[2]) + (dt2/2 * d_f[i].a[2]) + (dt * d_v[i].z) + d_r[i].z;
-
-        d_p[i].v[0] = (dt2/2 * d_f[i].a1[0]) + (dt * d_f[i].a[0]) + d_v[i].x;
-        d_p[i].v[1] = (dt2/2 * d_f[i].a1[1]) + (dt * d_f[i].a[1]) + d_v[i].y;
-        d_p[i].v[2] = (dt2/2 * d_f[i].a1[2]) + (dt * d_f[i].a[2]) + d_v[i].z;
-    }
-}
-
-/*
  * @fn k_force_calculation
  *
  * @desc GPU Kernel which calculates the interaction between
  *       a i-particle and a j-particle.
- *
- * @note Working properly.
  *
  */
 __device__ void k_force_calculation(double4 i_pos, double4 i_vel,
@@ -197,6 +172,11 @@ __device__ void k_force_calculation2(Predictor i_p,
     d_f.a1[2] += (vz * mr3inv - (3 * rv) * rz * mr5inv);
 }
 
+/*
+ * @fn k_update()
+ *
+ * @brief Gravitational interaction kernel.
+ */
 __global__ void k_update(Predictor *d_i,
                          Predictor *d_j,
                          Forces *d_fout,
@@ -249,6 +229,11 @@ __global__ void k_update(Predictor *d_i,
 
 }
 
+/*
+ * @fn reduce()
+ *
+ * @brief Forces reduction kernel
+ */
 __global__ void reduce(Forces *d_in,
                        Forces *d_out,
                        unsigned int total)

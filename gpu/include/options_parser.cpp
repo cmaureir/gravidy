@@ -31,7 +31,7 @@ bool file_exists(const std::string& filename)
  *  Parameters values
  *
  * @brief
- *   Checking the parameters of the program using the
+ *   Checking the parameters of the program without using the
  *   boost library.
  *
  * @return state of the parameters
@@ -39,7 +39,7 @@ bool file_exists(const std::string& filename)
 bool check_options_noboost(int argc, char *argv[])
 {
     input_file = std::string(argv[1]);
-    int_time = atoi(argv[2]);
+    itime = atoi(argv[2]);
     float e = atof(argv[3]);
     e2 = e*e;
     eta = atof(argv[4]);
@@ -47,7 +47,7 @@ bool check_options_noboost(int argc, char *argv[])
     // Preparing output filename
     std::ostringstream ss;
     ss << "_t";
-    ss << int_time;
+    ss << itime;
     ss << "_s";
     ss << e;
     ss << "_e";
@@ -87,25 +87,29 @@ bool check_options(int argc, char *argv[])
         ("time,t",      po::value<float>(),       "Integration time")
         ("softening,s", po::value<float>(),       "Softening")
         ("eta,e",       po::value<float>(),       "ETA of time-step calculation")
-        ("beta,b",      po::value<float>(),       "Use CPU when Nact < Beta")
+        ("screen,p",    "Print summary in the screen instead of a file")
     ;
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    // Help option
+    /*
+     * Help option
+     */
     if (vm.count("help"))
     {
-        std::cerr << desc
-                  << std::endl;
+        std::cerr << desc << std::endl;
         return false;
     }
 
-    // Input option
+    /*
+     * Input option
+     */
     if (vm.count("input"))
     {
         input_file = vm["input"].as<std::string>();
+
         if(!file_exists(input_file))
         {
             std::cout << "gravidy: cannot access "
@@ -124,11 +128,46 @@ bool check_options(int argc, char *argv[])
         return false;
     }
 
+    /*
+     * Screen
+     */
+    if(vm.count("screen"))
+    {
+        print_log=0;
+    }
+    else
+    {
+        print_log = 1;
+    }
 
-    // Time option
+    /*
+     * Output option
+     */
+    std::ostringstream ss;
+    ss << "_t";
+    ss << itime;
+    ss << "_s";
+    ss << e;
+    ss << "_e";
+    ss << eta;
+    ss << ".out";
+    std::string ext(ss.str());
+    if (vm.count("output"))
+    {
+        output_file = vm["output"].as<std::string>();
+        output_file = output_file+ext;
+    }
+    else
+    {
+        output_file = input_file+ext;
+    }
+
+    /*
+     * Time option
+     */
     if (vm.count("time"))
     {
-        int_time = vm["time"].as<float>();
+        itime = vm["time"].as<float>();
     }
     else
     {
@@ -139,6 +178,9 @@ bool check_options(int argc, char *argv[])
         return false;
     }
 
+    /*
+     * Softening
+     */
     e2 = E*E;
     if (vm.count("softening"))
     {
@@ -146,42 +188,13 @@ bool check_options(int argc, char *argv[])
         e2 = e*e;
     }
 
+    /*
+     * Eta
+     */
     eta  = ETA_N;
     if (vm.count("eta"))
     {
         eta = vm["eta"].as<float>();
-    }
-
-    std::ostringstream ss;
-    ss << "_t";
-    ss << int_time;
-    ss << "_s";
-    ss << e;
-    ss << "_e";
-    ss << eta;
-    ss << ".out";
-    std::string ext(ss.str());
-
-    // Output option
-    print_log = 1;
-    if (vm.count("output"))
-    {
-        output_file = vm["output"].as<std::string>();
-        output_file = output_file+ext;
-        //print_log = 1;
-    }
-    else
-    {
-        output_file = input_file+ext;
-    //    std::cerr << "gravidy: option requires an argument -- 'output'" << std::endl;
-    //    std::cerr << desc << std::endl;
-    //    return false;
-    }
-
-    beta = 20;
-    if (vm.count("beta"))
-    {
-        beta = vm["beta"].as<float>();
     }
 
 
