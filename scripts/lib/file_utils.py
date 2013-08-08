@@ -29,3 +29,14 @@ def read_gravidy_output(fname,N,S):
     return summary_array, snapshot_array
 
 
+def get_filename():
+    desc=''
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument('-i', '--input',  type=str, help='Input filename')
+    args = parser.parse_args()
+
+    if args.input   == None:
+        parser.print_help()
+        return None
+
+    return args.input
