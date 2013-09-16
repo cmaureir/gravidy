@@ -209,9 +209,11 @@ __global__ void k_update(Predictor *d_i,
         Predictor *dst = (Predictor *)jpshare;
         dst[      tid] = src[      tid];
         dst[BSIZE+tid] = src[BSIZE+tid];
-        mj = d_m[BSIZE + tid];
+        mj = d_m[j];
+        //mj = d_m[BSIZE + tid];
         __syncthreads();
 
+        // If the total amount of particles is not a multiple of BSIZE
         if(jend-j < BSIZE){
             for(int jj=0; jj<jend-j; jj++){
                 Predictor jp = jpshare[jj];
