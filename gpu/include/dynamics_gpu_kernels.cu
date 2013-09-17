@@ -233,12 +233,14 @@ __global__ void k_update(Predictor *d_i,
         __syncthreads();
 
         if(jend-j < BSIZE){
+            //#pragma unroll 4
             for(int jj=0; jj<jend-j; jj++){
                 Predictor jp = jpshare[jj];
                 k_force_calculation2(ip, jp, fo, mj, e2);
             }
         }
         else{
+            //#pragma unroll 4
             for(int jj=0; jj<BSIZE; jj++){
                 Predictor jp = jpshare[jj];
                 k_force_calculation2(ip, jp, fo, mj, e2);

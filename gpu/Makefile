@@ -19,13 +19,12 @@ OBJS_CPU=   include/options_parser.o \
 			include/extra_utils.o    \
 			include/equilibrium.o    \
 			include/dynamics_cpu.o
-#			include/memory_cpu.o         \
 
 OBJS_GPU=   include/memory_gpu.cuo \
 			include/memory_cpu.cuo \
 			include/dynamics_gpu_kernels.cuo \
 			include/dynamics_gpu.cuo \
-            include/hermite.cuo
+			include/hermite.cuo
 
 OBJS=       $(OBJS_GPU) $(OBJS_CPU)
 
