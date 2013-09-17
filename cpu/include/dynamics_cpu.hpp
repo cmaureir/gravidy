@@ -7,9 +7,7 @@
 
 void next_itime(double*);
 int find_particles_to_move(double);
-void update_iteration_dt();
 void init_dt(double*);
-void init_dt2(double*);
 void init_acc_jrk();
 void update_acc_jrk(int);
 double energy();

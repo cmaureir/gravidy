@@ -20,3 +20,4 @@ clean:
 	rm -rf gravidy
 distclean: clean
 	rm -rf include/*.o
+	rm -rf gmon.out

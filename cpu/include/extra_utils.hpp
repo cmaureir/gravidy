@@ -22,4 +22,5 @@ void print_particle(int);
 
 // Functions
 double get_magnitude(double, double, double);
-void get_energy_log(double,int, int, FILE*, double);
+void get_energy_log(double,int, long long, int, FILE*, double);
+string get_time();

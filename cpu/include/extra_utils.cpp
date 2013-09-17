@@ -12,9 +12,10 @@ void print_all(int limit, float ITIME, FILE *out)
     if (out == NULL)
     {
         for (int i = 0; i < limit; i++) {
-            printf("%.10f %6d %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
+            printf("%.10f %6d %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
                     ITIME,
                     i,
+                    h_m[i],
                     h_r[i].x, h_r[i].y, h_r[i].z,
                     h_v[i].x, h_v[i].y, h_v[i].z,
                     h_f[i].a[0], h_f[i].a[1], h_f[i].a[2],
@@ -145,62 +146,116 @@ double get_magnitude(double x, double y, double z)
  *
  * @brief Print a snapshoot with information of the system.
  *        * N-body time
- *        * CPU iterations
- *        * GPU iterations
  *        * Total iterations
  *        * Amount of particles which were updated
- *        * GPU clock time
- *        * CPU clock time
+ *        * Prediction time
+ *        * Update time
+ *        * Correction time
  *        * Total clock time
  *        * Energy
  *        * Relative Energy Error      (E_{t} - E_{t-1})/E_{t-1}
  *        * Relative Cumulative Error  (E_{t} - E_{t-1})/E_{0}
  *        * Cumulative Energy Error    (E_{t} - E_{0})/E_{0}
+ *        * GFLOPS of the k_update kernel only.
  *
  */
-void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out, double energy)
+void get_energy_log(double ITIME, int iterations, long long interactions, int nsteps, FILE *out, double energy)
 {
     energy_end = energy;
     double rel_error     = abs((energy_end-energy_tmp)/energy_tmp);
     double rel_cum_error = abs((energy_end-energy_tmp)/energy_ini);
     double cum_error     = abs((energy_end-energy_ini)/energy_ini);
     energy_tmp = energy_end;
-    float time = omp_get_wtime() - ini_time;
-
+    float time = omp_get_wtime() - gtime.integration_ini;
+    if (ITIME != 0.0){
+        gflops =  60.10e-9 * (interactions / gtime.update_end);
+    }
     if(ITIME == 0.0)
     {
-       fprintf(out, "00 %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
-     // printf(     "00 %3s\t %10s\t %10s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\t %8s\t %8s\n",
+        if (print_log)
+        {
+            fprintf(out,"00 %7s %8s %10s %12s %12s %12s %12s %7s %9s %9s %9s %8s\n",
                 "Time",
-                "CpuIte",
-                "GpuIte",
-                "Ite",
+                "Iterations",
                 "Nsteps",
-                "GpuT",
+                "PredictionT",
+                "UpdateT",
+                "CorrectionT",
                 "TTime",
                 "Energy",
                 "RelErr",
                 "CumRelErr",
-                "CumErr");
+                "CumErr",
+                "GFLOPS");
+            fflush(out);
+        }
+        else
+        {
+
+            printf("00 %7s %8s %10s %12s %12s %12s %12s %7s %9s %9s %9s %8s\n",
+                      "IteTime",
+                      "Iter",
+                      "Nsteps",
+                      "PredictionT",
+                      "UpdateT",
+                      "CorrectionT",
+                      "ElapsedTime",
+                      "Energy",
+                      "RelE",
+                      "CumRelE",
+                      "CumE",
+                      "GFLOPS");
+        }
     }
-   fprintf(out, "00 % 3f\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
-//   printf(     "00 % 3f\t % 10d\t % 10d\t % 10d\t % 10d\t % 6.4f\t % 6.4f\t % .6e\t % .6e\t % .6e\t % .6e\n",
+
+    if (print_log)
+    {
+        fprintf(out,"00 %7.3f %8d %10d %12.4f %12.4f %12.4f %12.4f %6.4f %5.3e %5.3e %5.3e %8.3f\n",
             ITIME,
             iterations,
-            0,
-            iterations,
             nsteps,
-            0.0,
+            gtime.prediction_end,
+            gtime.update_end,
+            gtime.correction_end,
             time,
             energy_end,
             rel_error,
             rel_cum_error,
-            cum_error);
-
-    if (print_log)
-    {
+            cum_error,
+            gflops);
         print_all(n,ITIME,out);
+        fflush(out);
     }
-    fflush(out);
+    else
+    {
+        printf("00 %7.3f %8d %10d %12.4f %12.4f %12.4f %12.4f %6.4f %5.3e %5.3e %5.3e %8.3f\n",
+            ITIME,
+            iterations,
+            nsteps,
+            gtime.prediction_end,
+            gtime.update_end,
+            gtime.correction_end,
+            time,
+            energy_end,
+            rel_error,
+            rel_cum_error,
+            cum_error,
+            gflops);
+    }
 }
 
+string get_time(){
+
+    time_t timeObj;
+    char buffer[100];
+
+    time(&timeObj);
+    tm *pTime = localtime(&timeObj);
+    sprintf(buffer, "%02d-%02d-%04d_%02d:%02d:%02d", pTime->tm_mday,
+                                                     pTime->tm_mon+1,
+                                                     1900+pTime->tm_year,
+                                                     pTime->tm_hour,
+                                                     pTime->tm_min,
+                                                     pTime->tm_sec);
+    return buffer;
+}

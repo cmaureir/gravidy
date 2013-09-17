@@ -84,73 +84,6 @@ void init_dt(double *ATIME)
     }
 }
 
-void init_dt2(double *ATIME)
-{
-    // Get Snap and Crackle
-    int i = 0;
-    int j = 0;
-    for (i = INIT_PARTICLE; i < n; i++)
-    {
-        for (j = INIT_PARTICLE; i < n; i++)
-        {
-            double rx = h_r[j].x - h_r[i].x;
-            double ry = h_r[j].y - h_r[i].y;
-            double rz = h_r[j].z - h_r[i].z;
-
-            double vx = h_v[j].x - h_v[i].x;
-            double vy = h_v[j].y - h_v[i].y;
-            double vz = h_v[j].z - h_v[i].z;
-
-            double r2 = rx*rx + ry*ry + rz*rz + e2;
-            double rinv = 1/sqrt(r2);
-            double r2inv = rinv  * rinv;
-            double r3inv = r2inv * rinv;
-            double mr3inv = r3inv * h_m[j];
-
-            double rv = rx*vx + ry*vy + rz*vz;
-            double ra = rx*h_f[i].a[0] + ry*h_f[i].a[1] + rz*h_f[i].a[2];
-            double v2 = vx*vx + vy*vy + vz*vz;
-            double va = h_f[i].a[0]*vx + h_f[i].a[1]*vy + h_f[i].a[2]*vz;
-            double rj = rx*h_f[i].a1[0] + ry*h_f[i].a1[1] + rz*h_f[i].a1[2];
-
-            double alpha = rv * r2inv;
-            double beta = alpha*alpha + r2inv * (v2 + ra);
-            double gamma = 3 * va + rj * r2inv + alpha * (3*beta - 4*alpha*alpha);
-
-            h_a2[i].x += mr3inv*h_f[i].a[0]  - 6 * alpha*h_f[i].a1[0] - 3 * beta*h_f[i].a[0];
-            h_a2[i].y += mr3inv*h_f[i].a[1]  - 6 * alpha*h_f[i].a1[1] - 3 * beta*h_f[i].a[1];
-            h_a2[i].z += mr3inv*h_f[i].a[2]  - 6 * alpha*h_f[i].a1[2] - 3 * beta*h_f[i].a[2];
-
-            h_a3[i].x += mr3inv*h_f[i].a1[0] - 9 * alpha*h_a2[i].x - 9 * beta*h_f[i].a1[0] - 3 * gamma*h_f[i].a[0];
-            h_a3[i].y += mr3inv*h_f[i].a1[1] - 9 * alpha*h_a2[i].y - 9 * beta*h_f[i].a1[1] - 3 * gamma*h_f[i].a[1];
-            h_a3[i].z += mr3inv*h_f[i].a1[2] - 9 * alpha*h_a2[i].z - 9 * beta*h_f[i].a1[2] - 3 * gamma*h_f[i].a[2];
-        }
-    }
-    // Get Timesteps
-    for (i = 0; i < n; i++)
-    {
-        double m_a    = get_magnitude(h_f[i].a[0],  h_f[i].a[1],  h_f[i].a[2]);
-        double m_a1   = get_magnitude(h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2]);
-        double m_a2   = get_magnitude(h_a2[i].x, h_a2[i].y, h_a2[i].z);
-        double m_a3   = get_magnitude(h_a3[i].x, h_a3[i].y, h_a3[i].z);
-        double tmp_dt = sqrt(ETA_S * (m_a * m_a2 + m_a1*m_a1)/(m_a1*m_a3+m_a2*m_a2));
-        int exp       = (int)(std::ceil(log(tmp_dt)/log(2.0))-1);
-        tmp_dt        = pow(2,exp);
-
-        if (tmp_dt < D_TIME_MIN)
-            tmp_dt = D_TIME_MIN;
-        else if (tmp_dt > D_TIME_MAX)
-            tmp_dt = D_TIME_MAX;
-
-        h_dt[i] = tmp_dt;
-        h_t[i]  = 0.0;
-
-        // Obtaining the first integration time
-        if(tmp_dt < *ATIME)
-            *ATIME = tmp_dt;
-    }
-}
-
 void force_calculation(int i, int j)
 {
     double rx = h_p[j].r[0] - h_p[i].r[0];
@@ -207,6 +140,7 @@ void init_acc_jrk()
  */
 void update_acc_jrk(int total)
 {
+	gtime.update_ini = omp_get_wtime();
     int i, j, k;
     #pragma omp parallel for private(i,j)
     for (k = 0; k < total; k++)
@@ -226,6 +160,7 @@ void update_acc_jrk(int total)
             force_calculation(i,j);
         }
     }
+    gtime.update_end += omp_get_wtime() - gtime.update_ini;
 }
 
 /*
@@ -302,10 +237,10 @@ void save_old(int total)
  *    and velocity, following the Hermite integrator scheme
  *    formulas.
  */
-void
-predicted_pos_vel(double ITIME)
+void predicted_pos_vel(double ITIME)
 {
-    #pragma omp parallel for
+    gtime.prediction_ini = omp_get_wtime();
+    //#pragma omp parallel for
     for (int i = INIT_PARTICLE; i < n; i++)
     {
         double dt  = ITIME - h_t[i];
@@ -321,6 +256,7 @@ predicted_pos_vel(double ITIME)
         h_p[i].v[2] = (dt2/2 * h_f[i].a1[2]) + (dt * h_f[i].a[2]) + h_v[i].z;
 
     }
+    gtime.prediction_end += omp_get_wtime() - gtime.prediction_ini;
 }
 
 /*
@@ -333,6 +269,7 @@ predicted_pos_vel(double ITIME)
  */
 void correction_pos_vel(double ITIME, int total)
 {
+    gtime.correction_ini = omp_get_wtime();
     for (int k = 0; k < total; k++)
     {
         int i = h_move[k];
@@ -369,8 +306,18 @@ void correction_pos_vel(double ITIME, int total)
         h_dt[i] = normal_dt;
 
     }
+
+
+    gtime.correction_end += omp_get_wtime() - gtime.correction_ini;
 }
 
+/*
+ * @fn get_timestep_normal()
+ *
+ * @brief
+ *  Obtain the time step of an i particle
+ *
+ */
 double get_timestep_normal(int i)
 {
     // Calculating a_{1,i}^{(2)} = a_{0,i}^{(2)} + dt * a_{0,i}^{(3)}
@@ -397,6 +344,15 @@ double get_timestep_normal(int i)
     return normal_dt;
 }
 
+/*
+ * @fn normalize_dt()
+ *
+ * @brief
+ *  Normalize the previous value of the time step of a particle i,
+ *  comparing it with its previous value and fitting the new value
+ *  in the blocks before of after the current block.
+ *
+ */
 double normalize_dt(double new_dt, double old_dt, double t, int i)
 {
     if (new_dt <= old_dt/8)
@@ -433,7 +389,6 @@ double normalize_dt(double new_dt, double old_dt, double t, int i)
     }
     else
     {
-        //fprintf(stderr, "gravidy: Undefined treatment for the time-step of (%d)",i);
         new_dt = old_dt;
     }
 

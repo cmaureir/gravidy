@@ -39,3 +39,4 @@ clean:
 distclean: clean
 	rm -rf include/*.o
 	rm -rf include/*.cuo
+	rm -rf gmon.out

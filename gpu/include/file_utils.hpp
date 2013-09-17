@@ -14,4 +14,3 @@
 using namespace std;
 
 void read_input_file(std::string path);
-void write_output_file(std::string path);

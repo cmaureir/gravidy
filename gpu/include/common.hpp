@@ -8,10 +8,6 @@
 #include <vector_types.h>
 #include <cuda_runtime_api.h>
 
-//// Fix GCC 4.7
-//#undef _GLIBCXX_ATOMIC_BUILTINS
-//#undef _GLIBCXX_USE_INT128
-
 #define gettime (float)clock()/CLOCKS_PER_SEC
 #define gettime_ms (float)clock()/(CLOCKS_PER_SEC/1000)
 
@@ -106,6 +102,24 @@ typedef struct Forces {
     double a1[3];
 } Forces;
 
+typedef struct Gtime {
+    double integration_ini;
+    double integration_end;
+    double prediction_ini;
+    double prediction_end;
+    double update_ini;
+    double update_end;
+    double correction_ini;
+    double correction_end;
+
+    double grav_ini;
+    double grav_end;
+
+    double reduce_ini;
+    double reduce_end;
+} Gtime;
+
+
 extern std::vector<particle> part; // Vector to save the input file data
 
 
@@ -119,11 +133,10 @@ extern std::string output_file;       // Output filename for general info.
 extern FILE *out;                     // Out file for debugging.
 extern float total_mass;              // Total mass of the particles
                                       // (In N-body units will be 1)
-extern int cpu_iterations, gpu_iterations;
-extern float gpu_time;
+extern Gtime gtime;                   // Global structure to store time calculation
+extern float gflops;                  // GFLOPS count
 
-extern double int_time;               // Integration clock time
-extern double ini_time, end_time;     // Initial and Final clock time stamps
+extern float itime;                   // Integration time when the it will stop
 extern double ekin, epot;             // Kinetic and Potential energy
 extern double energy_ini;             // Initial energy of the system
 extern double energy_end;             // Energy at an integration time t
@@ -132,7 +145,6 @@ extern float  e2, eta;         // Softening^2 and ETA parameters
                                       // (This parameters takes the previous
                                       // setted values E, and ETA_N or the
                                       // parameters give by the command line)
-extern float beta;
 
 extern float t_rh;                    // Half-mass relaxation time
 extern float t_cr;                    // Crossing time
