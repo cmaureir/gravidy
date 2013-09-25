@@ -5,11 +5,6 @@
 #include <ctime>
 #include <cassert>
 #include <omp.h>
-#include <vector_types.h>
-
-
-#define gettime (float)clock()/CLOCKS_PER_SEC
-#define gettime_ms (float)clock()/(CLOCKS_PER_SEC/1000)
 
 /*********************************
  *  Preprocessor directives
@@ -52,10 +47,10 @@
  */
 #define G 1
 
-//typedef struct double4
-//{
-//    double x, y, z, w;
-//} double4;
+typedef struct double4
+{
+    double x, y, z, w;
+} double4;
 
 /*****************************************
  * General variables of the integrator

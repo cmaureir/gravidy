@@ -53,10 +53,12 @@ int find_particles_to_move(double ITIME)
                 h_move[j] = i;
                 j++;
             #endif
-//            std::cout << i << " ";
+            //printf("%d ",i);
+            //printf("pre ");
+            //print_particle(i);
         }
     }
- //   std::cout << std::endl;
+    //printf("\n");
     return j;
 }
 
@@ -110,82 +112,6 @@ void init_dt(double *ATIME)
     }
 }
 
-void init_dt2(double *ATIME)
-{
-    // Get Snap and Crackle
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] init_dt2()\n");
-    #endif
-    int i = 0;
-    int j = 0;
-    for (i = INIT_PARTICLE; i < n; i++)
-    {
-        for (j = INIT_PARTICLE; i < n; i++)
-        {
-            double rx = h_r[j].x - h_r[i].x;
-            double ry = h_r[j].y - h_r[i].y;
-            double rz = h_r[j].z - h_r[i].z;
-
-            double vx = h_v[j].x - h_v[i].x;
-            double vy = h_v[j].y - h_v[i].y;
-            double vz = h_v[j].z - h_v[i].z;
-
-            double r2 = rx*rx + ry*ry + rz*rz + softening*softening;
-            double rinv = 1/sqrt(r2);
-            double r2inv = rinv  * rinv;
-            double r3inv = r2inv * rinv;
-            double mr3inv = r3inv * h_m[j];
-
-            double rv = rx*vx + ry*vy + rz*vz;
-            double ra = rx*h_f[i].a[0] + ry*h_f[i].a[1] + rz*h_f[i].a[2];
-            double v2 = vx*vx + vy*vy + vz*vz;
-            double va = h_f[i].a[0]*vx + h_f[i].a[1]*vy + h_f[i].a[2]*vz;
-            double rj = rx*h_f[i].a1[0] + ry*h_f[i].a1[1] + rz*h_f[i].a1[2];
-
-            double alpha = rv * r2inv;
-            double beta = alpha*alpha + r2inv * (v2 + ra);
-            double gamma = 3 * va + rj * r2inv + alpha * (3*beta - 4*alpha*alpha);
-
-            h_a2[i].x += mr3inv*h_f[i].a[0]  - 6 * alpha*h_f[i].a1[0] - 3 * beta*h_f[i].a[0];
-            h_a2[i].y += mr3inv*h_f[i].a[1]  - 6 * alpha*h_f[i].a1[1] - 3 * beta*h_f[i].a[1];
-            h_a2[i].z += mr3inv*h_f[i].a[2]  - 6 * alpha*h_f[i].a1[2] - 3 * beta*h_f[i].a[2];
-
-            h_a3[i].x += mr3inv*h_f[i].a1[0] - 9 * alpha*h_a2[i].x - 9 * beta*h_f[i].a1[0] - 3 * gamma*h_f[i].a[0];
-            h_a3[i].y += mr3inv*h_f[i].a1[1] - 9 * alpha*h_a2[i].y - 9 * beta*h_f[i].a1[1] - 3 * gamma*h_f[i].a[1];
-            h_a3[i].z += mr3inv*h_f[i].a1[2] - 9 * alpha*h_a2[i].z - 9 * beta*h_f[i].a1[2] - 3 * gamma*h_f[i].a[2];
-        }
-    }
-    // Get Timesteps
-    for (i = 0; i < n; i++) {
-        #ifdef USE_KEPLER
-        if(i == 0)
-        {
-            h_dt[0] = 0.0;
-            continue;
-        }
-        #endif
-        double m_a    = get_magnitude(h_f[i].a[0],  h_f[i].a[1],  h_f[i].a[2]);
-        double m_a1   = get_magnitude(h_f[i].a1[0], h_f[i].a1[1], h_f[i].a1[2]);
-        double m_a2   = get_magnitude(h_a2[i].x, h_a2[i].y, h_a2[i].z);
-        double m_a3   = get_magnitude(h_a3[i].x, h_a3[i].y, h_a3[i].z);
-        double tmp_dt = sqrt(ETA_S * (m_a * m_a2 + m_a1*m_a1)/(m_a1*m_a3+m_a2*m_a2));
-        int exp       = (int)(std::ceil(log(tmp_dt)/log(2.0))-1);
-        tmp_dt        = pow(2,exp);
-
-        if (tmp_dt < D_TIME_MIN)
-            tmp_dt = D_TIME_MIN;
-        else if (tmp_dt > D_TIME_MAX)
-            tmp_dt = D_TIME_MAX;
-
-        h_dt[i] = tmp_dt;
-        h_t[i]  = 0.0;
-
-        // Obtaining the first integration time
-        if(tmp_dt < *ATIME)
-            *ATIME = tmp_dt;
-    }
-}
-
 void force_calculation(int i, int j)
 {
     double rx = h_p[j].r[0] - h_p[i].r[0];
@@ -196,7 +122,7 @@ void force_calculation(int i, int j)
     double vy = h_p[j].v[1] - h_p[i].v[1];
     double vz = h_p[j].v[2] - h_p[i].v[2];
 
-    double r2     = rx*rx + ry*ry + rz*rz + softening*softening;
+    double r2     = rx*rx + ry*ry + rz*rz + e2;
     double rinv   = 1.0/sqrt(r2);
     double r2inv  = rinv  * rinv;
     double r3inv  = r2inv * rinv;
@@ -268,6 +194,7 @@ void update_acc_jrk(int total)
 //
 //        getchar();
     }
+    gtime.update_end += omp_get_wtime() - gtime.update_ini;
 }
 
 /*
@@ -282,17 +209,14 @@ void update_acc_jrk(int total)
  */
 double energy()
 {
-    double ekin_tmp;
-    double epot_tmp;
-    int i, j;
-
     epot = 0.0;
     ekin = 0.0;
 
-    for (i = 0; i < n; i++)
+    #pragma omp parallel for
+    for (int i = 0; i < n; i++)
     {
-        epot_tmp = 0.0;
-        for (j = i+1; j < n; j++)
+        double epot_tmp = 0.0;
+        for (int j = i+1; j < n; j++)
         {
             double rx = h_r[j].x - h_r[i].x;
             double ry = h_r[j].y - h_r[i].y;
@@ -307,45 +231,14 @@ double energy()
         double vz = h_v[i].z * h_v[i].z;
         double v2 = vx + vy + vz;
 
-        ekin_tmp = 0.5 * h_m[i] * v2;
+        double ekin_tmp = 0.5 * h_m[i] * v2;
 
+        #pragma omp atomic
         ekin += ekin_tmp;
+        #pragma omp atomic
         epot += epot_tmp;
     }
     return epot + ekin;
-}
-
-void get_energy_log(double ITIME, int iterations, int nsteps, FILE *out)
-{
-    energy_end = energy();
-    double relative_error   = abs((energy_end-energy_tmp)/energy_ini);
-    double cumulative_error = abs((energy_end-energy_ini)/energy_ini);
-    energy_tmp = energy_end;
-    float time = (float)clock()/CLOCKS_PER_SEC - ini_time;
-
-    if((int)ITIME == 0)
-    {
-        //fprintf(out, "#%3s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\n",
-        printf("#%3s\t %10s\t %10s\t %8s\t %8s\t %8s\t %8s\n",
-                "#Time",
-                "Ite",
-                "Nsteps",
-                "TTime",
-                "Energy",
-                "RelErr",
-                "CumErr");
-	}
-    //fprintf(out, "#% 3d\t % 10d\t % 10d\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
-	printf("#% 3d\t % 10d\t % 10d\t % 6.4f\t % .6e\t % .6e\t % .6e\n",
-            (int)ITIME,
-            iterations,
-            nsteps,
-            time,
-            energy_end,
-            relative_error,
-            cumulative_error);
-    fflush(out);
-    //print_all(n,ITIME);
 }
 
 /*
@@ -381,16 +274,16 @@ void save_old(int total)
  *    and velocity, following the Hermite integrator scheme
  *    formulas.
  */
-void
-predicted_pos_vel(double ITIME)
+void predicted_pos_vel(double ITIME)
 {
     #ifdef DEBUG_HERMITE
     printf("[DEBUG] predicted_pos_vel()\n");
     #endif
+    gtime.prediction_ini = omp_get_wtime();
     //#pragma omp parallel for
     for (int i = INIT_PARTICLE; i < n; i++)
     {
-        double dt = ITIME - h_t[i];
+        double dt  = ITIME - h_t[i];
         double dt2 = (dt  * dt);
         double dt3 = (dt2 * dt);
 
@@ -427,7 +320,12 @@ predicted_pos_vel(double ITIME)
         h_p[i].v[2] = (dt2/2 * h_f[i].a1[2]) + (dt * h_f[i].a[2]) + h_v[i].z;
         #endif
 
+        //printf("pred_normal %d\n",i);
+        //print_particle(i);
+        //getchar();
+
     }
+    gtime.prediction_end += omp_get_wtime() - gtime.prediction_ini;
 }
 
 /*
@@ -477,11 +375,15 @@ void predicted_pos_vel_kepler(double ITIME, int total)
         h_p[k].v[1] = vy;
         h_p[k].v[2] = vz;
         #ifdef DEBUG_KEPLER
-        printf("[New position] %.15f %.15f %.15f\n", h_p_r[k].x, h_p_r[k].y, h_p_r[k].z);
-        printf("[New velocity] %.15f %.15f %.15f\n", h_p_v[k].x, h_p_v[k].y, h_p_v[k].z);
+        printf("[New position] %.15f %.15f %.15f\n", h_p[k].r[0], h_p[k].r[1], h_p[k].r[2]);
+        printf("[New velocity] %.15f %.15f %.15f\n", h_p[k].v[0], h_p[k].v[1], h_p[k].v[2]);
         printf("End particle %d\n", k);
         getchar();
         #endif
+
+        //printf("pred_kepler ");
+        //print_particle(k);
+        //getchar();
     }
 }
 
@@ -498,7 +400,7 @@ void correction_pos_vel(double ITIME, int total)
     #ifdef DEBUG_HERMITE
     printf("[DEBUG] correction_pos_vel()\n");
     #endif
-
+    gtime.correction_ini = omp_get_wtime();
     for (int k = 0; k < total; k++)
     {
         int i = h_move[k];
@@ -541,6 +443,7 @@ void correction_pos_vel(double ITIME, int total)
         h_v[i].y = h_p[i].v[1] + (dt3/6)*h_a2[i].y + (dt4/24)*h_a3[i].y;
         h_v[i].z = h_p[i].v[2] + (dt3/6)*h_a2[i].z + (dt4/24)*h_a3[i].z;
 
+
         h_t[i] = ITIME;
         double normal_dt  = get_timestep_normal(i);
         #ifdef USE_KEPLER
@@ -560,9 +463,23 @@ void correction_pos_vel(double ITIME, int total)
             h_dt[i] = normal_dt;
         #endif
 
+        //printf("correction ");
+        //print_particle(i);
+        //getchar();
+
     }
+
+
+    gtime.correction_end += omp_get_wtime() - gtime.correction_ini;
 }
 
+/*
+ * @fn get_timestep_normal()
+ *
+ * @brief
+ *  Obtain the time step of an i particle
+ *
+ */
 double get_timestep_normal(int i)
 {
     #ifdef DEBUG_HERMITE
@@ -597,9 +514,9 @@ double get_timestep_central(int i)
     #ifdef DEBUG_HERMITE
     printf("[DEBUG] get_timestep_central()\n");
     #endif
-    double r = get_magnitude(h_r[i].x, h_r[i].y, h_r[i].z);
+    double r = get_magnitude(h_r[i].x-h_r[0].x, h_r[i].y-h_r[0].y, h_r[i].z-h_r[i].z);
     double r3 = r*r*r;
-    double central_dt = ((2.0 * M_PI )/OSTEPS * sqrt(r3/(G * h_m[0])));
+    double central_dt = (((2.0 * M_PI )/OSTEPS) * sqrt(r3/(G * h_m[0])));
 
     return central_dt;
 }

@@ -3,52 +3,57 @@
 #include "include/memory_cpu.hpp"
 #include "include/memory_gpu.cuh"
 #include "include/hermite.cuh"
-#include <time.h>
-
 #include <iostream>
 #include <iomanip>
 #include <limits>
+#include <time.h>
 #include <omp.h>
 
-// General variables of the program
+/************************************
+ * General variables of the program
+ **************************************/
+
+// Number of particles and integration iterations
 int n;
 int iterations;
-float total_mass;
-double energy_ini, energy_end, energy_tmp;
+
+float  itime;
+float  gflops;
+float  e2, eta;
+float  total_mass;
 double ekin, epot;
-float e2, eta;
-Gtime gtime;
-float itime;
-float gflops;
+double energy_ini, energy_end, energy_tmp;
+Gtime  gtime;
 
 // Struct vector to read the input file
 std::vector<particle> part;
-double4  *h_old_a, *h_old_a1;
-Predictor *h_p;
-Predictor *d_p;
+
 
 // Host pointers
-double *h_ekin, *h_epot;
-double *h_t, *h_dt;
-float   *h_m;
-int *h_move;
-double4 *h_r, *h_v;
-Forces *h_f;
-double4 *h_a2, *h_a3;
+int       *h_move;
+float     *h_m;
+double    *h_ekin, *h_epot;
+double    *h_t, *h_dt;
+double4   *h_r, *h_v;
+double4   *h_a2, *h_a3;
+double4   *h_old_a, *h_old_a1;
 Predictor *h_i;
-Forces *h_fout;
-Forces *h_fout_tmp;
+Predictor *h_p;
+Forces    *h_f;
+Forces    *h_fout;
+Forces    *h_fout_tmp;
 
 // Device pointers
-double *d_ekin, *d_epot;
-double  *d_t, *d_dt;
-double4 *d_r, *d_v;
-Forces *d_f;
-float   *d_m;
-int *d_move;
+double    *d_ekin, *d_epot;
+double    *d_t, *d_dt;
+double4   *d_r, *d_v;
+Forces    *d_f;
+float     *d_m;
+int       *d_move;
 Predictor *d_i;
-Forces *d_fout;
-Forces *d_fout_tmp;
+Predictor *d_p;
+Forces    *d_fout;
+Forces    *d_fout_tmp;
 
 // System times
 float t_rh, t_cr;

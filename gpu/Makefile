@@ -35,9 +35,9 @@ all: gravidy
 	$(NVCC) $(NVFLAGS) -c $^ -o $@
 
 gravidy: gravidy.cpp $(OBJS)
+
 clean:
 	rm -rf gravidy
+
 distclean: clean
-	rm -rf include/*.o
-	rm -rf include/*.cuo
-	rm -rf gmon.out
+	rm -rf include/*.{o,cuo} gmon.out

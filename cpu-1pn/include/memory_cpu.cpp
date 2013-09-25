@@ -48,6 +48,7 @@ void alloc_vectors_cpu()
         h_p[i].v[0] = part[i].v.x;
         h_p[i].v[1] = part[i].v.y;
         h_p[i].v[2] = part[i].v.z;
+
         h_f[i].a[0]  = 0.0;
         h_f[i].a[1]  = 0.0;
         h_f[i].a[2]  = 0.0;

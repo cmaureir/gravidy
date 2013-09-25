@@ -10,25 +10,7 @@
  *  Preprocessor directives
  *********************************/
 
-//#define KERNEL_ERROR_DEBUG 1
-//#define DEBUG_KEPLER 1
-//#define DEBUG_HERMITE 1
-
-//#define USE_KEPLER 1
-
-#ifdef USE_KEPLER
-    #define INIT_PARTICLE 1  // Starting from 1 to avoid including the BH
-                             // in all the loops
-#else
-    #define INIT_PARTICLE 0  // Starting from 0 to include all the particles
-                                // in all the loops
-#endif
-
-#define KEPLER_ITE (50)      // Maximum of iteration when solving Kepler's equation
-#define DEL_E      (9.0e-16) // Maximum error in E in elliptical orbits.
-#define DEL_E_HYP  (2.e-15)  // Maximum error in E in hyperbolic orbits.
-#define OSTEPS     (50)      // Maximum of steps when calculating the central
-                             // time-steps distribution
+#define INIT_PARTICLE 1
 #define RADIUS_MASS_PORCENTAGE 0.2 // for 1024 particles
 
 #define J 10 // Neighbour amount to calculate the center of density
@@ -64,6 +46,7 @@
  * Gravitational constant in N-body units
  */
 #define G 1
+#define C 70 // :S
 
 typedef struct double4
 {
