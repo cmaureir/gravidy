@@ -215,12 +215,14 @@ __global__ void k_update(Predictor *d_i,
 
         // If the total amount of particles is not a multiple of BSIZE
         if(jend-j < BSIZE){
+            //#pragma unroll 4
             for(int jj=0; jj<jend-j; jj++){
                 Predictor jp = jpshare[jj];
                 k_force_calculation2(ip, jp, fo, mj, e2);
             }
         }
         else{
+            //#pragma unroll 4
             for(int jj=0; jj<BSIZE; jj++){
                 Predictor jp = jpshare[jj];
                 k_force_calculation2(ip, jp, fo, mj, e2);
