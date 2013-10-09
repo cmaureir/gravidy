@@ -28,7 +28,7 @@ void integrate_cpu()
 
         predicted_pos_vel(ITIME);              // Predict all the particles
         update_acc_jrk(nact);                  // Update a and a1 of nact particles
-        //update_acc_jrk_1pn(nact);
+        update_acc_jrk_1pn(nact);
         correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
 
 
@@ -40,7 +40,8 @@ void integrate_cpu()
 
         // Print log every integer ITIME
         //if(std::ceil(ITIME) == ITIME)
-        if(nact == n-1)          // Print log in every integer ITIME
+        //if(nact == n-1)          // Print log in every integer ITIME
+        if (iterations%10 == 0)
         {
            get_energy_log(ITIME, iterations, interactions, nsteps, out, energy());
         }
