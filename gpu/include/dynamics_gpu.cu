@@ -11,7 +11,7 @@ __host__ void gpu_init_acc_jrk()
 {
     int smem = BSIZE * 2* sizeof(double4);
 
-    k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_r, d_v, d_f, d_m, n,e2);
+    k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_r, d_v, d_f, n,e2);
     cudaThreadSynchronize();
     get_kernel_error();
 }
@@ -82,7 +82,7 @@ __host__ void gpu_update(int total)
 
     // Kernel to update the forces for the particles in d_i
     gtime.grav_ini = omp_get_wtime();
-    k_update <<< nblocks, nthreads, smem >>> (d_i, d_p, d_fout,d_m, n, total,e2);
+    k_update <<< nblocks, nthreads, smem >>> (d_i, d_p, d_fout,n, total,e2);
     cudaThreadSynchronize();
     gtime.grav_end += omp_get_wtime() - gtime.grav_ini;
     get_kernel_error();

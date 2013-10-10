@@ -51,7 +51,6 @@ __global__ void k_energy(double4 *r,
 __global__ void k_init_acc_jrk (double4 *r,
                                 double4 *v,
                                 Forces *d_f,
-                                float *m,
                                 int n,
                                 double e2)
 {
@@ -67,7 +66,6 @@ __global__ void k_init_acc_jrk (double4 *r,
     ff.a1[0] = 0.0;
     ff.a1[1] = 0.0;
     ff.a1[2] = 0.0;
-    float mj;
 
     int id = threadIdx.x + blockDim.x * blockIdx.x;
     int tx = threadIdx.x;
@@ -84,12 +82,11 @@ __global__ void k_init_acc_jrk (double4 *r,
 
             sr[tx]   = r[idx];
             sv[tx]   = v[idx];
-            mj = m[idx];
             __syncthreads();
 
             for (int k = 0; k < BSIZE; k++)
             {
-                k_force_calculation(pos, vel, sr[k], sv[k], ff, mj,e2);
+                k_force_calculation(pos, vel, sr[k], sv[k], ff,e2);
             }
             __syncthreads();
             tile++;
@@ -109,7 +106,6 @@ __global__ void k_init_acc_jrk (double4 *r,
 __device__ void k_force_calculation(double4 i_pos, double4 i_vel,
                                     double4 j_pos, double4 j_vel,
                                     Forces &d_f,
-                                    float   j_mass,
                                     double e2)
 {
     double rx = j_pos.x - i_pos.x;
@@ -125,8 +121,8 @@ __device__ void k_force_calculation(double4 i_pos, double4 i_vel,
     double r2inv = rinv  * rinv;
     double r3inv = r2inv * rinv;
     double r5inv = r2inv * r3inv;
-    double mr3inv = r3inv * j_mass;
-    double mr5inv = r5inv * j_mass;
+    double mr3inv = r3inv * j_pos.w;
+    double mr5inv = r5inv * j_pos.w;
 
     double rv = rx*vx + ry*vy + rz*vz;
 
@@ -142,7 +138,6 @@ __device__ void k_force_calculation(double4 i_pos, double4 i_vel,
 __device__ void k_force_calculation2(Predictor i_p,
                                      Predictor j_p,
                                      Forces &d_f,
-                                     float   j_mass,
                                      double e2)
 {
     double rx = j_p.r[0] - i_p.r[0];
@@ -153,13 +148,13 @@ __device__ void k_force_calculation2(Predictor i_p,
     double vy = j_p.v[1] - i_p.v[1];
     double vz = j_p.v[2] - i_p.v[2];
 
-    double r2 = rx*rx + ry*ry + rz*rz + e2;
-    double rinv = rsqrt(r2);
-    double r2inv = rinv  * rinv;
-    double r3inv = r2inv * rinv;
-    double r5inv = r2inv * r3inv;
-    double mr3inv = r3inv * j_mass;
-    double mr5inv = r5inv * j_mass;
+    double r2     = rx*rx + ry*ry + rz*rz + e2;
+    double rinv   = rsqrt(r2);
+    double r2inv  = rinv  * rinv;
+    double r3inv  = r2inv * rinv;
+    double r5inv  = r2inv * r3inv;
+    double mr3inv = r3inv * j_p.m;
+    double mr5inv = r5inv * j_p.m;
 
     double rv = rx*vx + ry*vy + rz*vz;
 
@@ -180,7 +175,6 @@ __device__ void k_force_calculation2(Predictor i_p,
 __global__ void k_update(Predictor *d_i,
                          Predictor *d_j,
                          Forces *d_fout,
-                         float *d_m,
                          int n,
                          int total,
                          double e2)
@@ -191,7 +185,6 @@ __global__ void k_update(Predictor *d_i,
     int iaddr = tid + blockDim.x * ibid;
     int jstart = (n * (jbid  )) / NJBLOCK;
     int jend   = (n * (jbid+1)) / NJBLOCK;
-    float mj;
 
     Predictor ip = d_i[iaddr];
     Forces fo;
@@ -209,8 +202,6 @@ __global__ void k_update(Predictor *d_i,
         Predictor *dst = (Predictor *)jpshare;
         dst[      tid] = src[      tid];
         dst[BSIZE+tid] = src[BSIZE+tid];
-        mj = d_m[j];
-        //mj = d_m[BSIZE + tid];
         __syncthreads();
 
         // If the total amount of particles is not a multiple of BSIZE
@@ -218,14 +209,14 @@ __global__ void k_update(Predictor *d_i,
             //#pragma unroll 4
             for(int jj=0; jj<jend-j; jj++){
                 Predictor jp = jpshare[jj];
-                k_force_calculation2(ip, jp, fo, mj, e2);
+                k_force_calculation2(ip, jp, fo, e2);
             }
         }
         else{
             //#pragma unroll 4
             for(int jj=0; jj<BSIZE; jj++){
                 Predictor jp = jpshare[jj];
-                k_force_calculation2(ip, jp, fo, mj, e2);
+                k_force_calculation2(ip, jp, fo, e2);
             }
         }
     }

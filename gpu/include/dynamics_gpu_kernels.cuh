@@ -13,7 +13,6 @@ __global__ void k_energy(double4*,
 __global__ void k_init_acc_jrk(double4*,
                                double4*,
                                Forces*,
-                               float*,
                                int,
                                double);
 
@@ -22,7 +21,6 @@ __device__ void k_force_calculation(double4,
                                     double4,
                                     double4,
                                     Forces&,
-                                    float,
                                     double);
 
 __device__ void k_force_calculation2(Predictor,
@@ -34,7 +32,6 @@ __device__ void k_force_calculation2(Predictor,
 __global__ void k_update(Predictor*,
                          Predictor*,
                          Forces*,
-                         float*,
                          int,
                          int,
                          double);

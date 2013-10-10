@@ -12,14 +12,7 @@ void print_all(int limit, float ITIME, FILE *out)
     if (out == NULL)
     {
         for (int i = 0; i < limit; i++) {
-            printf("%.10f \
-                    %6d \
-                    %.10f \
-                    %.10f %.10f %.10f \
-                    %.10f %.10f %.10f \
-                    %.10f %.10f %.10f \
-                    %.10f %.10f %.10f \
-                    %.10f\n",
+            printf("%.10f %6d %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
                     ITIME        ,
                     i            ,
                     h_m[i]       ,
@@ -33,7 +26,7 @@ void print_all(int limit, float ITIME, FILE *out)
     else if (out != NULL)
     {
         for (int i = 0; i < limit; i++) {
-            fprintf(out,"%.10f %6d %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
+            fprintf(out,"%.10f\t%6d\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\t%.10f\n",
                     ITIME,
                     i,
                     h_m[i],
@@ -127,7 +120,7 @@ void print_movement(int limit, int total, float ITIME)
  */
 void print_particle(int i)
 {
-    printf("%5d %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f\n",
+    printf("% 5d % .10f % .10f % .10f % .10f % .10f % .10f % .10f % .10f % .10f % .10f % .10f % .10f % .10f\n",
             i,
             h_r[i].x,     h_r[i].y,     h_r[i].z,
             h_v[i].x,     h_v[i].y,     h_v[i].z,

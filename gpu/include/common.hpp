@@ -6,6 +6,7 @@
 #include <cassert>
 #include <vector_types.h>
 #include <cuda_runtime_api.h>
+#include <omp.h>
 
 /*********************************
  *  Preprocessor directives
@@ -18,6 +19,7 @@
 #define INIT_PARTICLE 0  // Starting from 0 to include all the particles
 #define RADIUS_MASS_PORCENTAGE 0.2
 #define J 10 // Neighbour amount to calculate the center of density
+
 /*
  * Softening parameter
  * (Please note that this parameter can be modified by the command line)
@@ -81,6 +83,7 @@ typedef struct particle
 typedef struct Predictor {
     double r[3];
     double v[3];
+    float m;
 } Predictor;
 
 typedef struct Forces {
@@ -131,7 +134,7 @@ extern float total_mass;         // Total mass of the particles
 extern Gtime gtime;              // Global structure to store time calculation
 extern float gflops;             // GFLOPS count
 
-extern float  itime;              // Integration time when the it will stop
+extern float  itime;             // Integration time when the it will stop
 extern double ekin, epot;        // Kinetic and Potential energy
 extern double energy_ini;        // Initial energy of the system
 extern double energy_end;        // Energy at an integration time t

@@ -133,6 +133,8 @@ void predicted_pos_vel(double ITIME)
         h_p[i].v[1] = (dt2/2 * h_f[i].a1[1]) + (dt * h_f[i].a[1]) + h_v[i].y;
         h_p[i].v[2] = (dt2/2 * h_f[i].a1[2]) + (dt * h_f[i].a[2]) + h_v[i].z;
 
+        h_p[i].m = h_m[i];
+
     }
     gtime.prediction_end += omp_get_wtime() - gtime.prediction_ini;
 }

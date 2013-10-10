@@ -61,6 +61,7 @@ void alloc_vectors_cpu()
         h_r[i].x    = part[i].r.x;
         h_r[i].y    = part[i].r.y;
         h_r[i].z    = part[i].r.z;
+        h_r[i].w    = part[i].m;
         h_v[i].x    = part[i].v.x;
         h_v[i].y    = part[i].v.y;
         h_v[i].z    = part[i].v.z;
