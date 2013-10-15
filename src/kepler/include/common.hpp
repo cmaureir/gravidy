@@ -14,7 +14,7 @@
 //#define DEBUG_KEPLER 1
 //#define DEBUG_HERMITE 1
 
-//#define USE_KEPLER 1
+#define USE_KEPLER 1
 
 #ifdef USE_KEPLER
     #define INIT_PARTICLE 1  // Starting from 1 to avoid including the BH

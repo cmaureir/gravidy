@@ -147,10 +147,11 @@ void init_acc_jrk()
     printf("[DEBUG] init_acc_jrk()\n");
     #endif
     //#pragma omp parallel for
-    for (int i = INIT_PARTICLE; i < n; i++)
+    for (int i = 0; i < n; i++)
     {
-        for (int j = INIT_PARTICLE; j < n; j++)
+        for (int j = 0; j < n; j++)
         {
+            printf("%d %d\n",i, j);
             if(i == j) continue;
             force_calculation(i,j);
         }
@@ -359,6 +360,8 @@ void predicted_pos_vel_kepler(double ITIME, int total)
         printf("Particle %d\n", k);
         printf("[Old position] %.15f %.15f %.15f\n", h_r[k].x, h_r[k].y, h_r[k].z);
         printf("[Old velocity] %.15f %.15f %.15f\n", h_v[k].x, h_v[k].y, h_v[k].z);
+        printf("[Old acceleration] %.15f %.15f %.15f\n", h_f[k].a[0], h_f[k].a[1], h_f[k].a[2]);
+        printf("[Old jerk] %.15f %.15f %.15f\n", h_f[k].a1[0], h_f[k].a1[1], h_f[k].a1[2]);
         #endif
 
         //for (time = h_t[k]; time < ITIME; time+=dt)
@@ -377,6 +380,8 @@ void predicted_pos_vel_kepler(double ITIME, int total)
         #ifdef DEBUG_KEPLER
         printf("[New position] %.15f %.15f %.15f\n", h_p[k].r[0], h_p[k].r[1], h_p[k].r[2]);
         printf("[New velocity] %.15f %.15f %.15f\n", h_p[k].v[0], h_p[k].v[1], h_p[k].v[2]);
+        printf("[New acceleration] %.15f %.15f %.15f\n", h_f[k].a[0], h_f[k].a[1], h_f[k].a[2]);
+        printf("[New jerk] %.15f %.15f %.15f\n", h_f[k].a1[0], h_f[k].a1[1], h_f[k].a1[2]);
         printf("End particle %d\n", k);
         getchar();
         #endif

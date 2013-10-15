@@ -26,11 +26,9 @@ void integrate_cpu()
         nact = find_particles_to_move(ITIME);  // Find particles to move (nact)
         save_old(nact);                        // Save old information
 
-        #ifdef USE_KEPLER
-        predicted_pos_vel_kepler(ITIME, nact); // Predict nact particles with Kepler
-        #endif
         predicted_pos_vel(ITIME);              // Predict all the particles
         update_acc_jrk(nact);                  // Update a and a1 of nact particles
+        //update_acc_jrk_pn(nact);
         correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
 
 
@@ -41,8 +39,9 @@ void integrate_cpu()
         next_itime(&ATIME);
 
         // Print log every integer ITIME
-        if(std::ceil(ITIME) == ITIME)
-        //if(nact == n)          // Print log in every integer ITIME
+        //if(std::ceil(ITIME) == ITIME)
+        //if(nact == n-1)          // Print log in every integer ITIME
+        if (iterations%10 == 0)
         {
            get_energy_log(ITIME, iterations, interactions, nsteps, out, energy());
         }
@@ -52,6 +51,5 @@ void integrate_cpu()
 
         // Increase iteration counter
         iterations++;
-        printf("%d %f\n", iterations, ITIME);
     }
 }

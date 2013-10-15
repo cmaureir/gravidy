@@ -210,7 +210,7 @@ void get_energy_log(double ITIME, int iterations, long long interactions, int ns
 
     if (print_log)
     {
-        fprintf(out,"00 %7.3f %8d %10d %12.4f %12.4f %12.4f %12.4f %6.4f %5.3e %5.3e %5.3e %8.3f\n",
+        fprintf(out,"00 %7.7f %8d %10d %12.4f %12.4f %12.4f %12.4f %6.4f %5.3e %5.3e %5.3e %8.3f\n",
             ITIME,
             iterations,
             nsteps,
@@ -228,7 +228,7 @@ void get_energy_log(double ITIME, int iterations, long long interactions, int ns
     }
     else
     {
-        printf("00 %7.3f %8d %10d %12.4f %12.4f %12.4f %12.4f %6.4f %5.3e %5.3e %5.3e %8.3f\n",
+        printf("00 %7.7f %8d %10d %12.4f %12.4f %12.4f %12.4f %6.4f %5.3e %5.3e %5.3e %8.3f\n",
             ITIME,
             iterations,
             nsteps,

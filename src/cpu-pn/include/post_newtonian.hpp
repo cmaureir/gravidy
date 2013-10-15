@@ -5,4 +5,6 @@
 
 #include "extra_utils.hpp"
 
-void update_acc_jrk_1pn(int);
+
+void pn_calculation(int);
+void update_acc_jrk_pn(int);

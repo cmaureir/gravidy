@@ -18,7 +18,7 @@ void force_calculation(int i, int j)
     double mr3inv = r3inv * h_m[j];
     double mr5inv = r5inv * h_m[j];
 
-    double rv = rx*vx + ry*vy + rz*vz + e2;
+    double rv = rx*vx + ry*vy + rz*vz;
 
     h_f[i].a[0] += (rx * mr3inv);
     h_f[i].a[1] += (ry * mr3inv);

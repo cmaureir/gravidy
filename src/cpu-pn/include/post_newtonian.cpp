@@ -1,12 +1,12 @@
 #include "post_newtonian.hpp"
 
-void first_pn_calculation(int i)
+void pn_calculation(int i)
 {
 
-    //int c2 = C*C; // CL2
-    int c2 = 5*5;
+    int c2 = C*C; // CL2
     int c4 = c2*c2;
-    int c5 = c4*5;
+    int c5 = c4*C;
+
     double pn1[3]  = {0.0, 0.0, 0.0};
     double pn1d[3] = {0.0, 0.0, 0.0};
     double pn2[3]  = {0.0, 0.0, 0.0};
@@ -15,21 +15,21 @@ void first_pn_calculation(int i)
     double pn25d[3] = {0.0, 0.0, 0.0};
 
 
-    //double r[0] = h_r[i].x - h_r[0].x;
-    //double r[1] = h_r[i].y - h_r[0].y;
-    //double r[2] = h_r[i].z - h_r[0].z;
     double r[3];
-    r[0] = 1.0;
-    r[1] = 0.5;
-    r[2] = 0.1;
-    h_v[i].x = 1.0;
-    h_v[i].y = 0.2;
-    h_v[i].z = 1.5;
-    h_v[0].x = 0.3;
-    h_v[0].y = 1.0;
-    h_v[0].z = 0.5;
-    h_m[i] = 1.0;
-    h_m[0] = 3.0;
+    r[0] = h_r[i].x - h_r[0].x;
+    r[1] = h_r[i].y - h_r[0].y;
+    r[2] = h_r[i].z - h_r[0].z;
+    //r[0] = 1.0;
+    //r[1] = 0.5;
+    //r[2] = 0.1;
+    //h_v[i].x = 1.0;
+    //h_v[i].y = 0.2;
+    //h_v[i].z = 1.5;
+    //h_v[0].x = 0.3;
+    //h_v[0].y = 1.0;
+    //h_v[0].z = 0.5;
+    //h_m[i] = 1.0;
+    //h_m[0] = 3.0;
 
     double v[3];
     v[0] = h_v[i].x - h_v[0].x;
@@ -203,6 +203,7 @@ void first_pn_calculation(int i)
     {
         h_f[i].a[k]  += pn1[k] /c2 + pn2[k] /c4 + pn25[k] /c5;
         h_f[i].a1[k] += pn1d[k]/c2 + pn2d[k]/c4 + pn25d[k]/c5;
+        //printf("Part %d pn[k]/a[k] = %.10f\n", i, (pn1[k] /c2 + pn2[k] /c4 + pn25[k] /c5)/h_f[i].a[k]);
     }
     //printf("1PNa:  %.10f %.10f %.10f\n", pn1[0]/c2, pn1[1]/c2, pn1[2]/c2);
     //printf("1PNb:  %.10f %.10f %.10f\n", pn1d[0]/c2, pn1d[1]/c2, pn1d[2]/c2);
@@ -214,13 +215,13 @@ void first_pn_calculation(int i)
 }
 
 
-void update_acc_jrk_1pn(int total)
+void update_acc_jrk_pn(int total)
 {
     int i, j;
     //#pragma omp parallel for private(i,j)
     for (i = 0; i < total; i++)
     {
         j = h_move[i];
-        first_pn_calculation(j);
+        pn_calculation(j);
     }
 }
