@@ -147,11 +147,10 @@ void init_acc_jrk()
     printf("[DEBUG] init_acc_jrk()\n");
     #endif
     //#pragma omp parallel for
-    for (int i = 0; i < n; i++)
+    for (int i = INIT_PARTICLE; i < n; i++)
     {
-        for (int j = 0; j < n; j++)
+        for (int j = INIT_PARTICLE; j < n; j++)
         {
-            printf("%d %d\n",i, j);
             if(i == j) continue;
             force_calculation(i,j);
         }
@@ -171,6 +170,7 @@ void init_acc_jrk()
  */
 void update_acc_jrk(int total)
 {
+    gtime.update_ini = omp_get_wtime();
     #ifdef DEBUG_HERMITE
     printf("[DEBUG] update_acc_jrk()\n");
     #endif
@@ -189,11 +189,6 @@ void update_acc_jrk(int total)
             if(i == j) continue;
             force_calculation(i,j);
         }
-//        printf("Updating %d %f\t%f\t%f\t%f\t%f\t%f\n",
-//                i, h_f[k].a[0],  h_f[k].a[1], h_f[k].a[2],
-//                   h_f[k].a1[0], h_f[k].a[1], h_f[k].a[2]);
-//
-//        getchar();
     }
     gtime.update_end += omp_get_wtime() - gtime.update_ini;
 }
@@ -329,68 +324,6 @@ void predicted_pos_vel(double ITIME)
     gtime.prediction_end += omp_get_wtime() - gtime.prediction_ini;
 }
 
-/*
- * @fn predicted_pos_vel_kepler()
- *
- * @brief
- *  Perform the calculation of the predicted position
- *    and velocity using the Kepler's equation.
- *
- */
-void predicted_pos_vel_kepler(double ITIME, int total)
-{
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] predicted_pos_vel_kepler()\n");
-    #endif
-    for (int i = 0; i < total; i++)
-    {
-        int k = h_move[i];
-        double dt = ITIME - h_t[k];
-        //double time = 0.0;
-
-
-        double rx = h_r[k].x - h_r[0].x;
-        double ry = h_r[k].y - h_r[0].y;
-        double rz = h_r[k].z - h_r[0].z;
-
-        double vx = h_v[k].x - h_v[0].x;
-        double vy = h_v[k].y - h_v[0].y;
-        double vz = h_v[k].z - h_v[0].z;
-        #ifdef DEBUG_KEPLER
-        printf("Particle %d\n", k);
-        printf("[Old position] %.15f %.15f %.15f\n", h_r[k].x, h_r[k].y, h_r[k].z);
-        printf("[Old velocity] %.15f %.15f %.15f\n", h_v[k].x, h_v[k].y, h_v[k].z);
-        printf("[Old acceleration] %.15f %.15f %.15f\n", h_f[k].a[0], h_f[k].a[1], h_f[k].a[2]);
-        printf("[Old jerk] %.15f %.15f %.15f\n", h_f[k].a1[0], h_f[k].a1[1], h_f[k].a1[2]);
-        #endif
-
-        //for (time = h_t[k]; time < ITIME; time+=dt)
-        //{
-        //    kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, dt, k);
-        //}
-        kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, dt, k);
-
-        h_p[k].r[0] = rx;
-        h_p[k].r[1] = ry;
-        h_p[k].r[2] = rz;
-
-        h_p[k].v[0] = vx;
-        h_p[k].v[1] = vy;
-        h_p[k].v[2] = vz;
-        #ifdef DEBUG_KEPLER
-        printf("[New position] %.15f %.15f %.15f\n", h_p[k].r[0], h_p[k].r[1], h_p[k].r[2]);
-        printf("[New velocity] %.15f %.15f %.15f\n", h_p[k].v[0], h_p[k].v[1], h_p[k].v[2]);
-        printf("[New acceleration] %.15f %.15f %.15f\n", h_f[k].a[0], h_f[k].a[1], h_f[k].a[2]);
-        printf("[New jerk] %.15f %.15f %.15f\n", h_f[k].a1[0], h_f[k].a1[1], h_f[k].a1[2]);
-        printf("End particle %d\n", k);
-        getchar();
-        #endif
-
-        //printf("pred_kepler ");
-        //print_particle(k);
-        //getchar();
-    }
-}
 
 /*
  * @fn correction_pos_vel()
@@ -467,10 +400,6 @@ void correction_pos_vel(double ITIME, int total)
             normal_dt = normalize_dt(normal_dt, h_dt[i], h_t[i], i);
             h_dt[i] = normal_dt;
         #endif
-
-        //printf("correction ");
-        //print_particle(i);
-        //getchar();
 
     }
 

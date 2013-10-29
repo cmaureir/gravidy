@@ -13,6 +13,7 @@ void integrate_cpu()
     omp_set_num_threads( max_threads - 1);
 
     init_acc_jrk();   // Initial calculation of a and a1
+    printf("%.10f %.10f %.10f\n", h_f[0].a[0], h_f[0].a[1],h_f[0].a[2]);
     init_dt(&ATIME);  // Initial calculation of time-steps using simple equation
 
     energy_ini = energy();   // Initial calculation of the energy of the system

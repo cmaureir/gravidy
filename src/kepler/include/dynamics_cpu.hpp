@@ -15,7 +15,6 @@ void update_acc_jrk(int);
 double energy();
 void save_old(int);
 void predicted_pos_vel(double);
-void predicted_pos_vel_kepler(double, int);
 void correction_pos_vel(double,int);
 double get_timestep_normal(int);
 double get_timestep_central(int);

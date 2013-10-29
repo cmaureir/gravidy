@@ -1,19 +1,46 @@
 \documentclass[a4paper]{report}
+\usepackage[margin=1.8cm]{geometry}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{multicol}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{draftwatermark}
+\SetWatermarkText{DRAFT}
+\SetWatermarkScale{5}
+
+\DeclareMathOperator{\arccosh}{arccosh}
+\newcommand{\bs}{\boldsymbol}
+\input{src/listings.conf.tex}
+
 
 \title{{\sc GraviDy}: Documentation}
 \author{Cristian Maureira-Fredes}
 \date{\today}
 
 \begin{document}
-\maketitle
+%\maketitle
 
-\section{Introduction}
-\section{Mathematical Model}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Introduction}
+\section{Model}
+\subsection{Hermite 4th order}
+\subsection{Keplerian correction}
+\input{src/kepler.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Implementation}
+\section{Serial}
+\section{OpenMP}
+\section{CUDA}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{User Manual}
+
+\chapter{Appendix}
+\input{src/appendix}
 
 \end{document}
 

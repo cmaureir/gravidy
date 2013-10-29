@@ -86,10 +86,13 @@ typedef struct Forces {
 typedef struct Gtime {
     double integration_ini;
     double integration_end;
+
     double prediction_ini;
     double prediction_end;
+
     double update_ini;
     double update_end;
+
     double correction_ini;
     double correction_end;
 
