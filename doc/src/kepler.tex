@@ -1,0 +1,224 @@
+There are some necessary corrections to do with the normal Hermite integrator scheme.  \begin{itemize} \item The BH needs to be fixed in the origin, this means that we need to
+          exclude it from the normal algorithm loops.
+          In this case we use a pre-processor directive called
+          \texttt{INIT\_PARTICLE} which determinate if we include the particle $0$
+          (The BH) or not.
+    \item We need to define more pre-processor constants to handle the keplerian
+          integration.
+          \begin{itemize}
+              \item The maximum iteration when solving the Kepler's equation
+                    \texttt{KEPLER\_ITE}.
+              \item The maximum error in the Eccentricity anomaly, in a elliptical
+                    orbit. \texttt{DEL\_E}
+              \item The maximum error in the Eccentricity anomaly, in a hyperbolic
+                    orbit. \texttt{DEL\_E\_HYP}
+              \item The maximum of steps when calculating the central time steps
+                    distribution. \texttt{OSTEPS}
+          \end{itemize}
+    \item Before the Hermite prediction step, we need to perform the prediction
+          of the active particles using the Keplerian approach explained below.
+\end{itemize}
+
+For the Keplerian prediction, we need to perform the following steps for every
+active particle ($i$-particle) in a certain integration time ($t$),
+to move it in a $dt$.
+\setlength{\columnseprule}{0.4pt}
+\begin{multicols}{2}
+\begin{enumerate}
+    \item Calculate relative position and velocity between the BH and
+          an $i$-particle.
+          \begin{align}
+              \bs{r}_{k,i} &= \bs{r}_{i} - \bs{r}_{0} \\
+              \bs{v}_{k,i} &= \bs{v}_{i} - \bs{v}_{0}
+          \end{align}
+
+    \item Calculate the angular momentum vector:
+        \begin{align}
+            \bs{j} &= \bs{r}_{k,i} \times \bs{v}_{k,i}
+        \end{align}
+
+    \item Calculate the Runge-Lenz-vector:
+        \begin{align}
+            \bs{e} &= \frac{\bs{v}_{k,i} \times \bs{j}}{G m} - \frac{\bs{r}}{|\bs{r}|}
+        \end{align}
+
+    \item Calculate the eccentricity
+        \begin{align}
+            e  &= |\bs{e}|
+        \end{align}
+
+    \item Calculate the eccentricity
+        \begin{align}
+            e  &= |\bs{e}|
+        \end{align}
+
+    \item Calculate the semi-major axis
+        \begin{align}
+            a &= \frac{\bs{j}^{2}}{G m |1 - e^{2}|}
+        \end{align}
+
+    \item Calculate the Frequency of the orbit
+        \begin{align}
+            \omega &= \sqrt{\frac{Gm}{a^{3}}}
+        \end{align}
+
+    \item Calculate the Semi-major vector
+        \begin{align}
+            \bs{a} &= \frac{a}{e}\bs{e}
+        \end{align}
+
+    \item Calculate the Semi-minor axis
+        \begin{align}
+            b &= a \sqrt{|1-e^{2}|}
+        \end{align}
+
+    \item Calculate the Semi-minor vector
+        \begin{align}
+            \bs{b} &= b \widehat{(\bs{j} \times \bs{e})}
+        \end{align}
+\end{enumerate}
+\end{multicols}
+
+Then, we continue depending of the eccentricity value.
+
+\begin{itemize}
+    % Elliptical orbit
+    \item If $e < 1$,
+        \begin{enumerate}
+            \item Calculate the initial Eccentric Anomaly ($E_{0}$),
+                \begin{align}
+                    \cos{E_{0}} &= \frac{a-r}{e a} \\
+                          E_{0} &= \arccos{\left(\frac{a-r}{e a}\right)}
+                \end{align}
+
+                If the value of $\frac{a-r}{e a}$ is $\geq 1$, we set it
+                to $0$ and if it is $\leq -1$ we set it as $\pi$.
+                In any other scenario, we keep the same value.
+
+            \item If $|\bs{r}_{k,i} \cdot \bs{b}| < 0$,
+                we set the $E_{0} = 2\pi - E_{0}$.
+
+            \item Calculate the Mean Anomaly,
+                \begin{align}
+                    M &= (E_{0} - e \sin{E_{0}} ) + dt * \omega
+                \end{align}
+            \item Adjust M to be $< 2\pi$ if it is $\geq 2\pi$,
+                \begin{align}
+                    M &= M \mod 2\pi
+                \end{align}
+
+            \item Solving the Kepler equations to calculate the Eccentric Anomaly ($E$)
+                using the Mean Anomaly ($M$) and Eccentricity ($e$). (See Appendix~\ref{ap:kepler-elliptical})
+            \item We calculate the position and velocity constant,
+                \begin{align}
+                    r_{const} &= \cos{E} - e \\
+                    v_{const} &= \frac{\omega}{1 - e \cos{E}}
+                \end{align}
+
+            \item If the eccentricity is greater than 0.99~\footnote{Based on
+                  Löckmann and Baumgardt simulations criteria, this work better
+                  with $0.99 < e < 1$ and $|E| < 1e-3$}.
+
+            \begin{lstlisting}[language=C]
+if (e > 0.99)
+{
+    e_tmp (E > 2.0 * PI - 1e-3) ? E - 2.0 * PI : E;
+
+    if (e_tmp < 1e-3)
+    {
+        e_tmp *= e_tmp;
+        ecc_const = (jx*jx + jy*jy + jz*jz)/(m0 * a * (1 + e));
+        cos_const = -0.5 * e_tmp * (1 - e_tmp / 12.0 * (1 - e_tmp / 30.0));
+        r_const = ecc_const + cos_const;
+        v_const = w / (ecc_const - ecc * cos_const);
+    }
+}
+            \end{lstlisting}
+
+            \item We get the new position and velocity:
+                \begin{align}
+                    \bs{r}_{new} &= \bs{a}\cdot r_{const} + \bs{b} \cdot \sin(e) \\
+                    \bs{v}_{new} &= (-\bs{a}\cdot \sin(e) + \bs{b}\cdot \cos(e)) \cdot v_{const}
+                \end{align}
+        \end{enumerate}
+
+
+    % Hyperbolic/Parabolic orbit
+    \item If $e \geq 1$,
+        \begin{enumerate}
+            \item Calculate the initial Eccentric Anomaly ($E_{0}$):
+                \begin{align}
+                    \cosh{E_{0}} &= \frac{a+r}{e a} \\
+                          E_{0} &= \arccosh{\left(\frac{a-r}{e a}\right)}
+                \end{align}
+
+                If the value of $\frac{a+r}{e a}$ is $< 1$, we set it
+                to $0$.
+                (else if) In other case if $(\bs{r}\cdot\bs{v} < 0)$ we use $-\arccosh$ instead
+                of $\arccosh$.
+                (else) Finally, if the previous conditions are not valid, we use the previous
+                value $\arccosh{\left(\frac{a-r}{e a}\right)}$.
+
+            \item We calculate the Mean Anomaly ($M$).
+                \begin{align}
+                    M = e \sinh(E_{0}) - E_{0} + dt\omega
+                \end{align}
+
+            \item We Solve the keplerian equations using $e$, and $M$ to get the
+                    new value of the Eccentricity Anomaly ($E$)~\ref{ap:kepler-hyperbollic}.
+
+            \item Calculate the velocity constant:
+                \begin{align}
+                    v_{const} &= \frac{\omega}{e \cosh(E) - 1}
+                \end{align}
+%
+            \item We get the new position and velocity:
+                (Direction of $\bs{v}$ only)
+                \begin{align}
+                    \bs{r}_{new} &= \bs{a}\cdot (e - \cosh(E)) + \bs{b}\cdot \sinh(E) \\
+                    \bs{v}_{new} &= (-\bs{a}\cdot \sinh(E) + \bs{b}\cdot \cosh(E)) \cdot v_{const}
+                \end{align}
+        \end{enumerate}
+        \item The new predicted position and velocity of the particle will be,
+            \begin{align}
+                \bs{r}_{new} &+= \bs{r}_{BH}\\
+                \bs{v}_{new} &+= \bs{v}_{BH}\\
+            \end{align}
+            Since in the first step we used the relative position within the BH.
+
+\end{itemize}
+
+After this procedure, we will have the new position and velocity
+of a particle related to the BH interaction.
+This steps happens only then the particle it is active ($i\in n_{act}$),
+but \emph{What happen when the particle is not active? How do we include
+the BH effect on his motion?}.
+
+Since we use a split scheme, for non-active particles we use the normal
+Hermite 4th predictor, but including the interaction with the BH in the previous
+step in which the particle was active.
+
+To calculate the direct interaction of the particle with the BH,
+we obtain the acceleration and its derivatives with the following
+formulas:
+
+\begin{align}
+    \bs{a}_{i,BH}       &= -G\frac{m_{0}}{r^{3}} \bs{r}\\
+    \bs{a}_{i,BH}^{(1)} &= -G\frac{m_{0}}{r^{3}} \left(\bs{v} - 3 \frac{(\bs{v}\cdot\bs{r})\bs{r}}{r^{2}} \right) \\
+    \bs{a}_{i,BH}^{(2)} &= -G\frac{m_{0}}{r^{3}} \left( \bs{a} - \frac{3}{r^{2}}
+                                                    \left[ (\bs{v}\cdot\bs{r})
+                                                        \left\{
+                                                            2\bs{v} - 5 \frac{(\bs{v}\cdot\bs{r})\bs{r}}{r^{2}}
+                                                        \right\}
+                                                    \right]
+                                                 \right) \\
+    \bs{a}_{i,BH}^{(3)} &= -G\frac{m_{0}}{r^{3}} \left( \bs{a}^{(1)} - \frac{3}{r^{2}}
+                                                    \left[
+                                                        3 (\bs{v}\cdot\bs{r})\bs{a} + 3 (v^{2} + (\bs{r}\cdot \bs{a}))
+                                                        \left\{ \bs{v} - 5 \frac{(\bs{v}\cdot\bs{r})\bs{r}}{r^{2}}       \right\} \nonumber \right.\right.\\
+                                                        &\qquad {} \left.\left. +\left\{ 3 (\bs{v}\cdot\bs{a}) + (\bs{r}\cdot\bs{a}^{(1)}) \bs{r} \right\} +
+                                                        \frac{(\bs{v}\cdot\bs{r})^{2}}{r^{2}}
+                                                        \left\{-15 \bs{v} + 35\frac{(\bs{v}\cdot\bs{r}) \bs{r}}{r^{2}}  \right\}
+                                                    \right]
+                                                 \right)
+\end{align}
