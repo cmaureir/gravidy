@@ -3,8 +3,8 @@
 #include <cmath>
 #include "common.hpp"
 
-float  get_magnitude(float x, float y, float z);
-double get_timestep_normal(int i, float4 *a2, float4 *a3, double *dt, Forces *f, float eta);
+double  get_magnitude(double x, double y, double z);
+double get_timestep_normal(int i, double4 *a2, double4 *a3, double *dt, Forces *f, float eta);
 double normalize_dt(double new_dt, double old_dt, double t, int i);
 
 #endif

@@ -1,11 +1,11 @@
 #include "extra_utils.hpp"
 
-float get_magnitude(float x, float y, float z)
+double get_magnitude(double x, double y, double z)
 {
     return sqrt(x*x + y*y + z*z);
 }
 
-double get_timestep_normal(int i, float4 *a2, float4 *a3, double *dt, Forces *f, float eta)
+double get_timestep_normal(int i, double4 *a2, double4 *a3, double *dt, Forces *f, float eta)
 {
     // Calculating a_{1,i}^{(2)} = a_{0,i}^{(2)} + dt * a_{0,i}^{(3)}
     double ax1_2 = a2[i].x + dt[i] * a3[i].x;
@@ -26,7 +26,6 @@ double get_timestep_normal(int i, float4 *a2, float4 *a3, double *dt, Forces *f,
     double abs_a1_22  = abs_a1_2 * abs_a1_2;
 
     double normal_dt = sqrt(eta * ((abs_a1 * abs_a1_2 + abs_j12) / (abs_j1 * abs_a1_3 + abs_a1_22)));
-
 
     return normal_dt;
 }

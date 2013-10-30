@@ -1,6 +1,7 @@
 #ifndef NBODYSYSTEM_HPP
 #define NBODYSYSTEM_HPP
 #include <vector>
+#include <cmath>
 #include <fstream>
 #include <iterator>
 #include <sstream>
@@ -18,27 +19,21 @@ class NbodySystem {
 
         // Misc
         Gtime gtime;
-        float gflops;
         std::vector<file_data> reader;
         int print_log;
 
         // Configuration parameters
         int n;
         int iterations;
-        float e2;
+        double e2;
         float eta;
         float total_mass;
         float integration_time;
 
         // Global parameters
-        double total_ekin;
-        double total_epot;
-        double energy_ini;
-        double energy_end;
+        Energy en;
         float hmr_time;
         float cr_time;
-
-
 
         // Files
         std::string input_filename;
@@ -46,14 +41,14 @@ class NbodySystem {
         FILE *out;
 
         // Host Particles attributes
-        float     *h_m;
+        //float     *h_m;
         double4   *h_r;
         double4   *h_v;
         Forces    *h_f;
-        float4   *h_a2;
-        float4   *h_a3;
-        float4   *h_old_a;
-        float4   *h_old_a1;
+        double4   *h_a2;
+        double4   *h_a3;
+        double4   *h_old_a;
+        double4   *h_old_a1;
         double    *h_t;
         double    *h_dt;
         int       *h_move;

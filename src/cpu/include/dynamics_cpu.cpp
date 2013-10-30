@@ -39,8 +39,11 @@ int find_particles_to_move(double ITIME)
         {
             h_move[j] = i;
             j++;
+//            std::cout << i << " ";
         }
     }
+    //std::cout << std::endl;
+
     return j;
 }
 
@@ -116,7 +119,7 @@ void force_calculation(int i, int j)
 void init_acc_jrk()
 {
     int i,j;
-    #pragma omp parallel for private(j) schedule(dynamic, 24)
+    //#pragma omp parallel for private(j) schedule(dynamic, 24)
     for (i = INIT_PARTICLE; i < n; i++)
     {
         for (j = INIT_PARTICLE; j < n; j++)

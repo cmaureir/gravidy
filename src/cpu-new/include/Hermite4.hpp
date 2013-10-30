@@ -6,20 +6,28 @@
 
 class Hermite4 {
     public:
-        Hermite4(int n, float e2);
+        Hermite4(int n, double e2, float eta);
         ~Hermite4();
 
         int n;
-        float e2;
+        double e2;
+        float eta;
 
-        void init_acc_jrk(double4* r, double4* v, Forces* f);
-        void force_calculation(int i, int j, double4 *r, double4 *v, Forces *f);
-        void init_dt(double &ATIME, Forces *f, double *dt, double *t);
-        int find_particles_to_move(double ITIME, double *dt, double *t, int *move);
-        void save_old_acc_jrk(Forces *f, int *move, int nact, float4 *old_a, float4 *old_a1);
-        void predicted_pos_vel(double ITIME, Predictor *p, double4 *r, double4 *v, Forces *f, double *t);
-        void update_acc_jrk(int nact, int *move, double4* r, double4* v, Forces* f);
-        void correction_pos_vel(double ITIME, int nact, int *move, double4 *r, double4 *v, Forces *f, double *t, double *dt, Predictor *p, float4 *old_a, float4 *old_a1, float4 *a3, float4 *a2, float eta);
+        int  find_particles_to_move(int *move, double ITIME, double *dt, double *t);
+        void next_integration_time(double &ATIME, double *dt, double *t);
+        void init_dt(double &ATIME, double *dt, double *t, Forces *f);
+        void save_old_acc_jrk(int nact, int *move, double4 *old_a, double4 *old_a1,
+                                Forces *f);
+
+        void force_calculation(int i, int j, Predictor *p, Forces *f);
+        void init_acc_jrk(Predictor *p, Forces* f);
+        void predicted_pos_vel(double ITIME, Predictor *p, double4 *r, double4 *v,
+                              Forces *f, double *t, Gtime &gtime);
+        void update_acc_jrk(int nact, int *move, Predictor *p, Forces* f, Gtime &gtime);
+        void correction_pos_vel(double ITIME, int nact, int *move, double4 *r,
+                                double4 *v, Forces *f, double *t, double *dt,
+                                Predictor *p, double4 *old_a, double4 *old_a1,
+                                double4 *a3, double4 *a2, Gtime &gtime);
 
 };
 

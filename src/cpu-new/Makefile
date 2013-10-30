@@ -1,8 +1,11 @@
 CC=        g++
-CXXFLAGS=  -O3 -Wall -pg
+CXXFLAGS=  -O3 -Wall -lgomp -fopenmp -pg
+
 CPPFLAGS= -lboost_program_options
 
 OBJS_CPU= include/NbodySystem.o \
+          include/NbodySystem_integration.o \
+          include/NbodySystem_memory.o \
           include/OptionsParser.o \
           include/Hermite4.o \
           include/extra_utils.o
