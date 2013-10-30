@@ -3,6 +3,7 @@
 #include <vector>
 #include <cmath>
 #include <fstream>
+#include <iostream>
 #include <iterator>
 #include <sstream>
 #include <string>
@@ -11,6 +12,7 @@
 #include "common.hpp"
 #include "OptionsParser.hpp"
 #include "Hermite4.hpp"
+#include "Logger.hpp"
 
 class NbodySystem {
     public:
@@ -38,7 +40,8 @@ class NbodySystem {
         // Files
         std::string input_filename;
         std::string output_filename;
-        FILE *out;
+        std::ofstream out_file;
+        //FILE *out;
 
         // Host Particles attributes
         //float     *h_m;
@@ -61,7 +64,7 @@ class NbodySystem {
         void alloc_arrays_host();
         void copy_initial_data();
         void free_arrays_host();
-        void integration(Hermite4 h4);
+        void integration(Hermite4 h4, Logger log);
         double get_energy();
 };
 

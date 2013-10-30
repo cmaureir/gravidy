@@ -6,6 +6,10 @@ NbodySystem::NbodySystem()
 
 NbodySystem::~NbodySystem()
 {
+    if (print_log)
+    {
+        out_file.close();
+    }
 }
 
 void NbodySystem::get_parameters(OptionsParser op)
@@ -20,6 +24,13 @@ void NbodySystem::get_parameters(OptionsParser op)
     en.ini = 0.0;
     en.end = 0.0;
     en.tmp = 0.0;
+    gtime.gflops = 0.0;
+    if (print_log)
+    {
+        std::cout << "abrimos" << std::endl;
+        out_file.open(output_filename.c_str(), std::ios::out);
+    }
+
 }
 
 void NbodySystem::read_input_file()

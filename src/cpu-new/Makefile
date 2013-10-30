@@ -8,7 +8,8 @@ OBJS_CPU= include/NbodySystem.o \
           include/NbodySystem_memory.o \
           include/OptionsParser.o \
           include/Hermite4.o \
-          include/extra_utils.o
+          include/extra_utils.o \
+          include/Logger.o
 OBJS = $(OBJS_CPU)
 
 all: gravidy
