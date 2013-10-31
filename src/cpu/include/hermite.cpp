@@ -20,35 +20,19 @@ void integrate_cpu()
 
     get_energy_log(ITIME, iterations, interactions, nsteps, out, energy_tmp);
     //print_all(n, ITIME, NULL);
+    std::cout << get_relaxation_time() << std::endl;
+    ITIME = itime;
 
     while (ITIME < itime)
     {
         ITIME = ATIME;                         // New integration time
         nact = find_particles_to_move(ITIME);  // Find particles to move (nact)
-        //for (int ki = 0; ki < nact; ki++) {
-        //    printf("%d ", h_move[ki]);
-        //}
-        //printf("\n");
         save_old(nact);                        // Save old information
-        //for (int ki = 0; ki < n; ki++) {
-        //    printf("old: %.10f %.10f\n", h_old_a[ki].x, h_old_a1[ki].y);
-        //}
 
         predicted_pos_vel(ITIME);              // Predict all the particles
-        //for (int ki = 0; ki < n; ki++) {
-        //    printf("pred: %.10f %.10f\n", h_p[ki].r[0], h_p[ki].v[1]);
-        //}
         update_acc_jrk(nact);                  // Update a and a1 of nact particles
-        //for (int kki = 0; kki < nact; kki++) {
-        //    int ki = h_move[kki];
-        //    printf("upd: %.10f %.10f\n", h_f[ki].a[0], h_f[ki].a1[1]);
-        //}
         correction_pos_vel(ITIME, nact);       // Correct r and v of nact particles
-        //for (int kki = 0; kki < nact; kki++) {
-        //    int ki = h_move[kki];
-        //    printf("cor: %.10f %.10f\n", h_r[ki].x, h_v[ki].y);
-        //}
-        //print_all(n, ITIME, NULL);
+
 
         // Update the amount of interactions counter
         interactions += nact * n;
@@ -57,8 +41,8 @@ void integrate_cpu()
         next_itime(&ATIME);
 
         // Print log every integer ITIME
-        //if(std::ceil(ITIME) == ITIME)
-        if(nact == n)          // Print log in every integer ITIME
+        if(std::ceil(ITIME) == ITIME)
+        //if(nact == n)          // Print log in every integer ITIME
         {
            get_energy_log(ITIME, iterations, interactions, nsteps, out, energy());
         }
@@ -68,6 +52,5 @@ void integrate_cpu()
 
         // Increase iteration counter
         iterations++;
-    //ITIME = itime;
     }
 }

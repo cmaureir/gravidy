@@ -2,12 +2,12 @@
 
 int main(int argc, char *argv[]) {
 
-    NbodySystem ns;
     OptionsParser op(argc,argv);
-
     if(!op.check_options()) return 1;
 
-    ns.get_parameters(op);
+    NbodySystem ns(op);
+
+    //ns.get_parameters(op);
 
     ns.read_input_file();
 

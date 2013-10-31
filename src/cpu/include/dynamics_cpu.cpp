@@ -35,14 +35,14 @@ int find_particles_to_move(double ITIME)
     for (int i = 0; i < n; i++)
     {
         h_move[i] = -1;
+        //double tmp_time = h_t[i] + h_dt[i];
+        //if (std::fabs(ITIME - tmp_time) < 0.0000001)
         if (h_t[i] + h_dt[i] == ITIME)
         {
             h_move[j] = i;
             j++;
-//            std::cout << i << " ";
         }
     }
-    //std::cout << std::endl;
 
     return j;
 }
@@ -119,7 +119,7 @@ void force_calculation(int i, int j)
 void init_acc_jrk()
 {
     int i,j;
-    //#pragma omp parallel for private(j) schedule(dynamic, 24)
+    #pragma omp parallel for private(j) schedule(dynamic, 24)
     for (i = INIT_PARTICLE; i < n; i++)
     {
         for (j = INIT_PARTICLE; j < n; j++)
@@ -395,10 +395,12 @@ double normalize_dt(double new_dt, double old_dt, double t, int i)
         new_dt = old_dt;
     }
 
+    //if (new_dt <= D_TIME_MIN)
     if (new_dt < D_TIME_MIN)
     {
         new_dt = D_TIME_MIN;
     }
+    //else if (new_dt >= D_TIME_MAX)
     else if (new_dt > D_TIME_MAX)
     {
         new_dt = D_TIME_MAX;
