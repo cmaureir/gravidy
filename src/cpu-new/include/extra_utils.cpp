@@ -5,7 +5,7 @@ double get_magnitude(double x, double y, double z)
     return sqrt(x*x + y*y + z*z);
 }
 
-double get_timestep_normal(int i, double4 *a2, double4 *a3, double *dt, Forces *f, float eta)
+double get_timestep_normal(int i, double4 *a2, double4 *a3, double *dt, Forces *f, double eta)
 {
     // Calculating a_{1,i}^{(2)} = a_{0,i}^{(2)} + dt * a_{0,i}^{(3)}
     double ax1_2 = a2[i].x + dt[i] * a3[i].x;
@@ -54,10 +54,10 @@ double normalize_dt(double new_dt, double old_dt, double t, int i)
     }
     else if (2 * old_dt < new_dt)
     {
-        float val = t/(2 *old_dt);
+        double val = t/(2 * old_dt);
         if(std::ceil(val) == val)
         {
-            new_dt = 2 * old_dt;
+            new_dt = 2.0 * old_dt;
         }
         else
         {
@@ -66,13 +66,16 @@ double normalize_dt(double new_dt, double old_dt, double t, int i)
     }
     else
     {
+        //std::cerr << "this will never happen...I promise" << std::endl;
         new_dt = old_dt;
     }
 
+    //if (new_dt <= D_TIME_MIN)
     if (new_dt < D_TIME_MIN)
     {
         new_dt = D_TIME_MIN;
     }
+    //else if (new_dt >= D_TIME_MAX)
     else if (new_dt > D_TIME_MAX)
     {
         new_dt = D_TIME_MAX;

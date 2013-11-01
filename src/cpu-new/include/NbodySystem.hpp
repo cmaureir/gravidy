@@ -16,17 +16,16 @@
 
 class NbodySystem {
     public:
-        NbodySystem();
+        NbodySystem(OptionsParser op);
         ~NbodySystem();
 
-        // Misc
         Gtime gtime;
         std::vector<file_data> reader;
         int print_log;
 
         // Configuration parameters
         int n;
-        int iterations;
+        long long int iterations;
         double e2;
         float eta;
         float total_mass;
@@ -41,7 +40,6 @@ class NbodySystem {
         std::string input_filename;
         std::string output_filename;
         std::ofstream out_file;
-        //FILE *out;
 
         // Host Particles attributes
         //float     *h_m;
@@ -50,8 +48,7 @@ class NbodySystem {
         Forces    *h_f;
         double4   *h_a2;
         double4   *h_a3;
-        double4   *h_old_a;
-        double4   *h_old_a1;
+        Forces    *h_old;
         double    *h_t;
         double    *h_dt;
         int       *h_move;
@@ -59,7 +56,7 @@ class NbodySystem {
         double    *h_ekin;
         double    *h_epot;
 
-        void get_parameters(OptionsParser op);
+        //void get_parameters(OptionsParser op);
         void read_input_file();
         void alloc_arrays_host();
         void copy_initial_data();

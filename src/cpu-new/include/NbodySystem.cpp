@@ -1,18 +1,6 @@
 #include "NbodySystem.hpp"
 
-NbodySystem::NbodySystem()
-{
-}
-
-NbodySystem::~NbodySystem()
-{
-    if (print_log)
-    {
-        out_file.close();
-    }
-}
-
-void NbodySystem::get_parameters(OptionsParser op)
+NbodySystem::NbodySystem(OptionsParser op)
 {
     input_filename   = op.input_filename;
     output_filename  = op.output_filename;
@@ -30,7 +18,14 @@ void NbodySystem::get_parameters(OptionsParser op)
         std::cout << "abrimos" << std::endl;
         out_file.open(output_filename.c_str(), std::ios::out);
     }
+}
 
+NbodySystem::~NbodySystem()
+{
+    if (print_log)
+    {
+        out_file.close();
+    }
 }
 
 void NbodySystem::read_input_file()
@@ -118,11 +113,16 @@ void NbodySystem::copy_initial_data()
         h_f[i].a1[1] = 0.0;
         h_f[i].a1[2] = 0.0;
 
+        h_old[i].a[0]   = 0.0;
+        h_old[i].a[1]   = 0.0;
+        h_old[i].a[2]   = 0.0;
+
+        h_old[i].a1[0]  = 0.0;
+        h_old[i].a1[1]  = 0.0;
+        h_old[i].a1[2]  = 0.0;
+
         h_a2[i]      = empty;
         h_a3[i]      = empty;
-
-        h_old_a[i]   = empty;
-        h_old_a1[i]  = empty;
 
         h_t[i]       = 0.0;
         h_dt[i]      = 0.0;
@@ -145,7 +145,7 @@ double NbodySystem::get_energy()
             double rx = h_r[j].x - h_r[i].x;
             double ry = h_r[j].y - h_r[i].y;
             double rz = h_r[j].z - h_r[i].z;
-            double r2 = rx*rx + ry*ry + rz*rz;
+            double r2 = rx*rx + ry*ry + rz*rz + e2;
 
             epot_tmp -= (h_r[i].w * h_r[j].w) / sqrt(r2);
         }

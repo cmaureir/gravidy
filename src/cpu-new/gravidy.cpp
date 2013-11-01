@@ -7,8 +7,6 @@ int main(int argc, char *argv[]) {
 
     NbodySystem ns(op);
 
-    //ns.get_parameters(op);
-
     ns.read_input_file();
 
     ns.alloc_arrays_host();

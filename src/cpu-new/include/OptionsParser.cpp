@@ -11,7 +11,6 @@ OptionsParser::OptionsParser(int argc, char *argv[])
         ("eta,e",       po::value<float>(),       "ETA of time-step calculation")
         ("screen,p",    "Print summary in the screen instead of a file")
     ;
-
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 }
