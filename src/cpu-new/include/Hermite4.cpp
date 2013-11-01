@@ -19,11 +19,11 @@ int Hermite4::find_particles_to_move(int *move, double ITIME, double *dt, double
     for (int i = 0; i < n; i++)
     {
         move[i] = -1;
-        double tmp_time = t[i] + dt[i];
-        if(std::fabs(ITIME - tmp_time) < 2*std::numeric_limits<double>::epsilon())
+        //double tmp_time = t[i] + dt[i];
+        //if(std::fabs(ITIME - tmp_time) < 2*std::numeric_limits<double>::epsilon())
         //if(std::fabs(ITIME) - std::fabs(t[i] + dt[i]) < epsilon)
         //if(std::fabs(ITIME - tmp_time) <= ( (fabs(ITIME) > fabs(tmp_time) ? fabs(tmp_time) : fabs(ITIME)) * std::numeric_limits<double>::epsilon()))
-        //if (t[i] + dt[i] == ITIME)
+        if (t[i] + dt[i] == ITIME)
         {
             move[j] = i;
             j++;

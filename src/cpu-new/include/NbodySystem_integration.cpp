@@ -29,7 +29,6 @@ void NbodySystem::integration(Hermite4 h, Logger log)
 
         nact = h.find_particles_to_move(h_move, ITIME, h_dt, h_t);
 
-
         h.save_old_acc_jrk(nact, h_move, h_old, h_f);
 
         h.predicted_pos_vel(ITIME, h_p, h_r, h_v, h_f, h_t, gtime);
@@ -41,6 +40,10 @@ void NbodySystem::integration(Hermite4 h, Logger log)
         // Update the amount of interactions counter
         interactions += nact * n;
 
+        // Find the next integration time
+        h.next_integration_time(ATIME, h_dt, h_t);
+
+
         //if(std::ceil(ITIME) == ITIME)
         if(nact == n)
         {
@@ -48,9 +51,6 @@ void NbodySystem::integration(Hermite4 h, Logger log)
             log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
 
         }
-
-        // Find the next integration time
-        h.next_integration_time(ATIME, h_dt, h_t);
 
         // Update nsteps with nact
         nsteps += nact;
