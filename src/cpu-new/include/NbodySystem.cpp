@@ -28,14 +28,6 @@ NbodySystem::~NbodySystem()
     }
 }
 
-NbodySystem::~NbodySystem()
-{
-    if (print_log)
-    {
-        out_file.close();
-    }
-}
-
 void NbodySystem::read_input_file()
 {
     file_data tmp;

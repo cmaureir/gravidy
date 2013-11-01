@@ -80,25 +80,14 @@ void Hermite4::init_dt(double &ATIME, double *dt, double *t, Forces *f)
     }
 }
 
-<<<<<<< Updated upstream
 void Hermite4::save_old_acc_jrk(int nact, int *move, Forces *old, Forces *f)
-=======
-void Hermite4::save_old_acc_jrk(int nact, int *move, Forces *old,
-                                Forces *f)
->>>>>>> Stashed changes
 {
     for (int k = INIT_PARTICLE; k < nact; k++)
     {
         int i = move[k];
-<<<<<<< Updated upstream
         old[i].a[0]  = f[i].a[0];
         old[i].a[1]  = f[i].a[1];
         old[i].a[2]  = f[i].a[2];
-=======
-        old[i].a[0] = f[i].a[0];
-        old[i].a[1] = f[i].a[1];
-        old[i].a[2] = f[i].a[2];
->>>>>>> Stashed changes
 
         old[i].a1[0] = f[i].a1[0];
         old[i].a1[1] = f[i].a1[1];
