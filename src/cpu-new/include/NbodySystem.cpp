@@ -28,6 +28,14 @@ NbodySystem::~NbodySystem()
     }
 }
 
+NbodySystem::~NbodySystem()
+{
+    if (print_log)
+    {
+        out_file.close();
+    }
+}
+
 void NbodySystem::read_input_file()
 {
     file_data tmp;
@@ -113,16 +121,16 @@ void NbodySystem::copy_initial_data()
         h_f[i].a1[1] = 0.0;
         h_f[i].a1[2] = 0.0;
 
-        h_old[i].a[0]   = 0.0;
-        h_old[i].a[1]   = 0.0;
-        h_old[i].a[2]   = 0.0;
-
-        h_old[i].a1[0]  = 0.0;
-        h_old[i].a1[1]  = 0.0;
-        h_old[i].a1[2]  = 0.0;
-
         h_a2[i]      = empty;
         h_a3[i]      = empty;
+
+        h_old[i].a[0]  = 0.0;
+        h_old[i].a[1]  = 0.0;
+        h_old[i].a[2]  = 0.0;
+
+        h_old[i].a1[0] = 0.0;
+        h_old[i].a1[1] = 0.0;
+        h_old[i].a1[2] = 0.0;
 
         h_t[i]       = 0.0;
         h_dt[i]      = 0.0;

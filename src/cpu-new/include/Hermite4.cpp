@@ -80,14 +80,25 @@ void Hermite4::init_dt(double &ATIME, double *dt, double *t, Forces *f)
     }
 }
 
+<<<<<<< Updated upstream
 void Hermite4::save_old_acc_jrk(int nact, int *move, Forces *old, Forces *f)
+=======
+void Hermite4::save_old_acc_jrk(int nact, int *move, Forces *old,
+                                Forces *f)
+>>>>>>> Stashed changes
 {
     for (int k = INIT_PARTICLE; k < nact; k++)
     {
         int i = move[k];
+<<<<<<< Updated upstream
         old[i].a[0]  = f[i].a[0];
         old[i].a[1]  = f[i].a[1];
         old[i].a[2]  = f[i].a[2];
+=======
+        old[i].a[0] = f[i].a[0];
+        old[i].a[1] = f[i].a[1];
+        old[i].a[2] = f[i].a[2];
+>>>>>>> Stashed changes
 
         old[i].a1[0] = f[i].a1[0];
         old[i].a1[1] = f[i].a1[1];
@@ -203,7 +214,7 @@ void Hermite4::correction_pos_vel(double ITIME, int nact, int *move, double4 *r,
         double dt5 = dt4 * dt1;
 
         // Acceleration 2nd derivate
-        a2[i].x = (-6 * (old[i].a[0] - f[i].a[1] ) - dt1 * (4 * old[i].a1[0] + 2 * f[i].a1[0]) ) / dt2;
+        a2[i].x = (-6 * (old[i].a[0] - f[i].a[0] ) - dt1 * (4 * old[i].a1[0] + 2 * f[i].a1[0]) ) / dt2;
         a2[i].y = (-6 * (old[i].a[1] - f[i].a[1] ) - dt1 * (4 * old[i].a1[1] + 2 * f[i].a1[1]) ) / dt2;
         a2[i].z = (-6 * (old[i].a[2] - f[i].a[2] ) - dt1 * (4 * old[i].a1[2] + 2 * f[i].a1[2]) ) / dt2;
 

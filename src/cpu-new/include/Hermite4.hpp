@@ -18,7 +18,6 @@ class Hermite4 {
         void next_integration_time(double &ATIME, double *dt, double *t);
         void init_dt(double &ATIME, double *dt, double *t, Forces *f);
         void save_old_acc_jrk(int nact, int *move, Forces *old, Forces *f);
-
         void force_calculation(int i, int j, Predictor *p, Forces *f);
         void init_acc_jrk(Predictor *p, Forces* f);
         void predicted_pos_vel(double ITIME, Predictor *p, double4 *r, double4 *v,
@@ -28,7 +27,6 @@ class Hermite4 {
                                 double4 *v, Forces *f, double *t, double *dt,
                                 Predictor *p, Forces *old, double4 *a3, double4 *a2,
                                 Gtime &gtime);
-
 };
 
 #endif
