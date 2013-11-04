@@ -15,7 +15,6 @@ NbodySystem::NbodySystem(OptionsParser op)
     gtime.gflops = 0.0;
     if (print_log)
     {
-        std::cout << "abrimos" << std::endl;
         out_file.open(output_filename.c_str(), std::ios::out);
     }
 }

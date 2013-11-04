@@ -5,15 +5,16 @@
 
 #include <iostream>
 
-const int J=10;
-const int INIT_PARTICLE=0;
-const float RADIUS_MASS_PORCENTAGE=0.2;
-const double E=1e-4;
-const double E2=1e-8;
-const double  ETA_S=0.01;
-const double  ETA_N=0.01;
-const double D_TIME_MIN=1.1920928955078125e-07;
-const double D_TIME_MAX=0.125;
+const int    G                      = 1;
+const int    J                      = 10;
+const int    INIT_PARTICLE          = 0;
+const float  RADIUS_MASS_PORCENTAGE = 0.2;
+const double E                      = 1e-4;
+const double E2                     = 1e-8;
+const double ETA_S                  = 0.01;
+const double ETA_N                  = 0.01;
+const double D_TIME_MIN             = 1.1920928955078125e-07;
+const double D_TIME_MAX             = 0.125;
 
 typedef struct Energy
 {
@@ -28,6 +29,11 @@ typedef struct double4
 {
     double x, y, z, w;
 } double4;
+
+typedef struct double3
+{
+    double x, y, z;
+} double3;
 
 typedef struct Predictor {
     double r[3];

@@ -13,6 +13,7 @@
 #include "OptionsParser.hpp"
 #include "Hermite4.hpp"
 #include "Logger.hpp"
+#include "NbodyUtils.hpp"
 
 class NbodySystem {
     public:
@@ -56,12 +57,11 @@ class NbodySystem {
         double    *h_ekin;
         double    *h_epot;
 
-        //void get_parameters(OptionsParser op);
         void read_input_file();
         void alloc_arrays_host();
         void copy_initial_data();
+        void integration(Hermite4 h4, Logger log, NbodyUtils nu);
         void free_arrays_host();
-        void integration(Hermite4 h4, Logger log);
         double get_energy();
 };
 

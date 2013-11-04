@@ -9,6 +9,7 @@ OBJS_CPU= include/NbodySystem.o \
           include/OptionsParser.o \
           include/Hermite4.o \
           include/extra_utils.o \
+          include/NbodyUtils.o \
           include/Logger.o
 OBJS = $(OBJS_CPU)
 

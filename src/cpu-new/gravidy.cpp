@@ -15,9 +15,10 @@ int main(int argc, char *argv[]) {
 
     Hermite4 h(ns.n, ns.e2, ns.eta);
     Logger log(ns.print_log, ns.out_file);
+    NbodyUtils nu(ns.n, ns.h_r, ns.total_mass);
 
     ns.gtime.integration_ini = omp_get_wtime();
-    ns.integration(h, log);
+    ns.integration(h, log, nu);
     ns.gtime.integration_end = omp_get_wtime();
 
     ns.free_arrays_host();

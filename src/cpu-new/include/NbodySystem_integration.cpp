@@ -1,6 +1,6 @@
 #include "NbodySystem.hpp"
 
-void NbodySystem::integration(Hermite4 h, Logger log)
+void NbodySystem::integration(Hermite4 h, Logger log, NbodyUtils nu)
 {
 
     double ATIME = 1.0e+10; // Actual integration time
@@ -21,6 +21,8 @@ void NbodySystem::integration(Hermite4 h, Logger log)
     en.tmp = en.ini;
 
     log.print_energy_log(ITIME, iterations, interactions, nsteps, gtime, en, en.ini);
+    nu.set_energy(en.tmp);
+    std::cout << nu.get_half_mass_relaxation_time() << std::endl;
     //log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
 
     while (ITIME < integration_time)
