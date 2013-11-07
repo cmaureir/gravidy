@@ -55,6 +55,7 @@ double normalize_dt(double new_dt, double old_dt, double t, int i)
     else if (2 * old_dt < new_dt)
     {
         double val = t/(2 * old_dt);
+        //float val = t/(2 * old_dt);
         if(std::ceil(val) == val)
         {
             new_dt = 2.0 * old_dt;

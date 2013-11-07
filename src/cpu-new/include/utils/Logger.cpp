@@ -10,27 +10,39 @@ Logger::~Logger()
 {
 }
 
-void Logger::print_info(int n, double e2, double eta, float itime)
+void Logger::print_info(int n, double e2, double eta, float itime, float hmr_time,
+                        float cr_time)
 {
     *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(5)  << std::left  << "N:";
-    *gstream << std::setw(4)  << std::right << n;
+    *gstream << std::setw(8)  << std::left  << "N:";
+    *gstream << std::setw(8)  << std::right << n;
     *gstream << std::endl;
 
     *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(5)  << std::left  << "E2:";
-    *gstream << std::setw(4)  << std::right << e2;
+    *gstream << std::setw(8)  << std::left  << "E2:";
+    *gstream << std::setw(8)  << std::right << e2;
     *gstream << std::endl;
 
     *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(5)  << std::left  << "Eta:";
-    *gstream << std::setw(4)  << std::right << eta;
+    *gstream << std::setw(8)  << std::left  << "Eta:";
+    *gstream << std::setw(8)  << std::right << eta;
     *gstream << std::endl;
 
     *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(5)  << std::left  << "T:";
-    *gstream << std::setw(4)  << std::right << itime;
+    *gstream << std::setw(8)  << std::left  << "T:";
+    *gstream << std::setw(8)  << std::right << itime;
     *gstream << std::endl;
+
+    *gstream << std::setw(2)  << std::left  << "#";
+    *gstream << std::setw(8)  << std::left  << "T_rh:";
+    *gstream << std::setw(8)  << std::right << hmr_time;
+    *gstream << std::endl;
+
+    *gstream << std::setw(2)  << std::left  << "#";
+    *gstream << std::setw(8)  << std::left  << "T_cr:";
+    *gstream << std::setw(8)  << std::right << cr_time;
+    *gstream << std::endl;
+
 
 }
 
@@ -84,8 +96,8 @@ void Logger::print_energy_log(double ITIME, int iterations, long long interactio
     if(ITIME == 0.0)
     {
             *gstream << std::setw(2)  << std::left  << "#";
-            *gstream << std::setw(13) << std::right << "IteTime";
-            *gstream << std::setw(8)  << std::right << "Iter";
+            *gstream << std::setw(10) << std::right << "IteTime";
+            *gstream << std::setw(10) << std::right << "Iter";
             *gstream << std::setw(10) << std::right << "Nsteps";
             *gstream << std::setw(16) << std::right << "ElapsedTime";
 
@@ -100,8 +112,8 @@ void Logger::print_energy_log(double ITIME, int iterations, long long interactio
     *gstream << std::fixed;
     gstream->precision(7);
     *gstream << std::setw(2)  << std::right << "00";
-    *gstream << std::setw(13) << std::right << ITIME;
-    *gstream << std::setw(8)  << std::right << iterations;
+    *gstream << std::setw(10) << std::right << ITIME;
+    *gstream << std::setw(10)  << std::right << iterations;
     *gstream << std::setw(10) << std::right << nsteps;
     *gstream << std::setw(16) << std::right << time;
 

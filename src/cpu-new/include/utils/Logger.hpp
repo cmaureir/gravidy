@@ -1,6 +1,6 @@
 #ifndef LOGGER_HPP
 #define LOGGER_HPP
-#include "common.hpp"
+#include "../common.hpp"
 #include <iostream>
 #include <fstream>
 #include <cstdio>
@@ -14,7 +14,8 @@ class Logger {
 
         std::ostream *gstream;
 
-        void print_info(int n, double e2, double eta, float itime);
+        void print_info(int n, double e2, double eta, float itime, float hmr_time,
+                        float cr_time);
         void print_all(double ITIME, int n, double4 *r, double4 *v, Forces *f,
                        double *dt);
         void print_energy_log(double ITIME, int iterations, long long interactions,

@@ -1,6 +1,6 @@
 #ifndef EXTRAUTILS_HPP
 #define EXTRAUTILS_HPP
-#include "common.hpp"
+#include "../common.hpp"
 #include <cmath>
 
 double get_magnitude(double x, double y, double z);

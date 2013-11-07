@@ -19,9 +19,6 @@ void integrate_cpu()
     energy_tmp = energy_ini; // Saving initial energy, to calculate errors
 
     get_energy_log(ITIME, iterations, interactions, nsteps, out, energy_tmp);
-    //print_all(n, ITIME, NULL);
-    std::cout << get_relaxation_time() << std::endl;
-    ITIME = itime;
 
     while (ITIME < itime)
     {
