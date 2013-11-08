@@ -18,7 +18,13 @@ CXXFLAGS=   $(BOOSTFLAGS) \
 CUDA_PATH=/cluster/gpu/nvidia/5.5
 NVCC=       $(CUDA_PATH)/bin/nvcc
 
-NVFLAGS=    --pre-include gcc4.7_nvcc_fix.h -pg -O3 -m64 -arch=sm_20 -DGPU
+NVFLAGS=    --pre-include gcc4.7_nvcc_fix.h -pg -O3 -arch=sm_20 -DGPU
+
+LBITS := $(shell getconf LONG_BIT)
+ifeq ($(LBITS),64)
+    CXXFLAGS+= -m64
+    NVFLAGS+= -m64
+endif
 
 LINKFLAGS=  -L$(CUDA_PATH)/lib64     \
             -I$(CUDA_PATH)/include   \
@@ -42,6 +48,7 @@ OBJS_CPU= $(OBJS) $(OBJS_UTILS) \
 OBJS_GPU= $(OBJS_CPU)                               \
           include/gpu/NbodySystem_memory_device.cuo \
           include/gpu/NbodySystem_integration.cuo \
+          include/gpu/NbodySystem_energy.cuo \
           include/gpu/Hermite4GPU.cuo
 
 

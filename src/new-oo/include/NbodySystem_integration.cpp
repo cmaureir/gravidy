@@ -54,7 +54,7 @@ void NbodySystem::integration(Hermite4CPU h, Logger log, NbodyUtils nu)
         {
             assert(nact == n);
             log.print_energy_log(ITIME, iterations, interactions, nsteps, gtime, en, get_energy());
-            //log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
+            log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
 
         }
 
