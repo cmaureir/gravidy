@@ -27,7 +27,7 @@ void NbodySystem::integration(Hermite4GPU h, Logger log, NbodyUtils nu)
 
     h.init_dt(ATIME, h_dt, h_t, h_f);
 
-    en.ini = get_energy();   // Initial calculation of the energy of the system
+    en.ini = get_energy_gpu();   // Initial calculation of the energy of the system
     en.tmp = en.ini;
 
     nu.set_energy(en.tmp);
@@ -37,7 +37,7 @@ void NbodySystem::integration(Hermite4GPU h, Logger log, NbodyUtils nu)
 
     log.print_info(n, e2, eta, integration_time, hmr_time, cr_time);
     log.print_energy_log(ITIME, iterations, interactions, nsteps, gtime, en, en.ini);
-    //log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
+    log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
 
     while (ITIME < integration_time)
     {
@@ -64,8 +64,8 @@ void NbodySystem::integration(Hermite4GPU h, Logger log, NbodyUtils nu)
         //if(nact == n)
         {
             assert(nact == n);
-            log.print_energy_log(ITIME, iterations, interactions, nsteps, gtime, en, get_energy());
-            //log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
+            log.print_energy_log(ITIME, iterations, interactions, nsteps, gtime, en, get_energy_gpu());
+            log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
 
         }
 

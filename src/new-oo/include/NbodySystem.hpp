@@ -92,6 +92,7 @@ class NbodySystem {
         void integration(Hermite4CPU h4, Logger log, NbodyUtils nu);
         #ifdef GPU
         void integration(Hermite4GPU h4, Logger log, NbodyUtils nu);
+        double get_energy_gpu();
         #endif
         double get_energy();
 

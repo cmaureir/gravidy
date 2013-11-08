@@ -1,12 +1,12 @@
 #ifndef HERMITE4GPU_HPP
 #define HERMITE4GPU_HPP
 #include "../Hermite4.hpp"
+//#include <string>
 
 class Hermite4GPU : public Hermite4 {
     public:
         Hermite4GPU(int n, double e2, float eta) : Hermite4(n, e2, eta) {
             nthreads = BSIZE;
-            nblocks = std::ceil(n/(float)nthreads);
             nblocks = std::ceil(n/(float)nthreads);
             }
 
@@ -21,19 +21,22 @@ class Hermite4GPU : public Hermite4 {
         Forces *h_fout_tmp;
         Forces *d_f;
 
+        void get_kernel_error();
+        void gpu_timer_start();
+        float gpu_timer_stop(std::string f);
+
         void set_pointers(Predictor*, Predictor*, Predictor*, Forces*, Forces*,
                           Forces*, Forces*);
         void init_acc_jrk(Predictor *p, Forces* f);
         void update_acc_jrk(int nact, int *move, Predictor *p, Forces* f, Gtime &gtime);
-
 };
 
 __global__ void k_energy(double4*,
                          double4*,
                          double*,
                          double*,
-                         float*,
-                         int);
+                         int,
+                         double);
 
 __global__ void k_init_acc_jrk(Predictor*,
                                Forces*,

@@ -24,6 +24,7 @@ void Hermite4GPU::init_acc_jrk(Predictor *p, Forces *f)
     CUDA_SAFE_CALL(cudaMemcpy(f,  d_f,  n * sizeof(Forces), cudaMemcpyDeviceToHost));
 }
 
+
 void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, Gtime &gtime)
 {
     gtime.update_ini = omp_get_wtime();
@@ -63,7 +64,7 @@ void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, G
     gtime.reduce_ini = omp_get_wtime();
     reduce <<< rgrid, rthreads, smem2 >>>(d_fout, d_fout_tmp, nact);
     cudaThreadSynchronize();
-    gtime.reduce_end += omp_get_wtime() - gtime.grav_ini;
+    gtime.reduce_end += omp_get_wtime() - gtime.reduce_ini;
     //get_kernel_error();
 
     // Copy from the GPU the new forces for the d_i particles.
@@ -80,46 +81,6 @@ void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, G
 }
 
 
-/*
- * @fn k_energy
- *
- * @desc GPU Kernel which calculates the energy of the system.
- *
- */
-__global__ void k_energy(double4 *r,
-                         double4 *v,
-                         double *ekin,
-                         double *epot,
-                         float *m,
-                         int n)
-{
-    int i = threadIdx.x + blockDim.x * blockIdx.x;
-    int j;
-    double ekin_tmp = 0.0;
-    double epot_tmp = 0.0;
-
-    if (i < n)
-    {
-        epot_tmp = 0.0;
-        for (j = i+1; j < n; j++)
-        {
-            double rx = r[j].x - r[i].x;
-            double ry = r[j].y - r[i].y;
-            double rz = r[j].z - r[i].z;
-            double r2 = rx*rx + ry*ry + rz*rz;
-            epot_tmp -= (m[i] * m[j]) * rsqrt(r2);
-        }
-
-        double vx = v[i].x * v[i].x;
-        double vy = v[i].y * v[i].y;
-        double vz = v[i].z * v[i].z;
-        double v2 = vx + vy + vz;
-        ekin_tmp = 0.5 * m[i] * v2;
-
-        ekin[i] = ekin_tmp;
-        epot[i] = epot_tmp;
-    }
-}
 
 /*
  * @fn k_init_acc_jrk
