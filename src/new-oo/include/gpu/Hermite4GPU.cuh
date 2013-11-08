@@ -19,8 +19,10 @@ class Hermite4GPU : public Hermite4 {
         Forces *d_fout;
         Forces *d_fout_tmp;
         Forces *h_fout_tmp;
+        Forces *d_f;
 
-        void set_pointers(Predictor*, Predictor*, Predictor*, Forces*, Forces*, Forces*);
+        void set_pointers(Predictor*, Predictor*, Predictor*, Forces*, Forces*,
+                          Forces*, Forces*);
         void init_acc_jrk(Predictor *p, Forces* f);
         void update_acc_jrk(int nact, int *move, Predictor *p, Forces* f, Gtime &gtime);
 

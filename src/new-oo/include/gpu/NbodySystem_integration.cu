@@ -15,19 +15,15 @@ void NbodySystem::integration(Hermite4GPU h, Logger log, NbodyUtils nu)
 
 
     h.set_pointers(d_p,
-                    d_i,
-                    h_i,
-                    d_fout,
-                    d_fout_tmp,
-                    h_fout_tmp);
+                   d_i,
+                   h_i,
+                   d_fout,
+                   d_fout_tmp,
+                   h_fout_tmp,
+                   d_f);
 
 
-    CUDA_SAFE_CALL(cudaMemcpy(d_p,  h_p,  n * sizeof(Predictor), cudaMemcpyHostToDevice));
-    std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
-    h.init_acc_jrk(d_p, d_f);
-    std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
-    CUDA_SAFE_CALL(cudaMemcpy(h_f,  d_f,  n * sizeof(Forces), cudaMemcpyDeviceToHost));
-    std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
+    h.init_acc_jrk(h_p, h_f);
 
     h.init_dt(ATIME, h_dt, h_t, h_f);
 

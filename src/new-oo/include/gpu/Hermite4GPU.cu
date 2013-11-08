@@ -1,7 +1,8 @@
 #include "Hermite4GPU.cuh"
 
 void Hermite4GPU::set_pointers(Predictor *dp, Predictor *di, Predictor *hi,
-                               Forces *dfout, Forces *dfouttmp, Forces *hfouttmp)
+                               Forces *dfout, Forces *dfouttmp, Forces *hfouttmp,
+                               Forces *df)
 {
     d_p = dp;
     d_i = di;
@@ -9,15 +10,18 @@ void Hermite4GPU::set_pointers(Predictor *dp, Predictor *di, Predictor *hi,
     d_fout = dfout;
     d_fout_tmp = dfouttmp;
     h_fout_tmp = hfouttmp;
+    d_f = df;
 }
 
 
 void Hermite4GPU::init_acc_jrk(Predictor *p, Forces *f)
 {
 
+    CUDA_SAFE_CALL(cudaMemcpy(d_p,  p,  n * sizeof(Predictor), cudaMemcpyHostToDevice));
     int smem = BSIZE * sizeof(Predictor);
-    k_init_acc_jrk <<< nblocks, nthreads, smem >>> (p, f, n, e2);
+    k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_p, d_f, n, e2);
     cudaThreadSynchronize();
+    CUDA_SAFE_CALL(cudaMemcpy(f,  d_f,  n * sizeof(Forces), cudaMemcpyDeviceToHost));
 }
 
 void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, Gtime &gtime)
