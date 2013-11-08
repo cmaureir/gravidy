@@ -1,15 +1,21 @@
 # Makefile
+BOOST_PATH=/cluster/boost/1.52.0
+
+BOOSTFLAGS= -L$(BOOST_PATH)/lib     \
+            -I$(BOOST_PATH)/include \
+            -lboost_program_options
+
 
 CXX=        g++
-CXXFLAGS=   -lboost_program_options  \
-            -O3                      \
-            -m64                     \
-            -Wall                    \
-            -pg                      \
-            -lgomp                   \
+CXXFLAGS=   $(BOOSTFLAGS) \
+            -O3           \
+            -m64          \
+            -Wall         \
+            -pg           \
+            -lgomp        \
             -fopenmp
 
-CUDA_PATH=/opt/cuda
+CUDA_PATH=/cluster/gpu/nvidia/5.5
 NVCC=       $(CUDA_PATH)/bin/nvcc
 
 NVFLAGS=    --pre-include gcc4.7_nvcc_fix.h -pg -O3 -m64 -arch=sm_20 -DGPU
@@ -45,7 +51,7 @@ gpu: CXXFLAGS+=$(LINKFLAGS)
 gpu: gravidy-gpu
 
 %.cuo : %.cu
-	$(NVCC) $(NVFLAGS) -c $^ -o $@
+	$(NVCC) $(BOOSTFLAGS) $(NVFLAGS) -c $^ -o $@
 
 gravidy-cpu: gravidy.cpp $(OBJS_CPU)
 	$(CXX) $(CXXFLAGS) $^ -o $@
