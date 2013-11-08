@@ -161,8 +161,5 @@ double NbodySystem::get_energy()
         #pragma omp atomic
         en.potential += epot_tmp;
     }
-    std::cout.precision(20);
-    std::cout << en.kinetic << std::endl;
-    std::cout << en.potential << std::endl;
     return en.kinetic + en.potential;
 }
