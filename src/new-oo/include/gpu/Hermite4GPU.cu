@@ -20,7 +20,8 @@ void Hermite4GPU::init_acc_jrk(Predictor *p, Forces *f)
     CUDA_SAFE_CALL(cudaMemcpy(d_p,  p,  n * sizeof(Predictor), cudaMemcpyHostToDevice));
     int smem = BSIZE * sizeof(Predictor);
     k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_p, d_f, n, e2);
-    cudaThreadSynchronize();
+    //cudaThreadSynchronize();
+    get_kernel_error();
     CUDA_SAFE_CALL(cudaMemcpy(f,  d_f,  n * sizeof(Forces), cudaMemcpyDeviceToHost));
 }
 
@@ -95,7 +96,6 @@ __global__ void k_init_acc_jrk (Predictor *p,
 {
 
     extern __shared__ Predictor sh[];
-    //Predictor *sp = (Predictor*)sh;
 
     Forces ff;
     ff.a[0] = 0.0;
@@ -122,6 +122,7 @@ __global__ void k_init_acc_jrk (Predictor *p,
 
             for (int k = 0; k < BSIZE; k++)
             {
+                if(idx == id) continue;
                 k_force_calculation(pred, sh[k], ff, e2);
             }
             __syncthreads();

@@ -85,7 +85,7 @@ __global__ void k_init_acc_jrk (double4 *r,
             __syncthreads();
 
             for (int k = 0; k < BSIZE; k++)
-            {
+            c
                 k_force_calculation(pos, vel, sr[k], sv[k], ff,e2);
             }
             __syncthreads();

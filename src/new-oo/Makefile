@@ -18,7 +18,7 @@ CXXFLAGS=   $(BOOSTFLAGS) \
 CUDA_PATH=/opt/cuda
 NVCC=       $(CUDA_PATH)/bin/nvcc
 
-NVFLAGS=    --pre-include gcc4.7_nvcc_fix.h -pg -O3 -arch=sm_20 -DGPU
+NVFLAGS=   -pg -O3 -arch=sm_20 -DGPU
 
 LINKFLAGS=  -L$(CUDA_PATH)/lib64     \
             -I$(CUDA_PATH)/include   \
@@ -61,7 +61,8 @@ gravidy-gpu: gravidy.cpp $(OBJS_GPU)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 clean:
-	rm -f gravidy
+	rm -f gravidy-gpu
+	rm -f gravidy-cpu
 #	rm -f gravidy-gpu
 distclean: clean
 	rm -f include/*.{o,cuo}
