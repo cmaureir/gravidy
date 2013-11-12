@@ -24,7 +24,6 @@ void Hermite4GPU::init_acc_jrk(Predictor *p, Forces *f)
     CUDA_SAFE_CALL(cudaMemcpy(f,  d_f,  n * sizeof(Forces), cudaMemcpyDeviceToHost));
 }
 
-
 void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, Gtime &gtime)
 {
     gtime.update_ini = omp_get_wtime();
@@ -204,14 +203,14 @@ __global__ void k_update(Predictor *d_i,
 
         // If the total amount of particles is not a multiple of BSIZE
         if(jend-j < BSIZE){
-            //#pragma unroll 4
+            #pragma unroll 4
             for(int jj=0; jj<jend-j; jj++){
                 Predictor jp = jpshare[jj];
                 k_force_calculation(ip, jp, fo, e2);
             }
         }
         else{
-            //#pragma unroll 4
+            #pragma unroll 4
             for(int jj=0; jj<BSIZE; jj++){
                 Predictor jp = jpshare[jj];
                 k_force_calculation(ip, jp, fo, e2);
