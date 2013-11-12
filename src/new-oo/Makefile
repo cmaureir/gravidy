@@ -9,22 +9,16 @@ BOOSTFLAGS= -L$(BOOST_PATH)/lib     \
 CXX=        g++
 CXXFLAGS=   $(BOOSTFLAGS) \
             -O3           \
-            -m64          \
             -Wall         \
             -pg           \
             -lgomp        \
             -fopenmp
 
-CUDA_PATH=/cluster/gpu/nvidia/5.5
+#CUDA_PATH=/cluster/gpu/nvidia/5.5
+CUDA_PATH=/opt/cuda
 NVCC=       $(CUDA_PATH)/bin/nvcc
 
 NVFLAGS=    --pre-include gcc4.7_nvcc_fix.h -pg -O3 -arch=sm_20 -DGPU
-
-LBITS := $(shell getconf LONG_BIT)
-ifeq ($(LBITS),64)
-    CXXFLAGS+= -m64
-    NVFLAGS+= -m64
-endif
 
 LINKFLAGS=  -L$(CUDA_PATH)/lib64     \
             -I$(CUDA_PATH)/include   \
