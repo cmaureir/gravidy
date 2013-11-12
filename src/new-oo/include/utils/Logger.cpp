@@ -99,29 +99,30 @@ void Logger::print_energy_log(double ITIME, int iterations, long long interactio
             *gstream << std::setw(10) << std::right << "IteTime";
             *gstream << std::setw(10) << std::right << "Iter";
             *gstream << std::setw(10) << std::right << "Nsteps";
-            *gstream << std::setw(16) << std::right << "ElapsedTime";
 
-            *gstream << std::setw(15) << std::right << "Energy";
+            *gstream << std::setw(25) << std::right << "Energy";
             *gstream << std::setw(15) << std::right << "RelE";
             *gstream << std::setw(15) << std::right << "CumE";
+            *gstream << std::setw(16) << std::right << "ElapsedTime";
 
             *gstream << std::setw(12)  << std::right << "GFLOPS";
             *gstream << std::endl;
     }
 
     *gstream << std::fixed;
-    gstream->precision(7);
     *gstream << std::setw(2)  << std::right << "00";
+    gstream->precision(3);
     *gstream << std::setw(10) << std::right << ITIME;
     *gstream << std::setw(10)  << std::right << iterations;
     *gstream << std::setw(10) << std::right << nsteps;
-    *gstream << std::setw(16) << std::right << time;
 
     *gstream << std::scientific;
+    gstream->precision(15);
+    *gstream << std::setw(25) << std::right << energy.end;
     gstream->precision(6);
-    *gstream << std::setw(15) << std::right << energy.end;
     *gstream << std::setw(15) << std::right << rel_error;
     *gstream << std::setw(15) << std::right << cum_error;
+    *gstream << std::setw(16) << std::right << time;
 
     *gstream << std::fixed;
     gstream->precision(3);
