@@ -2,7 +2,7 @@
 
 void Hermite4GPU::set_pointers(Predictor *dp, Predictor *di, Predictor *hi,
                                Forces *dfout, Forces *dfouttmp, Forces *hfouttmp,
-                               Forces *df)
+                               Forces *df, int *dmove)
 {
     d_p = dp;
     d_i = di;
@@ -11,6 +11,7 @@ void Hermite4GPU::set_pointers(Predictor *dp, Predictor *di, Predictor *hi,
     d_fout_tmp = dfouttmp;
     h_fout_tmp = hfouttmp;
     d_f = df;
+    d_move = dmove;
 }
 
 
@@ -21,7 +22,7 @@ void Hermite4GPU::init_acc_jrk(Predictor *p, Forces *f)
     int smem = BSIZE * sizeof(Predictor);
     k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_p, d_f, n, e2);
     //cudaThreadSynchronize();
-    get_kernel_error();
+    //get_kernel_error();
     CUDA_SAFE_CALL(cudaMemcpy(f,  d_f,  n * sizeof(Forces), cudaMemcpyDeviceToHost));
 }
 
@@ -31,6 +32,7 @@ void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, G
 
     // Copying to the device the predicted r and v
     CUDA_SAFE_CALL(cudaMemcpy(d_p, p, sizeof(Predictor) * n,cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(d_move, move, sizeof(int) * n,cudaMemcpyHostToDevice));
 
     // Fill the h_i Predictor array with the particles that we need
     // to move in this iteration
@@ -50,7 +52,7 @@ void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, G
 
     // Kernel to update the forces for the particles in d_i
     gtime.grav_ini = omp_get_wtime();
-    k_update <<< nblocks, nthreads, smem >>> (d_i, d_p, d_fout,n, nact,e2);
+    k_update <<< nblocks, nthreads, smem >>> (d_i, d_p, d_fout,d_move,n, nact,e2);
     cudaThreadSynchronize();
     gtime.grav_end += omp_get_wtime() - gtime.grav_ini;
     //get_kernel_error();
@@ -122,7 +124,7 @@ __global__ void k_init_acc_jrk (Predictor *p,
 
             for (int k = 0; k < BSIZE; k++)
             {
-                if(idx == id) continue;
+                //if(idx == id) continue;
                 k_force_calculation(pred, sh[k], ff, e2);
             }
             __syncthreads();
@@ -173,6 +175,7 @@ __device__ void k_force_calculation(Predictor i_p,
 __global__ void k_update(Predictor *d_i,
                          Predictor *d_j,
                          Forces *d_fout,
+                         int *move,
                          int n,
                          int total,
                          double e2)
@@ -203,6 +206,7 @@ __global__ void k_update(Predictor *d_i,
         __syncthreads();
 
         // If the total amount of particles is not a multiple of BSIZE
+        //if (move[iaddr] == j) continue;
         if(jend-j < BSIZE){
             #pragma unroll 4
             for(int jj=0; jj<jend-j; jj++){

@@ -20,13 +20,14 @@ class Hermite4GPU : public Hermite4 {
         Forces *d_fout_tmp;
         Forces *h_fout_tmp;
         Forces *d_f;
+        int *d_move;
 
         void get_kernel_error();
         void gpu_timer_start();
         float gpu_timer_stop(std::string f);
 
         void set_pointers(Predictor*, Predictor*, Predictor*, Forces*, Forces*,
-                          Forces*, Forces*);
+                          Forces*, Forces*, int*);
         void init_acc_jrk(Predictor *p, Forces* f);
         void update_acc_jrk(int nact, int *move, Predictor *p, Forces* f, Gtime &gtime);
 };
@@ -51,6 +52,7 @@ __device__ void k_force_calculation(Predictor,
 __global__ void k_update(Predictor*,
                          Predictor*,
                          Forces*,
+                         int*,
                          int,
                          int,
                          double);

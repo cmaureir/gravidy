@@ -19,7 +19,8 @@ void NbodySystem::integration(Hermite4GPU h, Logger log, NbodyUtils nu)
                    d_fout,
                    d_fout_tmp,
                    h_fout_tmp,
-                   d_f);
+                   d_f,
+                   d_move);
 
 
     h.init_acc_jrk(h_p, h_f);
