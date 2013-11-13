@@ -85,6 +85,10 @@ void Logger::print_all(double ITIME, int n, double4 *r, double4 *v, Forces *f, d
 void Logger::print_energy_log(double ITIME, int iterations, long long interactions, int nsteps, Gtime gtime, Energy &energy, double new_energy)
 {
     energy.end = new_energy;
+    std::cout.precision(20);
+    *gstream << std::scientific;
+    std::cout << energy.ini << " " << energy.end << " ";
+    std::cout << energy.end - energy.ini << std::endl;
     double rel_error     = std::abs((energy.end-energy.tmp)/energy.tmp);
     double cum_error     = std::abs((energy.end-energy.ini)/energy.ini);
     energy.tmp = energy.end;
@@ -97,10 +101,10 @@ void Logger::print_energy_log(double ITIME, int iterations, long long interactio
     {
             *gstream << std::setw(2)  << std::left  << "#";
             *gstream << std::setw(10) << std::right << "IteTime";
-            *gstream << std::setw(10) << std::right << "Iter";
-            *gstream << std::setw(10) << std::right << "Nsteps";
+            *gstream << std::setw(15) << std::right << "Iter";
+            *gstream << std::setw(15) << std::right << "Nsteps";
 
-            *gstream << std::setw(25) << std::right << "Energy";
+            *gstream << std::setw(20) << std::right << "Energy";
             *gstream << std::setw(15) << std::right << "RelE";
             *gstream << std::setw(15) << std::right << "CumE";
             *gstream << std::setw(16) << std::right << "ElapsedTime";
@@ -113,12 +117,12 @@ void Logger::print_energy_log(double ITIME, int iterations, long long interactio
     *gstream << std::setw(2)  << std::right << "00";
     gstream->precision(3);
     *gstream << std::setw(10) << std::right << ITIME;
-    *gstream << std::setw(10)  << std::right << iterations;
-    *gstream << std::setw(10) << std::right << nsteps;
+    *gstream << std::setw(15)  << std::right << iterations;
+    *gstream << std::setw(15) << std::right << nsteps;
 
     *gstream << std::scientific;
-    gstream->precision(15);
-    *gstream << std::setw(25) << std::right << energy.end;
+    gstream->precision(10);
+    *gstream << std::setw(20) << std::right << energy.end;
     gstream->precision(6);
     *gstream << std::setw(15) << std::right << rel_error;
     *gstream << std::setw(15) << std::right << cum_error;
