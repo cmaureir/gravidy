@@ -55,6 +55,7 @@ __global__ void k_energy(double4 *r,
         double vy = v[i].y * v[i].y;
         double vz = v[i].z * v[i].z;
         double v2 = vx + vy + vz;
+
         ekin_tmp = 0.5 * r[i].w * v2;
 
         ekin[i] = ekin_tmp;

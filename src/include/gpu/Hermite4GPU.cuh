@@ -2,6 +2,7 @@
 #define HERMITE4GPU_HPP
 #include "../Hermite4.hpp"
 //#include <string>
+#include <cassert>
 
 class Hermite4GPU : public Hermite4 {
     public:

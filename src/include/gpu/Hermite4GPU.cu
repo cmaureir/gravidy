@@ -21,7 +21,6 @@ void Hermite4GPU::init_acc_jrk(Predictor *p, Forces *f)
     CUDA_SAFE_CALL(cudaMemcpy(d_p,  p,  n * sizeof(Predictor), cudaMemcpyHostToDevice));
     int smem = BSIZE * sizeof(Predictor);
     k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_p, d_f, n, e2);
-    //cudaThreadSynchronize();
     //get_kernel_error();
     CUDA_SAFE_CALL(cudaMemcpy(f,  d_f,  n * sizeof(Forces), cudaMemcpyDeviceToHost));
 }
@@ -46,10 +45,13 @@ void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, G
 
 
     // Blocks, threads and shared memory configuration
-    dim3 nblocks(1 + (nact-1)/BSIZE,NJBLOCK, 1);
+    int nact_blocks = 1 + (nact-1)/BSIZE;
+    dim3 nblocks(nact_blocks,NJBLOCK, 1);
     dim3 nthreads(BSIZE, 1, 1);
     size_t smem = BSIZE * sizeof(Predictor);
 
+    //std::cout << "nact: " << nact << " , BSIZE: " << BSIZE << std::endl;
+    //assert(nact >= BSIZE);
     // Kernel to update the forces for the particles in d_i
     gtime.grav_ini = omp_get_wtime();
     k_update <<< nblocks, nthreads, smem >>> (d_i, d_p, d_fout,d_move,n, nact,e2);
@@ -65,7 +67,6 @@ void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, G
     // Kernel to reduce que temp array with the forces
     gtime.reduce_ini = omp_get_wtime();
     reduce <<< rgrid, rthreads, smem2 >>>(d_fout, d_fout_tmp, nact);
-    cudaThreadSynchronize();
     gtime.reduce_end += omp_get_wtime() - gtime.reduce_ini;
     //get_kernel_error();
 
@@ -124,7 +125,7 @@ __global__ void k_init_acc_jrk (Predictor *p,
 
             for (int k = 0; k < BSIZE; k++)
             {
-                //if(idx == id) continue;
+                if(idx == id) continue;
                 k_force_calculation(pred, sh[k], ff, e2);
             }
             __syncthreads();
@@ -196,34 +197,36 @@ __global__ void k_update(Predictor *d_i,
     fo.a1[1] = 0.0;
     fo.a1[2] = 0.0;
 
-    for(int j=jstart; j<jend; j+=BSIZE){
-        __shared__ Predictor jpshare[BSIZE];
-        __syncthreads();
-        Predictor *src = (Predictor *)&d_j[j];
-        Predictor *dst = (Predictor *)jpshare;
-        dst[      tid] = src[      tid];
-        dst[BSIZE+tid] = src[BSIZE+tid];
-        __syncthreads();
+    //if (iaddr < total || threadIdx.y + jbid * blockDim.y < n)
+    //{
+        for(int j=jstart; j<jend; j+=BSIZE){
+            __shared__ Predictor jpshare[BSIZE];
+            __syncthreads();
+            Predictor *src = (Predictor *)&d_j[j];
+            Predictor *dst = (Predictor *)jpshare;
+            dst[      tid] = src[      tid];
+            dst[BSIZE+tid] = src[BSIZE+tid];
+            __syncthreads();
 
-        // If the total amount of particles is not a multiple of BSIZE
-        //if (move[iaddr] == j) continue;
-        if(jend-j < BSIZE){
-            #pragma unroll 4
-            for(int jj=0; jj<jend-j; jj++){
-                Predictor jp = jpshare[jj];
-                k_force_calculation(ip, jp, fo, e2);
+            // If the total amount of particles is not a multiple of BSIZE
+            if(jend-j < BSIZE){
+                #pragma unroll 4
+                for(int jj=0; jj<jend-j; jj++){
+                    Predictor jp = jpshare[jj];
+                    k_force_calculation(ip, jp, fo, e2);
+                }
+            }
+            else{
+                #pragma unroll 4
+                for(int jj=0; jj<BSIZE; jj++){
+                    Predictor jp = jpshare[jj];
+                    k_force_calculation(ip, jp, fo, e2);
+                }
             }
         }
-        else{
-            #pragma unroll 4
-            for(int jj=0; jj<BSIZE; jj++){
-                Predictor jp = jpshare[jj];
-                k_force_calculation(ip, jp, fo, e2);
-            }
-        }
-    }
-    d_fout[iaddr*NJBLOCK + jbid] = fo;
 
+        d_fout[iaddr*NJBLOCK + jbid] = fo;
+    //}
 }
 
 /*

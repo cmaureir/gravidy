@@ -81,10 +81,10 @@ typedef struct file_data
     double v[3];
 } file_data;
 
+#ifdef GPU
 const int BSIZE   = 32;
 const int NJBLOCK = 16;
 
-#ifdef GPU
 // Macro from cutil.h to debug the CUDA calls
 #define CUDA_SAFE_CALL_NO_SYNC( call) do {                          \
     cudaError err = call;                                             \
