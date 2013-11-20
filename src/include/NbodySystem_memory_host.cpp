@@ -40,5 +40,6 @@ void NbodySystem::free_arrays_host(){
     delete h_dt;
     delete h_move;
     //delete h_m;
+    delete h_fout_tmp;
 
 }
