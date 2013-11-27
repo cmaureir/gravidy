@@ -18,11 +18,18 @@ void Hermite4GPU::set_pointers(Predictor *dp, Predictor *di, Predictor *hi,
 void Hermite4GPU::init_acc_jrk(Predictor *p, Forces *f)
 {
 
-    CUDA_SAFE_CALL(cudaMemcpy(d_p,  p,  n * sizeof(Predictor), cudaMemcpyHostToDevice));
-    int smem = BSIZE * sizeof(Predictor);
+    CUDA_SAFE_CALL(cudaMemcpy(d_p,
+                                p,
+                                n * sizeof(Predictor),
+                                cudaMemcpyHostToDevice));
+
     k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_p, d_f, n, e2);
     //get_kernel_error();
-    CUDA_SAFE_CALL(cudaMemcpy(f,  d_f,  n * sizeof(Forces), cudaMemcpyDeviceToHost));
+
+    CUDA_SAFE_CALL(cudaMemcpy(f,
+                            d_f,
+                            n * sizeof(Forces),
+                            cudaMemcpyDeviceToHost));
 }
 
 void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, Gtime &gtime)
@@ -48,7 +55,6 @@ void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, G
     int nact_blocks = 1 + (nact-1)/BSIZE;
     dim3 nblocks(nact_blocks,NJBLOCK, 1);
     dim3 nthreads(BSIZE, 1, 1);
-    size_t smem = BSIZE * sizeof(Predictor);
 
     //std::cout << "nact: " << nact << " , BSIZE: " << BSIZE << std::endl;
     //assert(nact >= BSIZE);
@@ -62,11 +68,10 @@ void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, G
     // Blocks, threads and shared memory configuration for the reduction.
     dim3 rgrid   (nact,   1, 1);
     dim3 rthreads(NJBLOCK, 1, 1);
-    size_t smem2 = sizeof(Forces) * NJBLOCK + 1;
 
     // Kernel to reduce que temp array with the forces
     gtime.reduce_ini = omp_get_wtime();
-    reduce <<< rgrid, rthreads, smem2 >>>(d_fout, d_fout_tmp, nact);
+    reduce <<< rgrid, rthreads, smem_reduce >>>(d_fout, d_fout_tmp, nact);
     gtime.reduce_end += omp_get_wtime() - gtime.reduce_ini;
     //get_kernel_error();
 
@@ -79,7 +84,7 @@ void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, G
         f[id] = h_fout_tmp[i];
     }
 
-    gtime.update_end += omp_get_wtime() - gtime.update_ini;
+    gtime.update_end += (omp_get_wtime() - gtime.update_ini);
 
 }
 

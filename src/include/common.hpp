@@ -6,30 +6,65 @@
 #include <omp.h>
 
 #ifndef GPU
+/** Defining the «double4» structure based on the CUDA definition for the
+ * CPU version, which not include the CUDA headers */
 typedef struct double4
 {
     double x, y, z, w;
 } double4;
 
+/** Defining the «double3» structure based on the CUDA definition for the
+ * CPU version, which not include the CUDA headers */
 typedef struct double3
 {
     double x, y, z;
 } double3;
 #else
+/** If we are compiling the CUDA version, we add the definition of the
+ * vector types and structs from the CUDA library */
 #include <vector_types.h>
 #endif
 
+/** Gravitational constant. Since we are working in N-body units we set G as one. */
 const int    G                      = 1;
+/** Amount of neighbours to calculate the center of density of the system */
 const int    J                      = 10;
+/** First particle to take into account in the main loops.
+ * The idea is to change it to 1, when the user want to use an input file
+ * with a BH fixed in the middle */
 const int    INIT_PARTICLE          = 0;
+/** Common radius for the core of a globular cluster */
 const float  RADIUS_MASS_PORCENTAGE = 0.2;
+/** Softening parameter */
 const double E                      = 1e-4;
+/** Softening parameter squared */
 const double E2                     = 1e-8;
+/** Initial ETA parameter to calculate the first timestep of all the particles
+ * of the system. Based on Aarseth formula */
 const double ETA_S                  = 0.01;
+/** Iteration ETA parameter to calculate new timestep of all the active particles
+ * of the system, in a certain integration time. Based on Aarseth formula */
 const double ETA_N                  = 0.01;
+/** Lower boundary for the particles timesteps, \f$2^{-23}\f$ */
 const double D_TIME_MIN             = 1.1920928955078125e-07;
+/** Upper boundary for the particles timesteps, \f$2^{-3}\f$ */
 const double D_TIME_MAX             = 0.125;
 
+/** @struct Energy
+ *  @brief This structure contains all the energy variables of the system.
+ *  @var Energy::ini
+ *  Member 'ini' contains the initial total energy of the system.
+ *  @var Energy::ini
+ *  Member 'ini' contains the initial total energy of the system.
+ *  @var Energy::end
+ *  Member 'end' contains the newest total energy of the system in a certain time.
+ *  @var Energy::tmp
+ *  Member 'tmp' contains the previous total total energy of the system.
+ *  @var Energy::kinetic
+ *  Member 'kinetic' contains the newest kinetic energy of the system in a certain time.
+ *  @var Energy::potential
+ *  Member 'potential' contains the newest kinetic energy of the system in a certain time.
+ *  */
 typedef struct Energy
 {
     double ini;
@@ -39,18 +74,73 @@ typedef struct Energy
     double potential;
 } Energy;
 
-
+/** @struct Predictor
+ *  @brief This structure contains the predicted information of a particle in some
+ *         moment of the integration.
+ *  @var Predictor::r
+ *  Member 'r' contains the position in three dimensions.
+ *  @var Predictor::v
+ *  Member 'v' contains the velocity in three dimensions.
+ *  @var Predictor::m
+ *  Member 'm' contains the mass of the particle.
+ *  */
 typedef struct Predictor {
     double r[3];
     double v[3];
     float  m;
 } Predictor;
 
+/** @struct Forces
+ *  @brief This structure contains the information of the Forces of a particle in some
+ *         moment of the integration.
+ *  @var Forces::a
+ *  Member 'a' contains the acceleration in three dimensions.
+ *  @var Forces::a1
+ *  Member 'v' contains the first derivative of the acceleration in three dimensions
+ *  (Jerk).
+ *  */
 typedef struct Forces {
     double a[3];
     double a1[3];
 } Forces;
 
+/** @struct Gtime
+ *  @brief This structure contains different times of the internal integration
+ *         process.
+ *         This times are calculated using the function omp_get_wtime() from the
+ *         OpenMP library.
+ *  @var Gtime::integration_ini
+ *  Member 'integration_ini' contains the starting time of the integration.
+ *  @var Gtime::integration_end
+ *  Member 'integration_end' contains the final time of the integration.
+ *  @var Gtime::prediction_ini
+ *  Member 'prediction_ini' contains the starting time of the prediction.
+ *  @var Gtime::prediction_end
+ *  Member 'prediction_end' contains the final time of the prediction.
+ *  @var Gtime::update_ini
+ *  Member 'update_ini' contains the starting time of the forces update.
+ *  @var Gtime::update_end
+ *  Member 'update_end' contains the final time of the forces update.
+ *  @var Gtime::correction_ini
+ *  Member 'correction_ini' contains the starting time of the correction.
+ *  @var Gtime::correction_end
+ *  Member 'correction_end' contains the final time of the correction.
+ *  @var Gtime::grav_ini
+ *  Member 'grav_ini' contains the starting time of the gravitational interaction.
+ *  @var Gtime::grav_end
+ *  Member 'grav_end' contains the final time of the gravitational interaction.
+ *  @var Gtime::reduce_ini
+ *  Member 'reduce_ini' contains the starting time of the forces reduction.
+ *  @var Gtime::reduce_end
+ *  Member 'reduce_end' contains the final time of the forces reduction.
+ *  @var Gtime::gflops
+ *  Member 'gflops' contains the amount of Giga FLOPs of the force update method.
+    This is calculated with the following formula:
+        \f$ 60.10e-9 \cdot \frac{1}{C_{\rm time}}\cdot \sum_{t=0}^{t=T} N_{\rm act} N \f$
+    where \f$(N_{\rm act} N)\f$ is the amount of gravitational interactions,
+    \f$C_{\rm time}\f$ the elapsed clock-time of the process,
+    \f$T\f$ a determinated integration time.
+ *  */
 typedef struct Gtime {
     double integration_ini;
     double integration_end;

@@ -1,12 +1,29 @@
-# Makefile
-BOOST_PATH=/cluster/boost/1.52.0
+## Makefile
 
+############################# Paths
+#BOOST_PATH=/cluster/boost/1.52.0
+#CUDA_PATH=/cluster/gpu/nvidia/5.5
+CUDA_PATH=/opt/cuda
+
+############################# Compilers
+CXX=        g++
+NVCC=       $(CUDA_PATH)/bin/nvcc
+
+############################# FLAGS
+
+# Boost FLAGS
 BOOSTFLAGS= -L$(BOOST_PATH)/lib     \
             -I$(BOOST_PATH)/include \
             -lboost_program_options
 
+# Links FLAGS
+LINKFLAGS=  -L$(CUDA_PATH)/lib64     \
+            -I$(CUDA_PATH)/include   \
+            -lcuda                   \
+            -lcudart                 \
+            -DGPU
 
-CXX=        g++
+# C++ FLAGS
 CXXFLAGS=   $(BOOSTFLAGS) \
             -O3           \
             -Wall         \
@@ -14,38 +31,32 @@ CXXFLAGS=   $(BOOSTFLAGS) \
             -lgomp        \
             -fopenmp
 
-#CUDA_PATH=/cluster/gpu/nvidia/5.5
-CUDA_PATH=/opt/cuda
-NVCC=       $(CUDA_PATH)/bin/nvcc
-
+# CUDA FLAGS
 NVFLAGS=   -pg -O3 -arch=sm_20 -DGPU
 
-LINKFLAGS=  -L$(CUDA_PATH)/lib64     \
-            -I$(CUDA_PATH)/include   \
-            -lcuda                   \
-            -lcudart                 \
-            -DGPU
 
-OBJS_UTILS= include/utils/extra_utils.o   \
-            include/utils/OptionsParser.o \
-            include/utils/NbodyUtils.o    \
+############################# Objects
+
+OBJS_UTILS= include/utils/extra_utils.o               \
+            include/utils/OptionsParser.o             \
+            include/utils/NbodyUtils.o                \
             include/utils/Logger.o
 
-OBJS= include/NbodySystem.o             \
-      include/Hermite4.o                \
-      include/NbodySystem_integration.o \
-      include/NbodySystem_memory_host.o
+OBJS=       include/NbodySystem.o                     \
+            include/Hermite4.o                        \
+            include/NbodySystem_integration.o         \
+            include/NbodySystem_memory_host.o
 
-OBJS_CPU= $(OBJS) $(OBJS_UTILS) \
-          include/Hermite4CPU.o \
+OBJS_CPU=   $(OBJS) $(OBJS_UTILS)                     \
+            include/Hermite4CPU.o                     \
 
-OBJS_GPU= $(OBJS_CPU)                               \
-          include/gpu/NbodySystem_memory_device.cuo \
-          include/gpu/NbodySystem_integration.cuo \
-          include/gpu/NbodySystem_energy.cuo \
-          include/gpu/Hermite4GPU.cuo
+OBJS_GPU=   $(OBJS_CPU)                               \
+            include/gpu/NbodySystem_memory_device.cuo \
+            include/gpu/NbodySystem_integration.cuo   \
+            include/gpu/NbodySystem_energy.cuo        \
+            include/gpu/Hermite4GPU.cuo
 
-
+############################# Main rules
 
 cpu: gravidy-cpu
 gpu: CXXFLAGS+=$(LINKFLAGS)

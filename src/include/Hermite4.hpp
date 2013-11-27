@@ -25,6 +25,7 @@ class Hermite4 {
                                 Predictor *p, Forces *old, double4 *a3, double4 *a2,
                                 Gtime &gtime);
 
+        /** Virtual methods to be implemented by the different versions **/
         virtual void force_calculation(int i, int j, Predictor *p, Forces *f) {}
         virtual void init_acc_jrk(Predictor *p, Forces* f) {}
         virtual void update_acc_jrk(int nact, int *move, Predictor *p, Forces* f, Gtime &gtime) {}

@@ -9,9 +9,11 @@ class Hermite4GPU : public Hermite4 {
         Hermite4GPU(int n, double e2, float eta) : Hermite4(n, e2, eta) {
             nthreads = BSIZE;
             nblocks = std::ceil(n/(float)nthreads);
+            smem = sizeof(Predictor) * BSIZE;
+            smem_reduce = sizeof(Forces) * NJBLOCK + 1;
             }
 
-        size_t nthreads, nblocks;
+        size_t nthreads, nblocks, smem, smem_reduce;
         cudaEvent_t start, stop;
 
         Predictor *d_p;
