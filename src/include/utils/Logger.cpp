@@ -85,10 +85,6 @@ void Logger::print_all(double ITIME, int n, double4 *r, double4 *v, Forces *f, d
 void Logger::print_energy_log(double ITIME, int iterations, long long interactions, int nsteps, Gtime gtime, Energy &energy, double new_energy)
 {
     energy.end = new_energy;
-    std::cout.precision(20);
-    *gstream << std::scientific;
-    std::cout << energy.ini << " " << energy.end << " ";
-    std::cout << energy.end - energy.ini << std::endl;
     double rel_error     = std::abs((energy.end-energy.tmp)/energy.tmp);
     double cum_error     = std::abs((energy.end-energy.ini)/energy.ini);
     energy.tmp = energy.end;

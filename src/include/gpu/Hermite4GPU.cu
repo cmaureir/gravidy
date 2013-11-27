@@ -130,7 +130,6 @@ __global__ void k_init_acc_jrk (Predictor *p,
 
             for (int k = 0; k < BSIZE; k++)
             {
-                if(idx == id) continue;
                 k_force_calculation(pred, sh[k], ff, e2);
             }
             __syncthreads();
