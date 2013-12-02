@@ -34,7 +34,7 @@ const int    J                      = 10;
  * with a BH fixed in the middle */
 const int    INIT_PARTICLE          = 0;
 /** Common radius for the core of a globular cluster */
-const float  RADIUS_MASS_PORCENTAGE = 0.2;
+const float  RADIUS_RATIO = 0.05;
 /** Softening parameter */
 const double E                      = 1e-4;
 /** Softening parameter squared */

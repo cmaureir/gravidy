@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
     // Creating the object in charge of printing the program logs
     Logger log(ns.print_log, ns.out_file);
     // Creating the object with some extra functionallity for N-body codes
-    NbodyUtils nu(ns.n, ns.h_r, ns.total_mass);
+    NbodyUtils nu(ns.n, ns.h_r, ns.total_mass, RADIUS_RATIO);
 
     // Calling the integration process using the corresponding Hermite object
     ns.gtime.integration_ini = omp_get_wtime();

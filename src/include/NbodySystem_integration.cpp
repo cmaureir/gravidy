@@ -28,6 +28,10 @@ void NbodySystem::integration(Hermite4CPU h, Logger log, NbodyUtils nu)
     log.print_energy_log(ITIME, iterations, interactions, nsteps, gtime, en, en.ini);
     //log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
 
+    nu.lagrange_radii();
+    log.print_lagrange_radii(ITIME, nu.layers_radii);
+    //integration_time = ITIME;
+
     while (ITIME < integration_time)
     {
         ITIME = ATIME;
@@ -55,6 +59,8 @@ void NbodySystem::integration(Hermite4CPU h, Logger log, NbodyUtils nu)
             assert(nact == n);
             log.print_energy_log(ITIME, iterations, interactions, nsteps, gtime, en, get_energy());
             //log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
+            nu.lagrange_radii();
+            log.print_lagrange_radii(ITIME, nu.layers_radii);
 
         }
 

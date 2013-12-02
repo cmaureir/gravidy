@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cmath>
 #include <string>
+#include <vector>
 
 class Logger {
     public:
@@ -21,6 +22,7 @@ class Logger {
         void print_energy_log(double ITIME, int iterations, long long interactions,
                               int nsteps, Gtime gtime, Energy &energy,
                               double new_energy);
+        void print_lagrange_radii(double ITIME, std::vector<double> lagrange_radii);
 };
 
 #endif

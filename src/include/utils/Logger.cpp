@@ -46,6 +46,16 @@ void Logger::print_info(int n, double e2, double eta, float itime, float hmr_tim
 
 }
 
+void Logger::print_lagrange_radii(double ITIME, std::vector<double> lagrange_radii)
+{
+    *gstream << "01 ";
+    *gstream << ITIME << " ";
+    for (int i = 0; i < 1/RADIUS_RATIO; i++) {
+        *gstream << lagrange_radii[i] << " ";
+    }
+    *gstream << std::endl;
+}
+
 void Logger::print_all(double ITIME, int n, double4 *r, double4 *v, Forces *f, double *dt)
 {
     for (int i = 0; i < n; i++) {

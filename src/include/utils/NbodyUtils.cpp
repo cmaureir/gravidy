@@ -1,6 +1,6 @@
 #include "NbodyUtils.hpp"
 
-NbodyUtils::NbodyUtils(int n, double4 *r, float m)
+NbodyUtils::NbodyUtils(int n, double4 *r, float m, float ratio)
 {
     double3 tmp = {0.0,0.0,0.0};
     this->n = n;
@@ -8,6 +8,9 @@ NbodyUtils::NbodyUtils(int n, double4 *r, float m)
     this->total_mass = m;
     this->cod = tmp;
     this->energy = 0.0;
+    this->radii.resize(n);
+    this->ratio = ratio;
+    this->layers_radii.resize(1/ratio);
 }
 
 NbodyUtils::~NbodyUtils()
@@ -19,7 +22,13 @@ void NbodyUtils::set_energy(double e)
 {
     energy = e;
 }
-double NbodyUtils::get_core_radius(double3 pc)
+
+double NbodyUtils::get_energy()
+{
+    return energy;
+}
+
+double NbodyUtils::get_core_radius()
 {
 
     std::vector<Distance> d(n);
@@ -29,9 +38,9 @@ double NbodyUtils::get_core_radius(double3 pc)
 
     for (i = 0; i < n; i++)
     {
-        double rx  = r[i].x - pc.x;
-        double ry  = r[i].y - pc.y;
-        double rz  = r[i].z - pc.z;
+        double rx  = r[i].x - cod.x;
+        double ry  = r[i].y - cod.y;
+        double rz  = r[i].z - cod.z;
         double r   = sqrt(rx*rx + ry*ry + rz*rz);
         d[i].index = i;
         d[i].value = r;
@@ -41,7 +50,7 @@ double NbodyUtils::get_core_radius(double3 pc)
 
     for (i = 0; i < n; i++)
     {
-        if (core_mass > RADIUS_MASS_PORCENTAGE)
+        if (core_mass > ratio)
         {
             i -= 1;
             break;
@@ -53,13 +62,19 @@ double NbodyUtils::get_core_radius(double3 pc)
     return radius;
 }
 
+double NbodyUtils::get_relaxation_time()
+{
+    // TO DO
+    return 0;
+}
+
 double NbodyUtils::get_half_mass_relaxation_time()
 {
     float t_rh;
     float r_h, a, b;
 
     cod = get_center_of_density();
-    r_h = get_halfmass_radius(cod);
+    r_h = get_halfmass_radius();
     a = sqrt( (n * r_h * r_h * r_h) / ( G * (total_mass/n) ));
     b = 1/log(0.11 * n);
     t_rh = 0.138 * a * b;
@@ -69,7 +84,7 @@ double NbodyUtils::get_half_mass_relaxation_time()
 double NbodyUtils::get_crossing_time()
 {
     float M = total_mass;
-    float Rv = (-G * M * M) / (4 * (energy));
+    float Rv = (-G * M * M) / (4 * (get_energy()));
     float Ut = sqrt( (Rv * Rv * Rv) / G * M);
     float t_cr = 2 * sqrt(2) * Ut;
 
@@ -127,7 +142,7 @@ double3 NbodyUtils::get_center_of_density()
     return density_center;
 }
 
-double NbodyUtils::get_halfmass_radius(double3 dc)
+double NbodyUtils::get_halfmass_radius()
 {
     float half_mass;
     double tmp, r_h;
@@ -140,9 +155,9 @@ double NbodyUtils::get_halfmass_radius(double3 dc)
 
     for (i = 0; i < n; i++)
     {
-        tmp = sqrt( (dc.x - r[i].x) * (dc.x - r[i].x) +
-                    (dc.y - r[i].y) * (dc.y - r[i].y) +
-                    (dc.z - r[i].z) * (dc.z - r[i].z) );
+        tmp = sqrt( (cod.x - r[i].x) * (cod.x - r[i].x) +
+                    (cod.y - r[i].y) * (cod.y - r[i].y) +
+                    (cod.z - r[i].z) * (cod.z - r[i].z) );
         distances[i].index = i;
         distances[i].value = tmp;
     }
@@ -162,4 +177,60 @@ double NbodyUtils::get_halfmass_radius(double3 dc)
     r_h = distances[j-1].value;
 
     return r_h;
+}
+
+void NbodyUtils::get_radii()
+{
+    #pragma omp parallel for
+    for(int i = 0; i < n; i++)
+    {
+        double rx = r[i].x - cod.x;
+        double ry = r[i].y - cod.y;
+        double rz = r[i].z - cod.z;
+        radii[i].index = i;
+        radii[i].value = sqrt(rx*rx + ry*ry + rz*rz);
+    }
+
+}
+
+void NbodyUtils::get_layers()
+{
+    float tmp_mass = 0.0;
+    int layer_id = 1;
+    float m_ratio = ratio * layer_id;
+
+    for (int i = 0; i < n; i++)
+    {
+        if (tmp_mass > m_ratio)
+        {
+            layers_radii[layer_id - 1] = radii[i-1].value;
+            layer_id += 1;
+            m_ratio = ratio * layer_id;
+            if (m_ratio >= 1.0)
+                break;
+        }
+        tmp_mass += r[radii[i].index].w;
+    }
+}
+
+void NbodyUtils::lagrange_radii()
+{
+
+    // Use the center of density (cod)
+    cod = get_center_of_density();
+
+    // Calculate all the radii of the particles of the system
+    get_radii();
+
+    // Sorting the distances related to the center of density
+    sort(radii.begin(), radii.end());
+
+    // Get the layers of the particles using a certain 'ratio' (by default 5%)
+    // We are going from the center of density to the outside calculating
+    // the different layers to get the lagrange radii
+    get_layers();
+}
+
+void NbodyUtils::core_radius_and_density()
+{
 }

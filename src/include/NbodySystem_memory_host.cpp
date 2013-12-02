@@ -18,11 +18,14 @@ void NbodySystem::alloc_arrays_host()
     h_t      = new double[d1_size];
     h_dt     = new double[d1_size];
     h_old    = new Forces[ff_size];
-    h_fout_tmp= new Forces[ff_size*NJBLOCK];
     h_a2     = new double4[d4_size];
     h_a3     = new double4[d4_size];
     //h_m      = new float[f1_size];
     h_move   = new int[i1_size];
+
+    #ifdef GPU
+    h_fout_tmp= new Forces[ff_size*NJBLOCK];
+    #endif
 }
 
 void NbodySystem::free_arrays_host(){
