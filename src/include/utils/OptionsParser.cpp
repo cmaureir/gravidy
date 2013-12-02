@@ -2,15 +2,28 @@
 
 OptionsParser::OptionsParser(int argc, char *argv[])
 {
-    desc.add_options()
-        ("help,h",      "Display message")
+
+
+    po::options_description help("GraviDy");
+    help.add_options()("help,h",      "Display this message");
+
+    po::options_description main_options("Required options");
+    main_options.add_options()
         ("input,i",     po::value<std::string>(), "Input data filename")
-        ("output,o",    po::value<std::string>(), "Output data filename")
         ("time,t",      po::value<float>(),       "Integration time")
+    ;
+
+    po::options_description extra_options("Optional options");
+    extra_options.add_options()
+        ("output,o",    po::value<std::string>(), "Output data filename")
         ("softening,s", po::value<float>(),       "Softening")
         ("eta,e",       po::value<float>(),       "ETA of time-step calculation")
         ("screen,p",    "Print summary in the screen instead of a file")
     ;
+
+    desc.add(help);
+    desc.add(main_options);
+    desc.add(extra_options);
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 }
