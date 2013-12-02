@@ -7,23 +7,30 @@ OptionsParser::OptionsParser(int argc, char *argv[])
     po::options_description help("GraviDy");
     help.add_options()("help,h",      "Display this message");
 
-    po::options_description main_options("Required options");
-    main_options.add_options()
-        ("input,i",     po::value<std::string>(), "Input data filename")
-        ("time,t",      po::value<float>(),       "Integration time")
+    po::options_description main("Required options");
+    main.add_options()
+        ("input,i",     po::value<std::string>()->value_name("<filename>"), "Input data filename")
+        ("time,t",      po::value<float>()->value_name("<value>"),       "Integration time (In N-body units)")
     ;
 
-    po::options_description extra_options("Optional options");
-    extra_options.add_options()
-        ("output,o",    po::value<std::string>(), "Output data filename")
-        ("softening,s", po::value<float>(),       "Softening")
-        ("eta,e",       po::value<float>(),       "ETA of time-step calculation")
+    po::options_description optional("Optional options");
+    optional.add_options()
+        ("output,o",    po::value<std::string>()->value_name("<filename>"), "Output data filename")
+        ("softening,s", po::value<float>()->value_name("<value>"),       "Softening parameter (default 1e-4)")
+        ("eta,e",       po::value<float>()->value_name("<value>"),       "ETA of time-step calculation (default 0.01)")
         ("screen,p",    "Print summary in the screen instead of a file")
     ;
 
+    po::options_description extra("Extra options");
+    extra.add_options()
+        ("lagrange,l",    "Print information of the Lagrange Radii in every integration time")
+        ("all,a",    "Print all the information of all the particles in every integration time")
+    ;
+
     desc.add(help);
-    desc.add(main_options);
-    desc.add(extra_options);
+    desc.add(main);
+    desc.add(optional);
+    desc.add(extra);
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 }
@@ -74,11 +81,17 @@ bool OptionsParser::check_options()
         return false;
     }
 
-    if(vm.count("screen"))
-        print_log=0;
-    else
-        print_log = 1;
+    // Options structure
+    ops.print_screen = 0;
+    ops.print_all = 0;
+    ops.print_lagrange = 0;
 
+    if(vm.count("screen"))
+        ops.print_screen=1;
+    if(vm.count("all"))
+        ops.print_all = 1;
+    if(vm.count("lagrange"))
+        ops.print_lagrange = 1;
 
     if (vm.count("time"))
         integration_time = vm["time"].as<float>();

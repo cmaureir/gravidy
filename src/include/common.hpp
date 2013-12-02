@@ -74,6 +74,13 @@ typedef struct Energy
     double potential;
 } Energy;
 
+typedef struct options
+{
+    bool print_screen;
+    bool print_all;
+    bool print_lagrange;
+} options;
+
 /** @struct Predictor
  *  @brief This structure contains the predicted information of a particle in some
  *         moment of the integration.

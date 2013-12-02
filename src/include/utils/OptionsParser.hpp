@@ -17,7 +17,7 @@ class OptionsParser {
         float integration_time;
         float softening;
         float eta;
-        int print_log;
+        options ops;
         po::variables_map vm;
         po::options_description desc;
 

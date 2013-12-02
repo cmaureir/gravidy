@@ -7,13 +7,13 @@ NbodySystem::NbodySystem(OptionsParser op)
     integration_time = op.integration_time;
     e2               = op.softening * op.softening;
     eta              = op.eta;
-    print_log        = op.print_log;
+    ops              = op.ops;
     iterations       = 0;
     en.ini = 0.0;
     en.end = 0.0;
     en.tmp = 0.0;
     gtime.gflops = 0.0;
-    if (print_log)
+    if (! ops.print_screen)
     {
         out_file.open(output_filename.c_str(), std::ios::out);
     }
@@ -21,7 +21,7 @@ NbodySystem::NbodySystem(OptionsParser op)
 
 NbodySystem::~NbodySystem()
 {
-    if (print_log)
+    if (! ops.print_screen)
     {
         out_file.close();
     }

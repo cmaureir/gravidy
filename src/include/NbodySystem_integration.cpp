@@ -26,11 +26,16 @@ void NbodySystem::integration(Hermite4CPU h, Logger log, NbodyUtils nu)
 
     log.print_info(n, e2, eta, integration_time, hmr_time, cr_time);
     log.print_energy_log(ITIME, iterations, interactions, nsteps, gtime, en, en.ini);
-    //log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
 
-    nu.lagrange_radii();
-    log.print_lagrange_radii(ITIME, nu.layers_radii);
-    //integration_time = ITIME;
+    if (ops.print_all)
+    {
+        log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
+    }
+    if (ops.print_lagrange)
+    {
+        nu.lagrange_radii();
+        log.print_lagrange_radii(ITIME, nu.layers_radii);
+    }
 
     while (ITIME < integration_time)
     {
@@ -54,14 +59,18 @@ void NbodySystem::integration(Hermite4CPU h, Logger log, NbodyUtils nu)
 
 
         if(std::ceil(ITIME) == ITIME)
-        //if(nact == n)
         {
             assert(nact == n);
             log.print_energy_log(ITIME, iterations, interactions, nsteps, gtime, en, get_energy());
-            //log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
-            nu.lagrange_radii();
-            log.print_lagrange_radii(ITIME, nu.layers_radii);
-
+            if (ops.print_all)
+            {
+                log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
+            }
+            if (ops.print_lagrange)
+            {
+                nu.lagrange_radii();
+                log.print_lagrange_radii(ITIME, nu.layers_radii);
+            }
         }
 
         // Update nsteps with nact

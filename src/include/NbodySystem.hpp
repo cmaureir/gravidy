@@ -26,7 +26,7 @@ class NbodySystem {
 
         Gtime gtime;
         std::vector<file_data> reader;
-        int print_log;
+        options ops;
 
         // Configuration parameters
         int n;

@@ -13,18 +13,9 @@ void NbodySystem::integration(Hermite4GPU h, Logger log, NbodyUtils nu)
     int max_threads = omp_get_max_threads();
     omp_set_num_threads( max_threads - 1);
 
-    h.set_pointers(d_p,
-                   d_i,
-                   h_i,
-                   d_fout,
-                   d_fout_tmp,
-                   h_fout_tmp,
-                   d_f,
-                   d_move);
-
+    h.set_pointers(d_p, d_i, h_i, d_fout, d_fout_tmp, h_fout_tmp, d_f, d_move);
 
     h.init_acc_jrk(h_p, h_f);
-
     h.init_dt(ATIME, h_dt, h_t, h_f);
 
     en.ini = get_energy_gpu();   // Initial calculation of the energy of the system
@@ -37,7 +28,16 @@ void NbodySystem::integration(Hermite4GPU h, Logger log, NbodyUtils nu)
 
     log.print_info(n, e2, eta, integration_time, hmr_time, cr_time);
     log.print_energy_log(ITIME, iterations, interactions, nsteps, gtime, en, en.ini);
-    //log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
+
+    if (ops.print_all)
+    {
+        log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
+    }
+    if (ops.print_lagrange)
+    {
+        nu.lagrange_radii();
+        log.print_lagrange_radii(ITIME, nu.layers_radii);
+    }
 
     while (ITIME < integration_time)
     {
@@ -64,9 +64,16 @@ void NbodySystem::integration(Hermite4GPU h, Logger log, NbodyUtils nu)
         //if(nact == n)
         {
             assert(nact == n);
-            log.print_energy_log(ITIME, iterations, interactions, nsteps, gtime, en, get_energy_gpu());
-            //log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
-
+            log.print_energy_log(ITIME, iterations, interactions, nsteps, gtime, en, get_energy());
+            if (ops.print_all)
+            {
+                log.print_all(ITIME, n, h_r, h_v, h_f, h_dt);
+            }
+            if (ops.print_lagrange)
+            {
+                nu.lagrange_radii();
+                log.print_lagrange_radii(ITIME, nu.layers_radii);
+            }
         }
 
         // Update nsteps with nact

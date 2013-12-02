@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     #endif
 
     // Creating the object in charge of printing the program logs
-    Logger log(ns.print_log, ns.out_file);
+    Logger log(ns.ops, ns.out_file);
     // Creating the object with some extra functionallity for N-body codes
     NbodyUtils nu(ns.n, ns.h_r, ns.total_mass, RADIUS_RATIO);
 

@@ -1,9 +1,9 @@
 #include "Logger.hpp"
 
-Logger::Logger(int print_log, std::ofstream &out_file)
+Logger::Logger(options ops, std::ofstream &out_file)
 {
 
-    gstream = (print_log ? &out_file : &std::cout);
+    gstream = (ops.print_screen ? &std::cout : &out_file);
 }
 
 Logger::~Logger()
@@ -49,9 +49,11 @@ void Logger::print_info(int n, double e2, double eta, float itime, float hmr_tim
 void Logger::print_lagrange_radii(double ITIME, std::vector<double> lagrange_radii)
 {
     *gstream << "01 ";
+    *gstream << std::fixed;
     *gstream << ITIME << " ";
+    gstream->precision(4);
     for (int i = 0; i < 1/RADIUS_RATIO; i++) {
-        *gstream << lagrange_radii[i] << " ";
+        *gstream << std::setw(6) << std::right << lagrange_radii[i] << " ";
     }
     *gstream << std::endl;
 }

@@ -10,7 +10,7 @@
 
 class Logger {
     public:
-        Logger(int print_log, std::ofstream &out_file);
+        Logger(options ops, std::ofstream &out_file);
         ~Logger();
 
         std::ostream *gstream;
