@@ -29,10 +29,6 @@ typedef struct double3
 const int    G                      = 1;
 /** Amount of neighbours to calculate the center of density of the system */
 const int    J                      = 10;
-/** First particle to take into account in the main loops.
- * The idea is to change it to 1, when the user want to use an input file
- * with a BH fixed in the middle */
-const int    INIT_PARTICLE          = 0;
 /** Common radius for the core of a globular cluster */
 const float  RADIUS_RATIO = 0.05;
 /** Softening parameter */

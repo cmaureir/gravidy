@@ -1,6 +1,6 @@
-#include "Hermite4CPU.hpp"
+#include "Hermite4Kepler.hpp"
 
-void Hermite4CPU::force_calculation(int i, int j, Predictor *p, Forces *f)
+void Hermite4Kepler::force_calculation(int i, int j, Predictor *p, Forces *f)
 {
     double rx = p[j].r[0] - p[i].r[0];
     double ry = p[j].r[1] - p[i].r[1];
@@ -29,13 +29,13 @@ void Hermite4CPU::force_calculation(int i, int j, Predictor *p, Forces *f)
     f[i].a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
 }
 
-void Hermite4CPU::init_acc_jrk(Predictor *p, Forces *f)
+void Hermite4Kepler::init_acc_jrk(Predictor *p, Forces *f)
 {
     int i,j;
     #pragma omp parallel for private(j) schedule(dynamic, 24)
-    for (i = 0; i < n; i++)
+    for (i = INIT_PARTICLE; i < n; i++)
     {
-        for (j = 0; j < n; j++)
+        for (j = INIT_PARTICLE; j < n; j++)
         {
             if(i == j) continue;
             force_calculation(i, j, p, f);
@@ -43,7 +43,7 @@ void Hermite4CPU::init_acc_jrk(Predictor *p, Forces *f)
     }
 }
 
-void Hermite4CPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, Gtime &gtime)
+void Hermite4Kepler::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, Gtime &gtime)
 {
     gtime.update_ini = omp_get_wtime();
     int i, j, k;
@@ -59,7 +59,7 @@ void Hermite4CPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, G
         f[i].a1[2] = 0.0;
 
         #pragma omp parallel for
-        for (j = 0; j < n; j++)
+        for (j = INIT_PARTICLE; j < n; j++)
         {
             if(i == j) continue;
             force_calculation(i, j, p, f);

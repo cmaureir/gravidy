@@ -13,10 +13,13 @@
 #include "utils/OptionsParser.hpp"
 #include "utils/Logger.hpp"
 #include "utils/NbodyUtils.hpp"
-#include "Hermite4CPU.hpp"
 
 #ifdef GPU
 #include "gpu/Hermite4GPU.cuh"
+#elif KEPLER
+#include "kepler/Hermite4Kepler.hpp"
+#else
+#include "Hermite4CPU.hpp"
 #endif
 
 class NbodySystem {
@@ -89,10 +92,18 @@ class NbodySystem {
 
         void copy_initial_data();
         //void integration(Hermite4 *h4, Logger log, NbodyUtils nu);
-        void integration(Hermite4CPU h4, Logger log, NbodyUtils nu);
+
+        /** Normal Hermite */
+        // GPU
         #ifdef GPU
         void integration(Hermite4GPU h4, Logger log, NbodyUtils nu);
         double get_energy_gpu();
+        /** Hermite/Kepler */
+        #elif KEPLER
+        void integration(Hermite4Kepler h4, Logger log, NbodyUtils nu);
+        #else
+        // CPU
+        void integration(Hermite4CPU h4, Logger log, NbodyUtils nu);
         #endif
         double get_energy();
 

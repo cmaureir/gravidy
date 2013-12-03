@@ -31,6 +31,8 @@ int main(int argc, char *argv[]) {
     // Creating an Hermite object depending on the compiling rules
     #ifdef GPU
     Hermite4GPU h4(ns.n, ns.e2, ns.eta);
+    #elif KEPLER
+    Hermite4Kepler h4(ns.n, ns.e2, ns.eta);
     #else
     Hermite4CPU h4(ns.n, ns.e2, ns.eta);
     #endif

@@ -34,7 +34,7 @@ void Hermite4::next_integration_time(double &ATIME, double *dt, double *t)
     // Big number to find the minimum
     //ATIME = 1.0e10;
     ATIME = t[0] + dt[0];
-    for (int i = 1 + INIT_PARTICLE; i < n; i++)
+    for (int i = 1; i < n; i++)
     {
         double time = t[i] + dt[i];
         if(time < ATIME)
@@ -49,7 +49,7 @@ void Hermite4::init_dt(double &ATIME, double *dt, double *t, Forces *f)
     // Aarseth initial timestep
     // dt_{i} = ETA_S * sqrt( (|a|) / (|j|) )
     double tmp_dt;
-    for (int i = INIT_PARTICLE; i < n; i++)
+    for (int i = 0; i < n; i++)
     {
         double a2 = get_magnitude(f[i].a[0],  f[i].a[1],  f[i].a[2]);
         double j2 = get_magnitude(f[i].a1[0], f[i].a1[1], f[i].a1[2]);
@@ -77,7 +77,7 @@ void Hermite4::init_dt(double &ATIME, double *dt, double *t, Forces *f)
 
 void Hermite4::save_old_acc_jrk(int nact, int *move, Forces *old, Forces *f)
 {
-    for (int k = INIT_PARTICLE; k < nact; k++)
+    for (int k = 0; k < nact; k++)
     {
         int i = move[k];
         old[i].a[0]  = f[i].a[0];
@@ -95,7 +95,7 @@ void Hermite4::predicted_pos_vel(double ITIME, Predictor *p, double4 *r, double4
 {
 
     gtime.prediction_ini = omp_get_wtime();
-    for (int i = INIT_PARTICLE; i < n; i++)
+    for (int i = 0; i < n; i++)
     {
         double dt  = ITIME - t[i];
         double dt2 = (dt  * dt);
