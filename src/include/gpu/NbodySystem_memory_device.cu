@@ -36,6 +36,9 @@ void NbodySystem::alloc_arrays_device()
     CUDA_SAFE_CALL(cudaMemset(d_fout,      0, ff_size * NJBLOCK));
     CUDA_SAFE_CALL(cudaMemset(d_fout_tmp,  0, ff_size * NJBLOCK));
 
+    // Extra CPU array
+    h_fout_tmp= new Forces[ff_size*NJBLOCK];
+
 }
 
 void NbodySystem::free_arrays_device()
@@ -53,4 +56,6 @@ void NbodySystem::free_arrays_device()
     CUDA_SAFE_CALL(cudaFree(d_i));
     CUDA_SAFE_CALL(cudaFree(d_fout));
     CUDA_SAFE_CALL(cudaFree(d_fout_tmp));
+
+    delete h_fout_tmp;
 }

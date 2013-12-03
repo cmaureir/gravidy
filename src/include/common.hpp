@@ -46,6 +46,13 @@ const double D_TIME_MIN             = 1.1920928955078125e-07;
 /** Upper boundary for the particles timesteps, \f$2^{-3}\f$ */
 const double D_TIME_MAX             = 0.125;
 
+const int INIT_PARTICLE = 0;
+#define KEPLER_ITE (50)      // Maximum of iteration when solving Kepler's equation
+#define DEL_E      (9.0e-16) // Maximum error in E in elliptical orbits.
+#define DEL_E_HYP  (2.e-15)  // Maximum error in E in hyperbolic orbits.
+#define OSTEPS     (50)      // Maximum of steps when calculating the central
+                             // time-steps distribution
+
 /** @struct Energy
  *  @brief This structure contains all the energy variables of the system.
  *  @var Energy::ini

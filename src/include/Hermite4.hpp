@@ -18,14 +18,14 @@ class Hermite4 {
         void next_integration_time(double &ATIME, double *dt, double *t);
         void init_dt(double &ATIME, double *dt, double *t, Forces *f);
         void save_old_acc_jrk(int nact, int *move, Forces *old, Forces *f);
-        void predicted_pos_vel(double ITIME, Predictor *p, double4 *r, double4 *v,
-                              Forces *f, double *t, Gtime &gtime);
-        void correction_pos_vel(double ITIME, int nact, int *move, double4 *r,
-                                double4 *v, Forces *f, double *t, double *dt,
-                                Predictor *p, Forces *old, double4 *a3, double4 *a2,
-                                Gtime &gtime);
 
         /** Virtual methods to be implemented by the different versions **/
+        virtual void predicted_pos_vel(double ITIME, Predictor *p, double4 *r, double4 *v,
+                              Forces *f, double *t, Gtime &gtime) {}
+        virtual void correction_pos_vel(double ITIME, int nact, int *move, double4 *r,
+                                double4 *v, Forces *f, double *t, double *dt,
+                                Predictor *p, Forces *old, double4 *a3, double4 *a2,
+                                Gtime &gtime) {}
         virtual void force_calculation(int i, int j, Predictor *p, Forces *f) {}
         virtual void init_acc_jrk(Predictor *p, Forces* f) {}
         virtual void update_acc_jrk(int nact, int *move, Predictor *p, Forces* f, Gtime &gtime) {}

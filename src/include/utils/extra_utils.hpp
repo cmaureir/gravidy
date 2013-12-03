@@ -6,6 +6,7 @@
 double get_magnitude(double x, double y, double z);
 double get_timestep_normal(int i, double4 *a2, double4 *a3, double *dt, Forces *f,
                            double eta);
+double get_timestep_central(double4 *h_r, int i);
 double normalize_dt(double new_dt, double old_dt, double t, int i);
 
 #endif

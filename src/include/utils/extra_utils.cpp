@@ -26,7 +26,6 @@ double get_timestep_normal(int i, double4 *a2, double4 *a3, double *dt, Forces *
     double abs_a1_22  = abs_a1_2 * abs_a1_2;
 
     double normal_dt = sqrt(eta * ((abs_a1 * abs_a1_2 + abs_j12) / (abs_j1 * abs_a1_3 + abs_a1_22)));
-
     return normal_dt;
 }
 
@@ -85,3 +84,16 @@ double normalize_dt(double new_dt, double old_dt, double t, int i)
     return new_dt;
 }
 
+double get_timestep_central(double4 *h_r, int i)
+{
+    #ifdef DEBUG_HERMITE
+    printf("[DEBUG] get_timestep_central()\n");
+    #endif
+    double r = get_magnitude(h_r[i].x - h_r[0].x,
+                             h_r[i].y - h_r[0].y,
+                             h_r[i].z - h_r[0].z);
+    double r3 = r*r*r;
+    double central_dt = (((2.0 * M_PI )/OSTEPS) * sqrt(r3/(G * h_r[0].w)));
+
+    return central_dt;
+}

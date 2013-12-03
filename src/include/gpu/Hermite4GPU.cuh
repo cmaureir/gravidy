@@ -31,6 +31,13 @@ class Hermite4GPU : public Hermite4 {
 
         void set_pointers(Predictor*, Predictor*, Predictor*, Forces*, Forces*,
                           Forces*, Forces*, int*);
+
+        void predicted_pos_vel(double ITIME, Predictor *p, double4 *r, double4 *v,
+                               Forces *f, double *t, Gtime &gtime);
+        void correction_pos_vel(double ITIME, int nact, int *move, double4 *r,
+                                double4 *v, Forces *f, double *t, double *dt,
+                                Predictor *p, Forces *old, double4 *a3, double4 *a2,
+                                Gtime &gtime);
         void init_acc_jrk(Predictor *p, Forces* f);
         void update_acc_jrk(int nact, int *move, Predictor *p, Forces* f, Gtime &gtime);
 };

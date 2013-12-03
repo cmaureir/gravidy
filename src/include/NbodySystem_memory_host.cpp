@@ -23,9 +23,6 @@ void NbodySystem::alloc_arrays_host()
     //h_m      = new float[f1_size];
     h_move   = new int[i1_size];
 
-    #ifdef GPU
-    h_fout_tmp= new Forces[ff_size*NJBLOCK];
-    #endif
 }
 
 void NbodySystem::free_arrays_host(){
@@ -43,6 +40,5 @@ void NbodySystem::free_arrays_host(){
     delete h_dt;
     delete h_move;
     //delete h_m;
-    delete h_fout_tmp;
 
 }
