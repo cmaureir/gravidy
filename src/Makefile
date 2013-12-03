@@ -82,7 +82,7 @@ gravidy-kepler: gravidy.cpp $(OBJS_KEPLER)
 clean:
 	rm -f gravidy-gpu
 	rm -f gravidy-cpu
-#	rm -f gravidy-gpu
+	rm -f gravidy-kepler
 distclean: clean
 	rm -f include/*.o
 	rm -f include/utils/*.o
