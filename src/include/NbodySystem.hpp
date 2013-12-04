@@ -82,12 +82,19 @@ class NbodySystem {
         double    *d_ekin;
         double    *d_epot;
 
+        // For keplerian correction
+        Forces    *h_fbh;
+        double4   *h_a2bh;
+        double4   *h_a3bh;
+
 
         void read_input_file();
 
         void alloc_arrays_host();
+        void alloc_arrays_host_kepler();
         void alloc_arrays_device();
         void free_arrays_host();
+        void free_arrays_host_kepler();
         void free_arrays_device();
 
         void copy_initial_data();

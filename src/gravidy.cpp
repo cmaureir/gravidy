@@ -23,6 +23,8 @@ int main(int argc, char *argv[]) {
     ns.alloc_arrays_host();
     #ifdef GPU
     ns.alloc_arrays_device();
+    #elif KEPLER
+    ns.alloc_arrays_host_kepler();
     #endif
 
     // Copy the data from the temporal structure to the Host variables
@@ -50,6 +52,8 @@ int main(int argc, char *argv[]) {
     // Freeing memory on the Device and Host
     #ifdef GPU
     ns.free_arrays_device();
+    #elif KEPLER
+    ns.free_arrays_host_kepler();
     #endif
     ns.free_arrays_host();
 

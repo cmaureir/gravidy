@@ -56,8 +56,9 @@ OBJS_GPU=   $(OBJS) $(OBJS_UTILS)                               \
             include/gpu/Hermite4GPU.cuo
 
 OBJS_KEPLER=$(OBJS) $(OBJS_UTILS)                     \
-            include/kepler/Hermite4Kepler.o           \
+            include/kepler/NbodySystem_memory_host_kepler.o \
             include/kepler/NbodySystem_integration_kepler.o \
+            include/kepler/Hermite4Kepler.o           \
 
 ############################# Main rules
 

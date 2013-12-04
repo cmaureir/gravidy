@@ -170,7 +170,7 @@ void predicted_pos_vel_kepler(double ITIME, int total)
         h_r[k].y = 0.0;
         h_r[k].z = 0.0;
         h_v[k].x = 0.0;
-        h_v[k].y = sqrt(h_m[0]);
+        h_v[k].y = sqrt(h_r[0].w);
         h_v[k].z = 0.0;
 
 
@@ -239,7 +239,7 @@ void kepler_prediction(double *rx, double *ry, double *rz,
     double r_const, v_const;
     double r = sqrt((*rx) * (*rx) + (*ry) * (*ry) + (*rz) * (*rz));
     double cos_e, sin_e, e_tmp, ecc_const, cos_const;
-    double m0 = h_m[0];
+    double m0 = h_r[0].w;
 
     #ifdef DEBUG_KEPLER
     printf("[M_bh] %.15f\n",m0);
