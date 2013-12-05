@@ -3,6 +3,8 @@
 *.out
 *.in
 *~
-gravidy
 *.o*
 *.e*
+gravidy-cpu
+gravidy-gpu
+gravidy-kepler
