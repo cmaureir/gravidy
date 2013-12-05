@@ -42,6 +42,11 @@ class Hermite4Kepler : public Hermite4 {
                                double*, double*, double,  int);
         double solve_kepler(double, double);
         double kepler(const double, double);
+
+
+        void alloc_arrays_host_kepler();
+        void free_arrays_host_kepler();
+
 };
 
 #endif

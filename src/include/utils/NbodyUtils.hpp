@@ -1,36 +1,19 @@
 #ifndef NBODYUTILS_HPP
 #define NBODYUTILS_HPP
 #include "../common.hpp"
-#include <cmath>
-#include <vector>
-#include <algorithm>
-#include <cstring>
+#include "../NbodySystem.hpp"
 
-struct Distance
-{
-    int index;
-    double value;
-    bool operator<(const Distance& a) const
-    {
-        return value < a.value;
-    }
-};
 
 class NbodyUtils {
-    private:
-        double energy;
-
     public:
-        NbodyUtils(int n, double4 *r, float m, float ratio);
+        NbodyUtils(NbodySystem *ns, float ratio);
         ~NbodyUtils();
 
+        NbodySystem *ns;
         // Variables
-        int n;
-        float total_mass;
         float ratio;
         double3 cod;
 
-        double4 *r;
         /** Radii array related to the center of density, and related to the
          * percentage distribution that we want to obtain */
         std::vector<Distance> radii;
@@ -38,25 +21,21 @@ class NbodyUtils {
         /** values of the radii of the different layers */
         std::vector<double> layers_radii;
 
-        void set_energy(double e);
-        double get_energy();
-
-        // Times
+        double get_core_radius();
         double get_relaxation_time();
         double get_half_mass_relaxation_time();
         double get_crossing_time();
-
-        /** Get the core radius according to a determinated ratio,
-         * for example, if it is a Plummer sphere of 1024 particles
-         * the core can be visible using a 0.2 percentage */
-        double get_core_radius();
-        double get_halfmass_radius();
         double3 get_center_of_density();
-
-        void lagrange_radii();
-        void core_radius_and_density();
+        double get_halfmass_radius();
         void get_radii();
         void get_layers();
+        void lagrange_radii();
+        void core_radius_and_density();
+        double get_magnitude(double x, double y, double z);
+        double get_timestep_normal(int i);
+        double normalize_dt(double new_dt, double old_dt, double t, int i);
+        double get_timestep_central(int i);
+        double get_energy();
 };
 
 #endif

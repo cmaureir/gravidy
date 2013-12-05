@@ -1,68 +1,201 @@
 #include "Hermite4GPU.cuh"
 
-void Hermite4GPU::set_pointers(Predictor *dp, Predictor *di, Predictor *hi,
-                               Forces *dfout, Forces *dfouttmp, Forces *hfouttmp,
-                               Forces *df, int *dmove)
+Hermite4GPU::~Hermite4GPU()
 {
-    d_p = dp;
-    d_i = di;
-    h_i = hi;
-    d_fout = dfout;
-    d_fout_tmp = dfouttmp;
-    h_fout_tmp = hfouttmp;
-    d_f = df;
-    d_move = dmove;
+    free_arrays_device();
 }
 
+void Hermite4GPU::alloc_arrays_device()
+{
+    int d4_size = ns->n * sizeof(double4);
+    int d1_size = ns->n * sizeof(double);
+    int i1_size = ns->n * sizeof(int);
+    int ff_size = ns->n * sizeof(Forces);
+    int pp_size = ns->n * sizeof(Predictor);
 
-void Hermite4GPU::init_acc_jrk(Predictor *p, Forces *f)
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ns->d_r,        d4_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ns->d_v,        d4_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ns->d_f,        ff_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ns->d_p,        pp_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ns->d_ekin,     d1_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ns->d_epot,     d1_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ns->d_t,        d1_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ns->d_dt,       d1_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ns->d_move,     i1_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ns->d_i,        pp_size));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ns->d_fout,     ff_size * NJBLOCK));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ns->d_fout_tmp, ff_size * NJBLOCK));
+
+    CUDA_SAFE_CALL(cudaMemset(ns->d_r,         0, d4_size));
+    CUDA_SAFE_CALL(cudaMemset(ns->d_v,         0, d4_size));
+    CUDA_SAFE_CALL(cudaMemset(ns->d_f,         0, ff_size));
+    CUDA_SAFE_CALL(cudaMemset(ns->d_p,         0, pp_size));
+    CUDA_SAFE_CALL(cudaMemset(ns->d_ekin,      0, d1_size));
+    CUDA_SAFE_CALL(cudaMemset(ns->d_epot,      0, d1_size));
+    CUDA_SAFE_CALL(cudaMemset(ns->d_t,         0, d1_size));
+    CUDA_SAFE_CALL(cudaMemset(ns->d_dt,        0, d1_size));
+    CUDA_SAFE_CALL(cudaMemset(ns->d_move,      0, i1_size));
+    CUDA_SAFE_CALL(cudaMemset(ns->d_i,         0, pp_size));
+    CUDA_SAFE_CALL(cudaMemset(ns->d_fout,      0, ff_size * NJBLOCK));
+    CUDA_SAFE_CALL(cudaMemset(ns->d_fout_tmp,  0, ff_size * NJBLOCK));
+
+    // Extra CPU array
+    ns->h_fout_tmp= new Forces[ff_size*NJBLOCK];
+
+}
+
+void Hermite4GPU::free_arrays_device()
+{
+    CUDA_SAFE_CALL(cudaFree(ns->d_r));
+    CUDA_SAFE_CALL(cudaFree(ns->d_v));
+    CUDA_SAFE_CALL(cudaFree(ns->d_f));
+    CUDA_SAFE_CALL(cudaFree(ns->d_p));
+    CUDA_SAFE_CALL(cudaFree(ns->d_ekin));
+    CUDA_SAFE_CALL(cudaFree(ns->d_epot));
+    CUDA_SAFE_CALL(cudaFree(ns->d_t));
+    CUDA_SAFE_CALL(cudaFree(ns->d_dt));
+    CUDA_SAFE_CALL(cudaFree(ns->d_move));
+    CUDA_SAFE_CALL(cudaFree(ns->d_i));
+    CUDA_SAFE_CALL(cudaFree(ns->d_fout));
+    CUDA_SAFE_CALL(cudaFree(ns->d_fout_tmp));
+
+    delete ns->h_fout_tmp;
+}
+
+/** Not implemented using GPU */
+void Hermite4GPU::predicted_pos_vel(double ITIME)
 {
 
-    CUDA_SAFE_CALL(cudaMemcpy(d_p,
-                                p,
-                                n * sizeof(Predictor),
-                                cudaMemcpyHostToDevice));
+    ns->gtime.prediction_ini = omp_get_wtime();
+    for (int i = 0; i < ns->n; i++)
+    {
+        double dt  = ITIME - ns->h_t[i];
+        double dt2 = (dt  * dt);
+        double dt3 = (dt2 * dt);
 
-    k_init_acc_jrk <<< nblocks, nthreads, smem >>> (d_p, d_f, n, e2);
+        ns->h_p[i].r[0] = (dt3/6 * ns->h_f[i].a1[0]) + (dt2/2 * ns->h_f[i].a[0]) + (dt * ns->h_v[i].x) + ns->h_r[i].x;
+        ns->h_p[i].r[1] = (dt3/6 * ns->h_f[i].a1[1]) + (dt2/2 * ns->h_f[i].a[1]) + (dt * ns->h_v[i].y) + ns->h_r[i].y;
+        ns->h_p[i].r[2] = (dt3/6 * ns->h_f[i].a1[2]) + (dt2/2 * ns->h_f[i].a[2]) + (dt * ns->h_v[i].z) + ns->h_r[i].z;
+
+        ns->h_p[i].v[0] = (dt2/2 * ns->h_f[i].a1[0]) + (dt * ns->h_f[i].a[0]) + ns->h_v[i].x;
+        ns->h_p[i].v[1] = (dt2/2 * ns->h_f[i].a1[1]) + (dt * ns->h_f[i].a[1]) + ns->h_v[i].y;
+        ns->h_p[i].v[2] = (dt2/2 * ns->h_f[i].a1[2]) + (dt * ns->h_f[i].a[2]) + ns->h_v[i].z;
+
+        ns->h_p[i].m = ns->h_r[i].w;
+
+    }
+    ns->gtime.prediction_end += omp_get_wtime() - ns->gtime.prediction_ini;
+}
+
+/** Not implemented using GPU */
+void Hermite4GPU::correction_pos_vel(double ITIME, int nact)
+{
+    ns->gtime.correction_ini = omp_get_wtime();
+    for (int k = 0; k < nact; k++)
+    {
+        int i = ns->h_move[k];
+
+        double dt1 = ns->h_dt[i];
+        double dt2 = dt1 * dt1;
+        double dt3 = dt2 * dt1;
+        double dt4 = dt2 * dt2;
+        double dt5 = dt4 * dt1;
+
+        // Acceleration 2nd derivate
+        ns->h_a2[i].x = (-6 * (ns->h_old[i].a[0] - ns->h_f[i].a[0] ) - dt1 * (4 * ns->h_old[i].a1[0] + 2 * ns->h_f[i].a1[0]) ) / dt2;
+        ns->h_a2[i].y = (-6 * (ns->h_old[i].a[1] - ns->h_f[i].a[1] ) - dt1 * (4 * ns->h_old[i].a1[1] + 2 * ns->h_f[i].a1[1]) ) / dt2;
+        ns->h_a2[i].z = (-6 * (ns->h_old[i].a[2] - ns->h_f[i].a[2] ) - dt1 * (4 * ns->h_old[i].a1[2] + 2 * ns->h_f[i].a1[2]) ) / dt2;
+
+        // Acceleration 3rd derivate
+        ns->h_a3[i].x = (12 * (ns->h_old[i].a[0] - ns->h_f[i].a[0] ) + 6 * dt1 * (ns->h_old[i].a1[0] + ns->h_f[i].a1[0]) ) / dt3;
+        ns->h_a3[i].y = (12 * (ns->h_old[i].a[1] - ns->h_f[i].a[1] ) + 6 * dt1 * (ns->h_old[i].a1[1] + ns->h_f[i].a1[1]) ) / dt3;
+        ns->h_a3[i].z = (12 * (ns->h_old[i].a[2] - ns->h_f[i].a[2] ) + 6 * dt1 * (ns->h_old[i].a1[2] + ns->h_f[i].a1[2]) ) / dt3;
+
+        // Correcting position
+        ns->h_r[i].x = ns->h_p[i].r[0] + (dt4/24)*ns->h_a2[i].x + (dt5/120)*ns->h_a3[i].x;
+        ns->h_r[i].y = ns->h_p[i].r[1] + (dt4/24)*ns->h_a2[i].y + (dt5/120)*ns->h_a3[i].y;
+        ns->h_r[i].z = ns->h_p[i].r[2] + (dt4/24)*ns->h_a2[i].z + (dt5/120)*ns->h_a3[i].z;
+
+        // Correcting velocity
+        ns->h_v[i].x = ns->h_p[i].v[0] + (dt3/6)*ns->h_a2[i].x + (dt4/24)*ns->h_a3[i].x;
+        ns->h_v[i].y = ns->h_p[i].v[1] + (dt3/6)*ns->h_a2[i].y + (dt4/24)*ns->h_a3[i].y;
+        ns->h_v[i].z = ns->h_p[i].v[2] + (dt3/6)*ns->h_a2[i].z + (dt4/24)*ns->h_a3[i].z;
+
+
+        ns->h_t[i] = ITIME;
+        double normal_dt  = nu->get_timestep_normal(i);
+        normal_dt = nu->normalize_dt(normal_dt, ns->h_dt[i], ns->h_t[i], i);
+        ns->h_dt[i] = normal_dt;
+
+    }
+    ns->gtime.correction_end += omp_get_wtime() - ns->gtime.correction_ini;
+}
+
+void Hermite4GPU::init_acc_jrk()
+{
+
+    CUDA_SAFE_CALL(cudaMemcpy(ns->d_p,
+                              ns->h_p,
+                              ns->n * sizeof(Predictor),
+                              cudaMemcpyHostToDevice));
+
+    k_init_acc_jrk <<< nblocks, nthreads, smem >>> (ns->d_p,
+                                                    ns->d_f,
+                                                    ns->n,
+                                                    ns->e2);
     //get_kernel_error();
 
-    CUDA_SAFE_CALL(cudaMemcpy(f,
-                            d_f,
-                            n * sizeof(Forces),
-                            cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(cudaMemcpy(ns->h_f,
+                              ns->d_f,
+                              ns->n * sizeof(Forces),
+                              cudaMemcpyDeviceToHost));
 }
 
-void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, Gtime &gtime)
+void Hermite4GPU::update_acc_jrk(int nact)
 {
-    gtime.update_ini = omp_get_wtime();
+    ns->gtime.update_ini = omp_get_wtime();
 
     // Copying to the device the predicted r and v
-    CUDA_SAFE_CALL(cudaMemcpy(d_p, p, sizeof(Predictor) * n,cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_move, move, sizeof(int) * n,cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(ns->d_p,
+                              ns->h_p,
+                              ns->n * sizeof(Predictor),
+                              cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(ns->d_move,
+                              ns->h_move,
+                              ns->n * sizeof(int),
+                              cudaMemcpyHostToDevice));
 
     // Fill the h_i Predictor array with the particles that we need
     // to move in this iteration
-    for (int i = 0; i < nact; i++) {
-        int id = move[i];
-        h_i[i] = p[id];
+    for (int i = 0; i < nact; i++)
+    {
+        int id = ns->h_move[i];
+        ns->h_i[i] = ns->h_p[id];
     }
 
     // Copy to the GPU (d_i) the preddictor host array (h_i)
-    CUDA_SAFE_CALL(cudaMemcpy(d_i, h_i, sizeof(Predictor) * nact, cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(ns->d_i,
+                              ns->h_i,
+                              nact * sizeof(Predictor),
+                              cudaMemcpyHostToDevice));
 
 
     // Blocks, threads and shared memory configuration
-    int nact_blocks = 1 + (nact-1)/BSIZE;
+    int  nact_blocks = 1 + (nact-1)/BSIZE;
     dim3 nblocks(nact_blocks,NJBLOCK, 1);
     dim3 nthreads(BSIZE, 1, 1);
 
-    //std::cout << "nact: " << nact << " , BSIZE: " << BSIZE << std::endl;
-    //assert(nact >= BSIZE);
     // Kernel to update the forces for the particles in d_i
-    gtime.grav_ini = omp_get_wtime();
-    k_update <<< nblocks, nthreads, smem >>> (d_i, d_p, d_fout,d_move,n, nact,e2);
+    ns->gtime.grav_ini = omp_get_wtime();
+    k_update <<< nblocks, nthreads, smem >>> (ns->d_i,
+                                              ns->d_p,
+                                              ns->d_fout,
+                                              ns->d_move,
+                                              ns->n,
+                                              nact,
+                                              ns->e2);
     cudaThreadSynchronize();
-    gtime.grav_end += omp_get_wtime() - gtime.grav_ini;
+    ns->gtime.grav_end += omp_get_wtime() - ns->gtime.grav_ini;
     //get_kernel_error();
 
     // Blocks, threads and shared memory configuration for the reduction.
@@ -70,25 +203,60 @@ void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, G
     dim3 rthreads(NJBLOCK, 1, 1);
 
     // Kernel to reduce que temp array with the forces
-    gtime.reduce_ini = omp_get_wtime();
-    reduce <<< rgrid, rthreads, smem_reduce >>>(d_fout, d_fout_tmp, nact);
-    gtime.reduce_end += omp_get_wtime() - gtime.reduce_ini;
+    ns->gtime.reduce_ini = omp_get_wtime();
+    reduce <<< rgrid, rthreads, smem_reduce >>>(ns->d_fout,
+                                                ns->d_fout_tmp);
+    ns->gtime.reduce_end += omp_get_wtime() - ns->gtime.reduce_ini;
     //get_kernel_error();
 
     // Copy from the GPU the new forces for the d_i particles.
-    CUDA_SAFE_CALL(cudaMemcpy(h_fout_tmp, d_fout_tmp, sizeof(Forces) * nact, cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(cudaMemcpy(ns->h_fout_tmp,
+                              ns->d_fout_tmp,
+                              nact * sizeof(Forces),
+                              cudaMemcpyDeviceToHost));
 
     // Update forces in the host
-    for (int i = 0; i < nact; i++) {
-        int id = move[i];
-        f[id] = h_fout_tmp[i];
+    for (int i = 0; i < nact; i++)
+    {
+        int id = ns->h_move[i];
+        ns->h_f[id] = ns->h_fout_tmp[i];
     }
 
-    gtime.update_end += (omp_get_wtime() - gtime.update_ini);
-
+    ns->gtime.update_end += (omp_get_wtime() - ns->gtime.update_ini);
 }
 
+double Hermite4GPU::get_energy_gpu()
+{
+    CUDA_SAFE_CALL(cudaMemcpy(ns->d_r, ns->h_r,  sizeof(double4) * ns->n,cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(ns->d_v, ns->h_v,  sizeof(double4) * ns->n,cudaMemcpyHostToDevice));
 
+    //gpu_timer_start();
+    int nthreads = BSIZE;
+    int nblocks = std::ceil(ns->n/(float)nthreads);
+    k_energy <<< nblocks, nthreads >>> (ns->d_r,
+                                        ns->d_v,
+                                        ns->d_ekin,
+                                        ns->d_epot,
+                                        ns->n,
+                                        ns->e2);
+    cudaThreadSynchronize();
+    //float msec = gpu_timer_stop("k_energy");
+    //get_kernel_error();
+
+    CUDA_SAFE_CALL(cudaMemcpy(ns->h_ekin, ns->d_ekin, sizeof(double) * ns->n,cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(cudaMemcpy(ns->h_epot, ns->d_epot, sizeof(double) * ns->n,cudaMemcpyDeviceToHost));
+
+    // Reduction on CPU
+    ns->en.kinetic = 0.0;
+    ns->en.potential = 0.0;
+
+    for (int i = 0; i < ns->n; i++)
+    {
+        ns->en.kinetic   += ns->h_ekin[i];
+        ns->en.potential += ns->h_epot[i];
+    }
+    return ns->en.kinetic + ns->en.potential;
+}
 
 /*
  * @fn k_init_acc_jrk
@@ -98,7 +266,7 @@ void Hermite4GPU::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, G
  *
  */
 __global__ void k_init_acc_jrk (Predictor *p,
-                                Forces *d_f,
+                                Forces *f,
                                 int n,
                                 double e2)
 {
@@ -106,9 +274,9 @@ __global__ void k_init_acc_jrk (Predictor *p,
     extern __shared__ Predictor sh[];
 
     Forces ff;
-    ff.a[0] = 0.0;
-    ff.a[1] = 0.0;
-    ff.a[2] = 0.0;
+    ff.a[0]  = 0.0;
+    ff.a[1]  = 0.0;
+    ff.a[2]  = 0.0;
     ff.a1[0] = 0.0;
     ff.a1[1] = 0.0;
     ff.a1[2] = 0.0;
@@ -119,15 +287,12 @@ __global__ void k_init_acc_jrk (Predictor *p,
     if (id < n)
     {
         Predictor pred = p[id];
-
         int tile = 0;
         for (int i = 0; i < n; i += BSIZE)
         {
             int idx = tile * BSIZE + tx;
-
             sh[tx]   = p[idx];
             __syncthreads();
-
             for (int k = 0; k < BSIZE; k++)
             {
                 k_force_calculation(pred, sh[k], ff, e2);
@@ -135,15 +300,14 @@ __global__ void k_init_acc_jrk (Predictor *p,
             __syncthreads();
             tile++;
         }
-
-        d_f[id] = ff;
+        f[id] = ff;
     }
 }
 
 __device__ void k_force_calculation(Predictor i_p,
-                                     Predictor j_p,
-                                     Forces &d_f,
-                                     double e2)
+                                    Predictor j_p,
+                                    Forces &f,
+                                    double e2)
 {
     double rx = j_p.r[0] - i_p.r[0];
     double ry = j_p.r[1] - i_p.r[1];
@@ -163,13 +327,13 @@ __device__ void k_force_calculation(Predictor i_p,
 
     double rv = rx*vx + ry*vy + rz*vz;
 
-    d_f.a[0] += (rx * mr3inv);
-    d_f.a[1] += (ry * mr3inv);
-    d_f.a[2] += (rz * mr3inv);
+    f.a[0] += (rx * mr3inv);
+    f.a[1] += (ry * mr3inv);
+    f.a[2] += (rz * mr3inv);
 
-    d_f.a1[0] += (vx * mr3inv - (3 * rv) * rx * mr5inv);
-    d_f.a1[1] += (vy * mr3inv - (3 * rv) * ry * mr5inv);
-    d_f.a1[2] += (vz * mr3inv - (3 * rv) * rz * mr5inv);
+    f.a1[0] += (vx * mr3inv - (3 * rv) * rx * mr5inv);
+    f.a1[1] += (vy * mr3inv - (3 * rv) * ry * mr5inv);
+    f.a1[2] += (vz * mr3inv - (3 * rv) * rz * mr5inv);
 }
 
 /*
@@ -177,9 +341,9 @@ __device__ void k_force_calculation(Predictor i_p,
  *
  * @brief Gravitational interaction kernel.
  */
-__global__ void k_update(Predictor *d_i,
-                         Predictor *d_j,
-                         Forces *d_fout,
+__global__ void k_update(Predictor *i_p,
+                         Predictor *j_p,
+                         Forces *fout,
                          int *move,
                          int n,
                          int total,
@@ -187,12 +351,12 @@ __global__ void k_update(Predictor *d_i,
 {
     int ibid = blockIdx.x;
     int jbid = blockIdx.y;
-    int tid = threadIdx.x;
-    int iaddr = tid + blockDim.x * ibid;
+    int tid  = threadIdx.x;
+    int iaddr  = tid + blockDim.x * ibid;
     int jstart = (n * (jbid  )) / NJBLOCK;
     int jend   = (n * (jbid+1)) / NJBLOCK;
 
-    Predictor ip = d_i[iaddr];
+    Predictor ip = i_p[iaddr];
     Forces fo;
     fo.a[0] = 0.0;
     fo.a[1] = 0.0;
@@ -201,36 +365,37 @@ __global__ void k_update(Predictor *d_i,
     fo.a1[1] = 0.0;
     fo.a1[2] = 0.0;
 
-    //if (iaddr < total || threadIdx.y + jbid * blockDim.y < n)
-    //{
-        for(int j=jstart; j<jend; j+=BSIZE){
+        for(int j=jstart; j<jend; j+=BSIZE)
+        {
             __shared__ Predictor jpshare[BSIZE];
             __syncthreads();
-            Predictor *src = (Predictor *)&d_j[j];
+            Predictor *src = (Predictor *)&j_p[j];
             Predictor *dst = (Predictor *)jpshare;
             dst[      tid] = src[      tid];
             dst[BSIZE+tid] = src[BSIZE+tid];
             __syncthreads();
 
             // If the total amount of particles is not a multiple of BSIZE
-            if(jend-j < BSIZE){
+            if(jend-j < BSIZE)
+            {
                 #pragma unroll 4
-                for(int jj=0; jj<jend-j; jj++){
+                for(int jj=0; jj<jend-j; jj++)
+                {
                     Predictor jp = jpshare[jj];
                     k_force_calculation(ip, jp, fo, e2);
                 }
             }
-            else{
+            else
+            {
                 #pragma unroll 4
-                for(int jj=0; jj<BSIZE; jj++){
+                for(int jj=0; jj<BSIZE; jj++)
+                {
                     Predictor jp = jpshare[jj];
                     k_force_calculation(ip, jp, fo, e2);
                 }
             }
         }
-
-        d_fout[iaddr*NJBLOCK + jbid] = fo;
-    //}
+        fout[iaddr*NJBLOCK + jbid] = fo;
 }
 
 /*
@@ -238,9 +403,8 @@ __global__ void k_update(Predictor *d_i,
  *
  * @brief Forces reduction kernel
  */
-__global__ void reduce(Forces *d_in,
-                       Forces *d_out,
-                       unsigned int total)
+__global__ void reduce(Forces *in,
+                       Forces *out)
 {
     extern __shared__ Forces sdata[];
 
@@ -248,7 +412,7 @@ __global__ void reduce(Forces *d_in,
     const int bid   = blockIdx.x;
     const int iaddr = xid + blockDim.x * bid;
 
-    sdata[xid] = d_in[iaddr];
+    sdata[xid] = in[iaddr];
     __syncthreads();
 
     if(xid < 8) sdata[xid] += sdata[xid + 8];
@@ -257,77 +421,176 @@ __global__ void reduce(Forces *d_in,
     if(xid < 1) sdata[xid] += sdata[xid + 1];
 
     if(xid == 0){
-        d_out[bid] = sdata[0];
+        out[bid] = sdata[0];
     }
 }
 
-
-/** Not implemented using GPU */
-void Hermite4GPU::predicted_pos_vel(double ITIME, Predictor *p, double4 *r, double4 *v, Forces *f, double *t, Gtime &gtime)
+__global__ void k_energy(double4 *r,
+                         double4 *v,
+                         double *ekin,
+                         double *epot,
+                         int n,
+                         double e2)
 {
+    int i = threadIdx.x + blockDim.x * blockIdx.x;
+    int j;
+    double ekin_tmp = 0.0;
 
-    gtime.prediction_ini = omp_get_wtime();
-    for (int i = 0; i < n; i++)
+    if (i < n)
     {
-        double dt  = ITIME - t[i];
-        double dt2 = (dt  * dt);
-        double dt3 = (dt2 * dt);
+        double epot_tmp = 0.0;
+        for (j = i+1; j < n; j++)
+        {
+            double rx = r[j].x - r[i].x;
+            double ry = r[j].y - r[i].y;
+            double rz = r[j].z - r[i].z;
+            double r2 = rx*rx + ry*ry + rz*rz + e2;
 
-        p[i].r[0] = (dt3/6 * f[i].a1[0]) + (dt2/2 * f[i].a[0]) + (dt * v[i].x) + r[i].x;
-        p[i].r[1] = (dt3/6 * f[i].a1[1]) + (dt2/2 * f[i].a[1]) + (dt * v[i].y) + r[i].y;
-        p[i].r[2] = (dt3/6 * f[i].a1[2]) + (dt2/2 * f[i].a[2]) + (dt * v[i].z) + r[i].z;
+            epot_tmp -= (r[i].w * r[j].w) * rsqrt(r2);
+        }
 
-        p[i].v[0] = (dt2/2 * f[i].a1[0]) + (dt * f[i].a[0]) + v[i].x;
-        p[i].v[1] = (dt2/2 * f[i].a1[1]) + (dt * f[i].a[1]) + v[i].y;
-        p[i].v[2] = (dt2/2 * f[i].a1[2]) + (dt * f[i].a[2]) + v[i].z;
+        double vx = v[i].x * v[i].x;
+        double vy = v[i].y * v[i].y;
+        double vz = v[i].z * v[i].z;
+        double v2 = vx + vy + vz;
 
-        p[i].m = r[i].w;
+        ekin_tmp = 0.5 * r[i].w * v2;
 
+        ekin[i] = ekin_tmp;
+        epot[i] = epot_tmp;
     }
-    gtime.prediction_end += omp_get_wtime() - gtime.prediction_ini;
 }
 
-/** Not implemented using GPU */
-void Hermite4GPU::correction_pos_vel(double ITIME, int nact, int *move, double4 *r, double4 *v, Forces *f, double *t, double *dt, Predictor *p, Forces *old, double4 *a3, double4 *a2, Gtime &gtime)
+void Hermite4GPU::get_kernel_error(){
+    #ifdef KERNEL_ERROR_DEBUG
+        std::cerr << "[Error] : ";
+        std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
+    #endif
+}
+
+void Hermite4GPU::gpu_timer_start(){
+    cudaEventRecord(start);
+}
+
+float Hermite4GPU::gpu_timer_stop(std::string f){
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float msec = 0;
+    cudaEventElapsedTime(&msec, start, stop);
+    #if KERNEL_TIME
+    if (f != "")
+        std::cout << "[Time] " << f << " : " << msec << " msec" << std::endl;
+    #endif
+    return msec;
+}
+
+void Hermite4GPU::force_calculation(int i, int j)
 {
-    gtime.correction_ini = omp_get_wtime();
-    for (int k = 0; k < nact; k++)
-    {
-        int i = move[k];
+    double rx = ns->h_p[j].r[0] - ns->h_p[i].r[0];
+    double ry = ns->h_p[j].r[1] - ns->h_p[i].r[1];
+    double rz = ns->h_p[j].r[2] - ns->h_p[i].r[2];
 
-        double dt1 = dt[i];
-        double dt2 = dt1 * dt1;
-        double dt3 = dt2 * dt1;
-        double dt4 = dt2 * dt2;
-        double dt5 = dt4 * dt1;
+    double vx = ns->h_p[j].v[0] - ns->h_p[i].v[0];
+    double vy = ns->h_p[j].v[1] - ns->h_p[i].v[1];
+    double vz = ns->h_p[j].v[2] - ns->h_p[i].v[2];
 
-        // Acceleration 2nd derivate
-        a2[i].x = (-6 * (old[i].a[0] - f[i].a[0] ) - dt1 * (4 * old[i].a1[0] + 2 * f[i].a1[0]) ) / dt2;
-        a2[i].y = (-6 * (old[i].a[1] - f[i].a[1] ) - dt1 * (4 * old[i].a1[1] + 2 * f[i].a1[1]) ) / dt2;
-        a2[i].z = (-6 * (old[i].a[2] - f[i].a[2] ) - dt1 * (4 * old[i].a1[2] + 2 * f[i].a1[2]) ) / dt2;
+    double r2     = rx*rx + ry*ry + rz*rz + ns->e2;
+    double rinv   = 1.0/sqrt(r2);
+    double r2inv  = rinv  * rinv;
+    double r3inv  = r2inv * rinv;
+    double r5inv  = r2inv * r3inv;
+    double mr3inv = r3inv * ns->h_p[j].m;
+    double mr5inv = r5inv * ns->h_p[j].m;
 
-        // Acceleration 3rd derivate
-        a3[i].x = (12 * (old[i].a[0] - f[i].a[0] ) + 6 * dt1 * (old[i].a1[0] + f[i].a1[0]) ) / dt3;
-        a3[i].y = (12 * (old[i].a[1] - f[i].a[1] ) + 6 * dt1 * (old[i].a1[1] + f[i].a1[1]) ) / dt3;
-        a3[i].z = (12 * (old[i].a[2] - f[i].a[2] ) + 6 * dt1 * (old[i].a1[2] + f[i].a1[2]) ) / dt3;
+    double rv = rx*vx + ry*vy + rz*vz;
 
-        // Correcting position
-        r[i].x = p[i].r[0] + (dt4/24)*a2[i].x + (dt5/120)*a3[i].x;
-        r[i].y = p[i].r[1] + (dt4/24)*a2[i].y + (dt5/120)*a3[i].y;
-        r[i].z = p[i].r[2] + (dt4/24)*a2[i].z + (dt5/120)*a3[i].z;
+    ns->h_f[i].a[0] += (rx * mr3inv);
+    ns->h_f[i].a[1] += (ry * mr3inv);
+    ns->h_f[i].a[2] += (rz * mr3inv);
 
-        // Correcting velocity
-        v[i].x = p[i].v[0] + (dt3/6)*a2[i].x + (dt4/24)*a3[i].x;
-        v[i].y = p[i].v[1] + (dt3/6)*a2[i].y + (dt4/24)*a3[i].y;
-        v[i].z = p[i].v[2] + (dt3/6)*a2[i].z + (dt4/24)*a3[i].z;
-
-
-        t[i] = ITIME;
-        double normal_dt  = get_timestep_normal(i, a2, a3, dt, f, eta);
-        normal_dt = normalize_dt(normal_dt, dt[i], t[i], i);
-        dt[i] = normal_dt;
-
-    }
-    gtime.correction_end += omp_get_wtime() - gtime.correction_ini;
+    ns->h_f[i].a1[0] += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
+    ns->h_f[i].a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
+    ns->h_f[i].a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
 }
 
+void Hermite4GPU::integration()
+{
+    ns->gtime.integration_ini = omp_get_wtime();
+
+    double ATIME = 1.0e+10; // Actual integration time
+    double ITIME = 0.0;     // Integration time
+    int nact     = 0;       // Active particles
+    int nsteps   = 0;       // Amount of steps per particles on the system
+    static long long interactions = 0;
+
+
+    int max_threads = omp_get_max_threads();
+    omp_set_num_threads( max_threads - 1);
+
+    init_acc_jrk();
+    init_dt(ATIME);
+
+    ns->en.ini = get_energy_gpu();   // Initial calculation of the energy of the system
+    ns->en.tmp = ns->en.ini;
+
+    ns->hmr_time = nu->get_half_mass_relaxation_time();
+    ns->cr_time  = nu->get_crossing_time();
+
+    logger->print_info();
+    logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, ns->en.ini);
+
+    if (ns->ops.print_all)
+    {
+        logger->print_all(ITIME);
+    }
+    if (ns->ops.print_lagrange)
+    {
+        nu->lagrange_radii();
+        logger->print_lagrange_radii(ITIME, nu->layers_radii);
+    }
+
+    while (ITIME < ns->integration_time)
+    {
+        ITIME = ATIME;
+
+        nact = find_particles_to_move(ITIME);
+
+        save_old_acc_jrk(nact);
+
+        predicted_pos_vel(ITIME);
+
+        update_acc_jrk(nact);
+
+        correction_pos_vel(ITIME, nact);
+
+        // Update the amount of interactions counter
+        interactions += nact * ns->n;
+
+        // Find the next integration time
+        next_integration_time(ATIME);
+
+
+        if(std::ceil(ITIME) == ITIME)
+        {
+            assert(nact == ns->n);
+            logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, get_energy_gpu());
+            if (ns->ops.print_all)
+            {
+                logger->print_all(ITIME);
+            }
+            if (ns->ops.print_lagrange)
+            {
+                nu->lagrange_radii();
+                logger->print_lagrange_radii(ITIME, nu->layers_radii);
+            }
+        }
+
+        // Update nsteps with nact
+        nsteps += nact;
+
+        // Increase iteration counter
+        ns->iterations++;
+    }
+    ns->gtime.integration_end =  omp_get_wtime() - ns->gtime.integration_ini;
+
+}

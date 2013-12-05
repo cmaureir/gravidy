@@ -36,23 +36,16 @@ NVFLAGS=   -pg -O3 -arch=sm_20 -DGPU
 
 ############################# Objects
 
-OBJS_UTILS= include/utils/extra_utils.o               \
-            include/utils/OptionsParser.o             \
+OBJS=       include/utils/OptionsParser.o             \
+            include/NbodySystem.o                     \
             include/utils/NbodyUtils.o                \
-            include/utils/Logger.o
-
-OBJS=       include/NbodySystem.o                     \
+            include/utils/Logger.o                    \
             include/Hermite4.o                        \
-            include/NbodySystem_memory_host.o
 
-OBJS_CPU=   $(OBJS) $(OBJS_UTILS)                     \
+OBJS_CPU=   $(OBJS)                                   \
             include/Hermite4CPU.o                     \
-            include/NbodySystem_integration.o         \
 
-OBJS_GPU=   $(OBJS) $(OBJS_UTILS)                               \
-            include/gpu/NbodySystem_memory_device.cuo \
-            include/gpu/NbodySystem_integration.cuo   \
-            include/gpu/NbodySystem_energy.cuo        \
+OBJS_GPU=   $(OBJS)                                   \
             include/gpu/Hermite4GPU.cuo
 
 OBJS_KEPLER=$(OBJS) $(OBJS_UTILS)                     \

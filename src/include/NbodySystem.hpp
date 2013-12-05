@@ -1,5 +1,6 @@
 #ifndef NBODYSYSTEM_HPP
 #define NBODYSYSTEM_HPP
+
 #include <vector>
 #include <cmath>
 #include <fstream>
@@ -11,16 +12,6 @@
 
 #include "common.hpp"
 #include "utils/OptionsParser.hpp"
-#include "utils/Logger.hpp"
-#include "utils/NbodyUtils.hpp"
-
-#ifdef GPU
-#include "gpu/Hermite4GPU.cuh"
-#elif KEPLER
-#include "kepler/Hermite4Kepler.hpp"
-#else
-#include "Hermite4CPU.hpp"
-#endif
 
 class NbodySystem {
     public:
@@ -50,7 +41,6 @@ class NbodySystem {
         std::ofstream out_file;
 
         // Host Particles arrays
-        //float     *h_m;
         double4   *h_r;
         double4   *h_v;
         Forces    *h_f;
@@ -67,7 +57,6 @@ class NbodySystem {
         Forces    *h_fout_tmp;
 
         // Device Particles arrays
-        //float     *d_m;
         double4   *d_r;
         double4   *d_v;
         Forces    *d_f;
@@ -87,33 +76,9 @@ class NbodySystem {
         double4   *h_a2bh;
         double4   *h_a3bh;
 
-
         void read_input_file();
-
-        void alloc_arrays_host();
-        void alloc_arrays_host_kepler();
-        void alloc_arrays_device();
-        void free_arrays_host();
-        void free_arrays_host_kepler();
-        void free_arrays_device();
-
-        void copy_initial_data();
-        //void integration(Hermite4 *h4, Logger log, NbodyUtils nu);
-
-        /** Normal Hermite */
-        // GPU
-        #ifdef GPU
-        void integration(Hermite4GPU h4, Logger log, NbodyUtils nu);
-        double get_energy_gpu();
-        /** Hermite/Kepler */
-        #elif KEPLER
-        void integration(Hermite4Kepler h4, Logger log, NbodyUtils nu);
-        #else
-        // CPU
-        void integration(Hermite4CPU h4, Logger log, NbodyUtils nu);
-        #endif
-        double get_energy();
-
+        void alloc_base_attributes();
+        void free_base_attributes();
+        void copy_input_data();
 };
-
-#endif
+#endif // NBODYSYSTEM_HPP

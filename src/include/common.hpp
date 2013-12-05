@@ -52,6 +52,15 @@ const int INIT_PARTICLE = 0;
 #define DEL_E_HYP  (2.e-15)  // Maximum error in E in hyperbolic orbits.
 #define OSTEPS     (50)      // Maximum of steps when calculating the central
                              // time-steps distribution
+struct Distance
+{
+    int index;
+    double value;
+    bool operator<(const Distance& a) const
+    {
+        return value < a.value;
+    }
+};
 
 /** @struct Energy
  *  @brief This structure contains all the energy variables of the system.
