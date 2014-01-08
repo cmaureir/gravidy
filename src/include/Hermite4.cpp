@@ -18,9 +18,10 @@ int Hermite4::find_particles_to_move(double ITIME)
 {
 
     int j = 0;
-    for (int i = 0; i < ns->n; i++)
+    for (int i = FIRST_PARTICLE; i < ns->n; i++)
     {
         ns->h_move[i] = -1;
+
         double tmp_time = ns->h_t[i] + ns->h_dt[i];
         if(std::fabs(ITIME - tmp_time) < 2*std::numeric_limits<double>::epsilon())
         {
@@ -33,10 +34,9 @@ int Hermite4::find_particles_to_move(double ITIME)
 
 void Hermite4::next_integration_time(double &ATIME)
 {
-    // Big number to find the minimum
-    //ATIME = 1.0e10;
-    ATIME = ns->h_t[0] + ns->h_dt[0];
-    for (int i = 1; i < ns->n; i++)
+    // Initial number as the maximum
+    ATIME = ns->h_t[FIRST_PARTICLE] + ns->h_dt[FIRST_PARTICLE];
+    for (int i = FIRST_PARTICLE + 1; i < ns->n; i++)
     {
         double time = ns->h_t[i] + ns->h_dt[i];
         if(time < ATIME)
@@ -51,7 +51,7 @@ void Hermite4::init_dt(double &ATIME)
     // Aarseth initial timestep
     // dt_{i} = ETA_S * sqrt( (|a|) / (|j|) )
     double tmp_dt;
-    for (int i = 0; i < ns->n; i++)
+    for (int i = FIRST_PARTICLE; i < ns->n; i++)
     {
         double a2 = nu->get_magnitude(ns->h_f[i].a[0],
                                       ns->h_f[i].a[1],

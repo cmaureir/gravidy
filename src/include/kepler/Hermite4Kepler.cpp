@@ -1,556 +1,775 @@
 #include "Hermite4Kepler.hpp"
 
-void Hermite4Kepler::force_calculation(int i, int j, Predictor *p, Forces *f)
+/* @desc Constructor which uses the parent constructor (Hermite4).
+ *       The additional steps in this method are the allocation
+ *       and initialization of the data that it is only needed
+ *       for the Keplerian treatment.
+ */
+Hermite4Kepler::Hermite4Kepler(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
+: Hermite4(ns, logger, nu)
 {
-    double rx = p[j].r[0] - p[i].r[0];
-    double ry = p[j].r[1] - p[i].r[1];
-    double rz = p[j].r[2] - p[i].r[2];
+    alloc_arrays_host_kepler();
+    init_data_bh();
+}
 
-    double vx = p[j].v[0] - p[i].v[0];
-    double vy = p[j].v[1] - p[i].v[1];
-    double vz = p[j].v[2] - p[i].v[2];
+/* @desc Destructor in charge of freeing the memory of the data
+ *       used in the Keplerian treatment
+ */
+Hermite4Kepler::~Hermite4Kepler()
+{
+    free_arrays_host_kepler();
+}
 
-    double r2     = rx*rx + ry*ry + rz*rz + e2;
+void Hermite4Kepler::alloc_arrays_host_kepler()
+{
+
+    size_t ff_size = ns->n * sizeof(Forces);
+    size_t d4_size = ns->n * sizeof(double4);
+    size_t d1_size = ns->n * sizeof(double);
+
+    ns->h_fbh    = new Forces[ff_size];
+    ns->h_a2bh   = new double4[d4_size];
+    ns->h_a3bh   = new double4[d4_size];
+    ns->h_dt_old = new double[d1_size];
+}
+
+void Hermite4Kepler::free_arrays_host_kepler()
+{
+    delete ns->h_fbh;
+    delete ns->h_a2bh;
+    delete ns->h_a2bh;
+    delete ns->h_dt_old;
+}
+
+void Hermite4Kepler::init_data_bh()
+{
+    double4 empty = {0.0, 0.0, 0.0, 0.0};
+    int i;
+    #pragma omp parallel for schedule(dynamic, 24)
+    for (i = 1; i < ns->n; i++) {
+        ns->h_fbh[i].a[0]  = 0.0;
+        ns->h_fbh[i].a[1]  = 0.0;
+        ns->h_fbh[i].a[2]  = 0.0;
+
+        ns->h_fbh[i].a1[0] = 0.0;
+        ns->h_fbh[i].a1[1] = 0.0;
+        ns->h_fbh[i].a1[2] = 0.0;
+
+        ns->h_a2bh[i] = empty;
+        ns->h_a3bh[i] = empty;
+        ns->h_dt_old[i] = 0.0;
+    }
+}
+
+void Hermite4Kepler::force_calculation(int i, int j)
+{
+    double rx = ns->h_p[j].r[0] - ns->h_p[i].r[0];
+    double ry = ns->h_p[j].r[1] - ns->h_p[i].r[1];
+    double rz = ns->h_p[j].r[2] - ns->h_p[i].r[2];
+
+    double vx = ns->h_p[j].v[0] - ns->h_p[i].v[0];
+    double vy = ns->h_p[j].v[1] - ns->h_p[i].v[1];
+    double vz = ns->h_p[j].v[2] - ns->h_p[i].v[2];
+
+    double r2     = (rx * rx + ry * ry) + (rz * rz + ns->e2);
     double rinv   = 1.0/sqrt(r2);
     double r2inv  = rinv  * rinv;
     double r3inv  = r2inv * rinv;
     double r5inv  = r2inv * r3inv;
-    double mr3inv = r3inv * p[j].m;
-    double mr5inv = r5inv * p[j].m;
+    double mr3inv = r3inv * ns->h_p[j].m;
+    double mr5inv = r5inv * ns->h_p[j].m;
 
     double rv = rx*vx + ry*vy + rz*vz;
 
-    f[i].a[0] += (rx * mr3inv);
-    f[i].a[1] += (ry * mr3inv);
-    f[i].a[2] += (rz * mr3inv);
+    ns->h_f[i].a[0] += (rx * mr3inv);
+    ns->h_f[i].a[1] += (ry * mr3inv);
+    ns->h_f[i].a[2] += (rz * mr3inv);
 
-    f[i].a1[0] += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
-    f[i].a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
-    f[i].a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
+    ns->h_f[i].a1[0] += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
+    ns->h_f[i].a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
+    ns->h_f[i].a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
 }
 
-void Hermite4Kepler::init_acc_jrk(Predictor *p, Forces *f)
+/*
+ * @name force_calculation_bh
+ *
+ * @desc Method to calculate the gravitational interaction between
+ * a certain i-particle and the BH
+ */
+void Hermite4Kepler::force_calculation_bh(int i)
+{
+    double rx = ns->h_p[0].r[0] - ns->h_p[i].r[0];
+    double ry = ns->h_p[0].r[1] - ns->h_p[i].r[1];
+    double rz = ns->h_p[0].r[2] - ns->h_p[i].r[2];
+
+    double vx = ns->h_p[0].v[0] - ns->h_p[i].v[0];
+    double vy = ns->h_p[0].v[1] - ns->h_p[i].v[1];
+    double vz = ns->h_p[0].v[2] - ns->h_p[i].v[2];
+
+    double r2     = (rx * rx + ry * ry) + (rz * rz + ns->e2);
+    double rinv   = 1.0/sqrt(r2);
+    double r2inv  = rinv  * rinv;
+    double r3inv  = r2inv * rinv;
+    double r5inv  = r2inv * r3inv;
+    double mr3inv = r3inv * ns->h_p[0].m;
+    double mr5inv = r5inv * ns->h_p[0].m;
+
+    double rv = rx*vx + ry*vy + rz*vz;
+
+    ns->h_fbh[i].a[0] += (rx * mr3inv);
+    ns->h_fbh[i].a[1] += (ry * mr3inv);
+    ns->h_fbh[i].a[2] += (rz * mr3inv);
+
+    ns->h_fbh[i].a1[0] += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
+    ns->h_fbh[i].a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
+    ns->h_fbh[i].a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
+}
+
+void Hermite4Kepler::init_acc_jrk()
 {
     int i,j;
     #pragma omp parallel for private(j) schedule(dynamic, 24)
-    for (i = INIT_PARTICLE; i < n; i++)
+    for (i = 1; i < ns->n; i++)
     {
-        for (j = INIT_PARTICLE; j < n; j++)
+        for (j = 1; j < ns->n; j++)
         {
             if(i == j) continue;
-            force_calculation(i, j, p, f);
+            force_calculation(i, j);
         }
     }
 }
 
-void Hermite4Kepler::update_acc_jrk(int nact, int *move, Predictor *p, Forces *f, Gtime &gtime)
+void Hermite4Kepler::init_acc_jrk_bh()
 {
-    gtime.update_ini = omp_get_wtime();
+    int i;
+    #pragma omp parallel for schedule(dynamic, 24)
+    for (i = 1; i < ns->n; i++)
+    {
+        force_calculation_bh(i);
+    }
+}
+
+void Hermite4Kepler::update_acc_jrk(int nact)
+{
+    ns->gtime.update_ini = omp_get_wtime();
     int i, j, k;
     #pragma omp parallel for private(i,j)
     for (k = 0; k < nact; k++)
     {
-        i = move[k];
-        f[i].a[0]  = 0.0;
-        f[i].a[1]  = 0.0;
-        f[i].a[2]  = 0.0;
-        f[i].a1[0] = 0.0;
-        f[i].a1[1] = 0.0;
-        f[i].a1[2] = 0.0;
+        i = ns->h_move[k];
+        ns->h_f[i].a[0]  = 0.0;
+        ns->h_f[i].a[1]  = 0.0;
+        ns->h_f[i].a[2]  = 0.0;
+        ns->h_f[i].a1[0] = 0.0;
+        ns->h_f[i].a1[1] = 0.0;
+        ns->h_f[i].a1[2] = 0.0;
 
         #pragma omp parallel for
-        for (j = INIT_PARTICLE; j < n; j++)
+        for (j = FIRST_PARTICLE; j < ns->n; j++)
         {
             if(i == j) continue;
-            force_calculation(i, j, p, f);
+            force_calculation(i, j);
         }
     }
-    gtime.update_end += omp_get_wtime() - gtime.update_ini;
-
+    ns->gtime.update_end += omp_get_wtime() - ns->gtime.update_ini;
 }
 
-void Hermite4Kepler::predicted_pos_vel(double ITIME, Predictor *p, double4 *r, double4 *v, Forces *f, double *t, Gtime &gtime)
+void Hermite4Kepler::predicted_pos_vel(double ITIME)
 {
 
-    gtime.prediction_ini = omp_get_wtime();
-    for (int i = 0; i < n; i++)
+    ns->gtime.prediction_ini = omp_get_wtime();
+    for (int i = 1; i < ns->n; i++)
     {
-        double dt  = ITIME - t[i];
+        double dt  = ITIME - ns->h_t[i];
         double dt2 = (dt  * dt);
         double dt3 = (dt2 * dt);
 
-        p[i].r[0] = (dt3/6 * f[i].a1[0]) + (dt2/2 * f[i].a[0]) + (dt * v[i].x) + r[i].x;
-        p[i].r[1] = (dt3/6 * f[i].a1[1]) + (dt2/2 * f[i].a[1]) + (dt * v[i].y) + r[i].y;
-        p[i].r[2] = (dt3/6 * f[i].a1[2]) + (dt2/2 * f[i].a[2]) + (dt * v[i].z) + r[i].z;
+        ns->h_p[i].r[0] = (dt3/6 * ns->h_f[i].a1[0]) + (dt2/2 * ns->h_f[i].a[0]) + (dt * ns->h_v[i].x) + ns->h_r[i].x;
+        ns->h_p[i].r[1] = (dt3/6 * ns->h_f[i].a1[1]) + (dt2/2 * ns->h_f[i].a[1]) + (dt * ns->h_v[i].y) + ns->h_r[i].y;
+        ns->h_p[i].r[2] = (dt3/6 * ns->h_f[i].a1[2]) + (dt2/2 * ns->h_f[i].a[2]) + (dt * ns->h_v[i].z) + ns->h_r[i].z;
 
-        p[i].v[0] = (dt2/2 * f[i].a1[0]) + (dt * f[i].a[0]) + v[i].x;
-        p[i].v[1] = (dt2/2 * f[i].a1[1]) + (dt * f[i].a[1]) + v[i].y;
-        p[i].v[2] = (dt2/2 * f[i].a1[2]) + (dt * f[i].a[2]) + v[i].z;
+        ns->h_p[i].v[0] = (dt2/2 * ns->h_f[i].a1[0]) + (dt * ns->h_f[i].a[0]) + ns->h_v[i].x;
+        ns->h_p[i].v[1] = (dt2/2 * ns->h_f[i].a1[1]) + (dt * ns->h_f[i].a[1]) + ns->h_v[i].y;
+        ns->h_p[i].v[2] = (dt2/2 * ns->h_f[i].a1[2]) + (dt * ns->h_f[i].a[2]) + ns->h_v[i].z;
 
-        p[i].m = r[i].w;
+        ns->h_p[i].m = ns->h_r[i].w;
 
     }
-    gtime.prediction_end += omp_get_wtime() - gtime.prediction_ini;
+    ns->gtime.prediction_end += omp_get_wtime() - ns->gtime.prediction_ini;
 }
 
-void Hermite4Kepler::correction_pos_vel(double ITIME, int nact, int *move, double4 *r, double4 *v, Forces *f, double *t, double *dt, Predictor *p, Forces *old, double4 *a3, double4 *a2, Gtime &gtime)
+void Hermite4Kepler::correction_pos_vel(double ITIME, int nact)
 {
-    gtime.correction_ini = omp_get_wtime();
+    ns->gtime.correction_ini = omp_get_wtime();
     for (int k = 0; k < nact; k++)
     {
-        int i = move[k];
+        int i = ns->h_move[k];
 
-        double dt1 = dt[i];
+        double dt1 = ns->h_dt[i];
         double dt2 = dt1 * dt1;
         double dt3 = dt2 * dt1;
         double dt4 = dt2 * dt2;
         double dt5 = dt4 * dt1;
 
         // Acceleration 2nd derivate
-        a2[i].x = (-6 * (old[i].a[0] - f[i].a[0] ) - dt1 * (4 * old[i].a1[0] + 2 * f[i].a1[0]) ) / dt2;
-        a2[i].y = (-6 * (old[i].a[1] - f[i].a[1] ) - dt1 * (4 * old[i].a1[1] + 2 * f[i].a1[1]) ) / dt2;
-        a2[i].z = (-6 * (old[i].a[2] - f[i].a[2] ) - dt1 * (4 * old[i].a1[2] + 2 * f[i].a1[2]) ) / dt2;
+        ns->h_a2[i].x = (-6 * (ns->h_old[i].a[0] - ns->h_f[i].a[0] ) - dt1 * (4 * ns->h_old[i].a1[0] + 2 * ns->h_f[i].a1[0]) ) / dt2;
+        ns->h_a2[i].y = (-6 * (ns->h_old[i].a[1] - ns->h_f[i].a[1] ) - dt1 * (4 * ns->h_old[i].a1[1] + 2 * ns->h_f[i].a1[1]) ) / dt2;
+        ns->h_a2[i].z = (-6 * (ns->h_old[i].a[2] - ns->h_f[i].a[2] ) - dt1 * (4 * ns->h_old[i].a1[2] + 2 * ns->h_f[i].a1[2]) ) / dt2;
 
         // Acceleration 3rd derivate
-        a3[i].x = (12 * (old[i].a[0] - f[i].a[0] ) + 6 * dt1 * (old[i].a1[0] + f[i].a1[0]) ) / dt3;
-        a3[i].y = (12 * (old[i].a[1] - f[i].a[1] ) + 6 * dt1 * (old[i].a1[1] + f[i].a1[1]) ) / dt3;
-        a3[i].z = (12 * (old[i].a[2] - f[i].a[2] ) + 6 * dt1 * (old[i].a1[2] + f[i].a1[2]) ) / dt3;
+        ns->h_a3[i].x = (12 * (ns->h_old[i].a[0] - ns->h_f[i].a[0] ) + 6 * dt1 * (ns->h_old[i].a1[0] + ns->h_f[i].a1[0]) ) / dt3;
+        ns->h_a3[i].y = (12 * (ns->h_old[i].a[1] - ns->h_f[i].a[1] ) + 6 * dt1 * (ns->h_old[i].a1[1] + ns->h_f[i].a1[1]) ) / dt3;
+        ns->h_a3[i].z = (12 * (ns->h_old[i].a[2] - ns->h_f[i].a[2] ) + 6 * dt1 * (ns->h_old[i].a1[2] + ns->h_f[i].a1[2]) ) / dt3;
 
         // Correcting position
-        r[i].x = p[i].r[0] + (dt4/24)*a2[i].x + (dt5/120)*a3[i].x;
-        r[i].y = p[i].r[1] + (dt4/24)*a2[i].y + (dt5/120)*a3[i].y;
-        r[i].z = p[i].r[2] + (dt4/24)*a2[i].z + (dt5/120)*a3[i].z;
+        ns->h_r[i].x = ns->h_p[i].r[0] + (dt4/24)*ns->h_a2[i].x + (dt5/120)*ns->h_a3[i].x;
+        ns->h_r[i].y = ns->h_p[i].r[1] + (dt4/24)*ns->h_a2[i].y + (dt5/120)*ns->h_a3[i].y;
+        ns->h_r[i].z = ns->h_p[i].r[2] + (dt4/24)*ns->h_a2[i].z + (dt5/120)*ns->h_a3[i].z;
 
         // Correcting velocity
-        v[i].x = p[i].v[0] + (dt3/6)*a2[i].x + (dt4/24)*a3[i].x;
-        v[i].y = p[i].v[1] + (dt3/6)*a2[i].y + (dt4/24)*a3[i].y;
-        v[i].z = p[i].v[2] + (dt3/6)*a2[i].z + (dt4/24)*a3[i].z;
+        ns->h_v[i].x = ns->h_p[i].v[0] + (dt3/6)*ns->h_a2[i].x + (dt4/24)*ns->h_a3[i].x;
+        ns->h_v[i].y = ns->h_p[i].v[1] + (dt3/6)*ns->h_a2[i].y + (dt4/24)*ns->h_a3[i].y;
+        ns->h_v[i].z = ns->h_p[i].v[2] + (dt3/6)*ns->h_a2[i].z + (dt4/24)*ns->h_a3[i].z;
 
 
-        t[i] = ITIME;
-        double normal_dt  = get_timestep_normal(i, a2, a3, dt, f, eta);
-        normal_dt = normalize_dt(normal_dt, dt[i], t[i], i);
-        dt[i] = normal_dt;
+        // Save old timestep
+        ns->h_dt_old[i] = ns->h_dt[i];
+        // Update self timej
+        ns->h_t[i] = ITIME;
+
+        // Get new timestep
+        double normal_dt  = nu->get_timestep_normal(i);
+        normal_dt = nu->normalize_dt(normal_dt, ns->h_dt[i], ns->h_t[i], i);
+        ns->h_dt[i] = normal_dt;
 
     }
-    gtime.correction_end += omp_get_wtime() - gtime.correction_ini;
+    ns->gtime.correction_end += omp_get_wtime() - ns->gtime.correction_ini;
 }
 
+void Hermite4Kepler::integration()
+{
+
+    ns->gtime.integration_ini = omp_get_wtime();
+
+    double ATIME = 1.0e+10; // Actual integration time
+    double ITIME = 0.0;     // Integration time
+    int nact     = 0;       // Active particles
+    int nsteps   = 0;       // Amount of steps per particles on the system
+    static long long interactions = 0;
+
+
+    int max_threads = omp_get_max_threads();
+    omp_set_num_threads( max_threads - 1);
+
+    init_acc_jrk();
+    init_acc_jrk_bh();
+    init_dt(ATIME);
+
+    ns->en.ini = nu->get_energy();   // Initial calculation of the energy of the system
+    ns->en.tmp = ns->en.ini;
+
+    ns->hmr_time = nu->get_half_mass_relaxation_time();
+    ns->cr_time  = nu->get_crossing_time();
+
+    logger->print_info();
+    logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, ns->en.ini);
+
+    if (ns->ops.print_all)
+    {
+        logger->print_all(ITIME);
+    }
+    if (ns->ops.print_lagrange)
+    {
+        nu->lagrange_radii();
+        logger->print_lagrange_radii(ITIME, nu->layers_radii);
+    }
+
+    while (ITIME < ns->integration_time)
+    {
+        ITIME = ATIME;
+
+        nact = find_particles_to_move(ITIME);
+
+        save_old_acc_jrk(nact);
+
+        move_keplerian_orbit(ITIME, nact);
+        predicted_pos_vel(ITIME);
+
+        update_acc_jrk(nact);
+
+        correction_pos_vel(ITIME, nact);
+
+        // Update the amount of interactions counter
+        interactions += nact * ns->n;
+
+        // Find the next integration time
+        next_integration_time(ATIME);
+
+        /****************************/
+        //std::cout << nact << " | ";
+        //for (int ii = 0; ii < nact; ii++) {
+        //    std::cout << ns->h_move[ii] << " ";
+        //}
+        //std::cout << std::endl;
+        /****************************/
+
+        if(std::ceil(ITIME) == ITIME)
+        {
+            assert(nact == ns->n - FIRST_PARTICLE);
+            logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy());
+            if (ns->ops.print_all)
+            {
+                logger->print_all(ITIME);
+            }
+            if (ns->ops.print_lagrange)
+            {
+                nu->lagrange_radii();
+                logger->print_lagrange_radii(ITIME, nu->layers_radii);
+            }
+        }
+
+        // Update nsteps with nact
+        nsteps += nact;
+
+        // Increase iteration counter
+        ns->iterations++;
+    }
+    ns->gtime.integration_end =  omp_get_wtime() - ns->gtime.integration_ini;
+}
+
+// -------------------------------------------------------------------------------
 
 /*
- * @fn predicted_pos_vel_kepler()
+ * @fn move_keplerian_orbit()
  *
  * @brief
  *  Perform the calculation of the predicted position
  *    and velocity using the Kepler's equation.
  *
  */
-void predicted_pos_vel_kepler(double ITIME, int total)
+void Hermite4Kepler::move_keplerian_orbit(double ITIME, int nact)
 {
-    #ifdef DEBUG_HERMITE
-    printf("[DEBUG] predicted_pos_vel_kepler()\n");
-    #endif
-
-
-    //for (int i = 0; i < total; i++)
-    for (float dt = 0.0; dt <  100; dt += 0.01)
+    for (int i = 0; i < nact; i++)
     {
-        int k = h_move[1];
-        //double dt = ITIME - h_t[k];
-        //double time = 0.0;
+        int k = ns->h_move[0];
+        double dt = ITIME - ns->h_t[k];
+        double time = 0.0;
 
-        h_r[0].x = 0.0;
-        h_r[0].y = 0.0;
-        h_r[0].z = 0.0;
-        h_v[0].x = 0.0;
-        h_v[0].y = 0.0;
-        h_v[0].z = 0.0;
+        k = 1;
+        /**** TEMP ***/
+        //ns->h_r[0].w = 100;
+        //ns->h_r[1].w = 1;
 
-        h_r[k].x = 1.5;
-        h_r[k].y = 0.0;
-        h_r[k].z = 0.0;
-        h_v[k].x = 0.0;
-        h_v[k].y = sqrt(h_r[0].w);
-        h_v[k].z = 0.0;
+        ns->h_r[0].x = 0.0;
+        ns->h_r[0].y = 0.0;
+        ns->h_r[0].z = 0.0;
+        ns->h_v[0].x = 0.0;
+        ns->h_v[0].y = 0.0;
+        ns->h_v[0].z = 0.0;
 
+        ns->h_r[k].x = 1.5;
+        ns->h_r[k].y = 0.0;
+        ns->h_r[k].z = 0.0;
+        ns->h_v[k].x = 0.0;
+        ns->h_v[k].y = sqrt(ns->h_r[0].w);
+        ns->h_v[k].z = 0.0;
 
-        double rx = h_r[k].x - h_r[0].x;
-        double ry = h_r[k].y - h_r[0].y;
-        double rz = h_r[k].z - h_r[0].z;
+        dt = 0.01;
+        pkepler.r[0] = ns->h_r[k].x - ns->h_r[0].x;
+        pkepler.r[1] = ns->h_r[k].y - ns->h_r[0].y;
+        pkepler.r[2] = ns->h_r[k].z - ns->h_r[0].z;
 
-        double vx = h_v[k].x - h_v[0].x;
-        double vy = h_v[k].y - h_v[0].y;
-        double vz = h_v[k].z - h_v[0].z;
-        #ifdef DEBUG_KEPLER
-        //printf("Particle %d\n", k);
-        //printf("[Old position] %.15f %.15f %.15f\n", h_r[k].x, h_r[k].y, h_r[k].z);
-        //printf("[Old velocity] %.15f %.15f %.15f\n", h_v[k].x, h_v[k].y, h_v[k].z);
-        //printf("[Old acceleration] %.15f %.15f %.15f\n", h_f[k].a[0], h_f[k].a[1], h_f[k].a[2]);
-        //printf("[Old jerk] %.15f %.15f %.15f\n", h_f[k].a1[0], h_f[k].a1[1], h_f[k].a1[2]);
-        #endif
+        pkepler.v[0] = ns->h_v[k].x - ns->h_v[0].x;
+        pkepler.v[1] = ns->h_v[k].y - ns->h_v[0].y;
+        pkepler.v[2] = ns->h_v[k].z - ns->h_v[0].z;
+        pkepler.m    = ns->h_r[k].w;
 
-        //for (time = h_t[k]; time < ITIME; time+=dt)
-        //{
-        //    kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, dt, k);
-        //}
-        kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, dt, k);
+        std::cout.precision(15);
+        //for (time = ns->h_t[k]; time < ITIME; time += dt)
+        for (time = 0; time < 100; time += dt)
+        {
+            std::cout << time << " ";
+            std::cout << pkepler.r[0] << " ";
+            std::cout << pkepler.r[1] << " ";
+            std::cout << pkepler.r[2] << " ";
+            std::cout << pkepler.v[0] << " ";
+            std::cout << pkepler.v[1] << " ";
+            std::cout << pkepler.v[2];
+            std::cout << std::endl;
 
-        h_p[k].r[0] = rx;
-        h_p[k].r[1] = ry;
-        h_p[k].r[2] = rz;
+            kepler_move(k, time);
+        }
+            getchar();
 
-        h_p[k].v[0] = vx;
-        h_p[k].v[1] = vy;
-        h_p[k].v[2] = vz;
-
-        h_r[k].x = rx;
-        h_r[k].y = ry;
-        h_r[k].z = rz;
-        h_r[k].x = vx;
-        h_r[k].y = vy;
-        h_r[k].z = vz;
-        //#ifdef DEBUG_KEPLER
-        printf("%.15f %.15f %.15f\n", h_p[k].r[0], h_p[k].r[1], h_p[k].r[2]);
-        //printf("%.15f %.15f %.15f\n", h_p[k].v[0], h_p[k].v[1], h_p[k].v[2]);
-        //printf("[New acceleration] %.15f %.15f %.15f\n", h_f[k].a[0], h_f[k].a[1], h_f[k].a[2]);
-        //printf("[New jerk] %.15f %.15f %.15f\n", h_f[k].a1[0], h_f[k].a1[1], h_f[k].a1[2]);
-        //printf("End particle %d\n", k);
-        //#endif
-
+        ns->h_p[k] = pkepler;
     }
-    getchar();
 }
-
-void kepler_prediction(double *rx, double *ry, double *rz,
-                       double *vx, double *vy, double *vz,
-                       double dt, int i)
+void Hermite4Kepler::calculate_orbital_elements()
 {
+    double b_mag;
 
-    /*
-     * Orbital parameters
-     */
-    double jx, jy, jz; // Angular momentum vector
-    double ex, ey, ez; // Runge-Lenz vector
-    double  a,  b,  w; // Semi-major axis, Semi-minor axis, Frequency of the orbit
-    double ax, ay, az; // Semi-major axis vector
-    double bx, by, bz; // Semi-minor axis vector
-    double ecc;        // Eccentricity
-    double e_anomaly, m_anomaly; // Eccentric anomaly, Mean anomaly
-    double r_const, v_const;
-    double r = sqrt((*rx) * (*rx) + (*ry) * (*ry) + (*rz) * (*rz));
-    double cos_e, sin_e, e_tmp, ecc_const, cos_const;
-    double m0 = h_r[0].w;
-
-    #ifdef DEBUG_KEPLER
-    printf("[M_bh] %.15f\n",m0);
-    #endif
-
-    #ifdef DEBUG_KEPLER
-    printf("[relative] Old Position: (%.10f,%.10f,%.10f)\n", *rx, *ry, *rz);
-    printf("[relative] Old Velocity: (%.10f,%.10f,%.10f)\n", *vx, *vy, *vz);
-    #endif
+    r_mag = sqrt((pkepler.r[0]) * (pkepler.r[0]) +
+                 (pkepler.r[1]) * (pkepler.r[1]) +
+                 (pkepler.r[2]) * (pkepler.r[2]));
 
     // Angular momentum
     // j = r x v
-    jx = (*ry) * (*vz) - (*rz) * (*vy);
-    jy = (*rz) * (*vx) - (*rx) * (*vz);
-    jz = (*rx) * (*vy) - (*ry) * (*vx);
-    #ifdef DEBUG_KEPLER
-    printf("Angular momentum vector (j): %.10f %.10f %.10f\n", jx, jy, jz);
-    #endif
+    oe.j.x = (pkepler.r[1]) * (pkepler.v[2]) - (pkepler.r[2]) * (pkepler.v[1]);
+    oe.j.y = (pkepler.r[2]) * (pkepler.v[0]) - (pkepler.r[0]) * (pkepler.v[2]);
+    oe.j.z = (pkepler.r[0]) * (pkepler.v[1]) - (pkepler.r[1]) * (pkepler.v[0]);
 
     // Runge-Lenz-vector
     // e = { (v x j) / (G * m) }  - { r / |r| }
-    ex = (*vy) * (jz) - (*vz) * (jy);
-    ey = (*vz) * (jx) - (*vx) * (jz);
-    ez = (*vx) * (jy) - (*vy) * (jx);
+    oe.e.x = (pkepler.v[1]) * (oe.j.z) - (pkepler.v[2]) * (oe.j.y);
+    oe.e.y = (pkepler.v[2]) * (oe.j.x) - (pkepler.v[0]) * (oe.j.z);
+    oe.e.z = (pkepler.v[0]) * (oe.j.y) - (pkepler.v[1]) * (oe.j.x);
 
     // G, omitted due its value of 1
-    ex = ex/m0 - *rx/r;
-    ey = ey/m0 - *ry/r;
-    ez = ez/m0 - *rz/r;
-    #ifdef DEBUG_KEPLER
-    printf("Runge-Lenz-vector (e): %.10f %.10f %.10f\n", ex, ey, ez);
-    #endif
+    oe.e.x = oe.e.x/ns->h_r[0].w - pkepler.r[0]/r_mag;
+    oe.e.y = oe.e.y/ns->h_r[0].w - pkepler.r[1]/r_mag;
+    oe.e.z = oe.e.z/ns->h_r[0].w - pkepler.r[2]/r_mag;
 
     // Eccentricity
-    ecc = sqrt(ex*ex + ey*ey + ez*ez);
-    #ifdef DEBUG_KEPLER
-    printf("Eccentricity (ecc): %.10f\n", ecc);
-    #endif
+    oe.ecc = sqrt(oe.e.x * oe.e.x +
+                  oe.e.y * oe.e.y +
+                  oe.e.z * oe.e.z);
 
     // Semi-major axis
     // a = ( j * j ) / (G * m * | 1 - ecc^2 | )
-    a = (jx*jx + jy*jy + jz*jz) / (m0 * fabs(1 - ecc*ecc));
-    #ifdef DEBUG_KEPLER
-    printf("Semi-major axis (a): %.10f\n", a);
-    #endif
+    oe.a = (oe.j.x * oe.j.x +
+            oe.j.y * oe.j.y +
+            oe.j.z * oe.j.z);
+    oe.a /= (ns->h_r[0].w * std::abs(1 - oe.ecc * oe.ecc));
 
     // Frequency of the orbit
     // w = sqrt(( G * m )/ a^3 )
-    w = sqrt( m0 / (a*a*a));
-    #ifdef DEBUG_KEPLER
-    printf("Frequency of the orbit (w): %.10f\n", w);
-    #endif
+    oe.w = sqrt( ns->h_r[0].w / (oe.a * oe.a * oe.a));
 
     // Semi-major vector
-    ax = a * ex/ecc;
-    ay = a * ey/ecc;
-    az = a * ez/ecc;
-    #ifdef DEBUG_KEPLER
-    printf("Semi-major vector: %.10f %.10f %.10f\n", ax, ay, az);
-    #endif
+    oe.a_vec.x = oe.a * oe.e.x/oe.ecc;
+    oe.a_vec.y = oe.a * oe.e.y/oe.ecc;
+    oe.a_vec.z = oe.a * oe.e.z/oe.ecc;
 
     // Semi-minor vector
-    bx = (jy * ez - jz * ey);
-    by = (jz * ex - jx * ez);
-    bz = (jx * ey - jy * ex);
+    oe.b_vec.x = (oe.j.y * oe.e.z - oe.j.z * oe.e.y);
+    oe.b_vec.y = (oe.j.z * oe.e.x - oe.j.x * oe.e.z);
+    oe.b_vec.z = (oe.j.x * oe.e.y - oe.j.y * oe.e.x);
 
-    double b_vmag = sqrt(bx*bx + by*by + bz*bz);
+    b_mag = sqrt(oe.b_vec.x * oe.b_vec.x +
+                 oe.b_vec.y * oe.b_vec.y +
+                 oe.b_vec.z * oe.b_vec.z);
     // Semi-minor axis
-    b = a * sqrt(fabs(1 - ecc*ecc));
-    //b = a * sqrt(fabs(1 - ecc*ecc))/b_vmag;
-    #ifdef DEBUG_KEPLER
-    printf("Semi-minor axis (b): %.10f\n", b);
-    #endif
+    oe.b = oe.a * sqrt(std::abs(1 - oe.ecc * oe.ecc));
 
-    bx *= b/b_vmag;
-    by *= b/b_vmag;
-    bz *= b/b_vmag;
-    #ifdef DEBUG_KEPLER
-    printf("Semi-minor vector:  %.10f %.10f %.10f\n", bx, by, bz);
-    #endif
-    // End of the variables calculation.
+    oe.b_vec.x *= oe.b/b_mag;
+    oe.b_vec.y *= oe.b/b_mag;
+    oe.b_vec.z *= oe.b/b_mag;
+
+    oe.e_anomaly = 0.0; // The value will depend of the orbit type
+    oe.m_anomaly = 0.0; // The value will depend of the orbit type
+}
+
+void Hermite4Kepler::print_orbital_elements()
+{
+    int ll = 30;
+    std::cout.precision(15);
+    std::cout << std::setw(ll) << "Orbital Elements:" << std::endl;
+
+    std::cout << std::setw(ll) << "Angular Momentum vector (";
+    std::cout << oe.j.x << ", " << oe.j.y << ", " << oe.j.z;
+    std::cout << ")" << std::endl;
+
+    std::cout << std::setw(ll) << "Runge-Lenz vector (";
+    std::cout << oe.e.x << ", " << oe.e.y << ", " << oe.e.z;
+    std::cout << ")" << std::endl;
+
+    std::cout << std::setw(ll) << "Semi-major axis (";
+    std::cout << oe.a;
+    std::cout << ")" << std::endl;
+
+    std::cout << std::setw(ll) << "Semi-minor axis (";
+    std::cout << oe.b;
+    std::cout << ")" << std::endl;
+
+    std::cout << std::setw(ll) << "Frequency of the orbit (";
+    std::cout << oe.w;
+    std::cout << ")" << std::endl;
+
+    std::cout << std::setw(ll) << "Semi-major axis vector (";
+    std::cout << oe.a_vec.x << ", " << oe.a_vec.y << ", " << oe.a_vec.z;
+    std::cout << ")" << std::endl;
+
+    std::cout << std::setw(ll) << "Semi-minor axis vector (";
+    std::cout << oe.b_vec.x << ", " << oe.b_vec.y << ", " << oe.b_vec.z;
+    std::cout << ")" << std::endl;
+
+    std::cout << std::setw(ll) << "Eccentricity (";
+    std::cout << oe.ecc;
+    std::cout << ")" << std::endl;
+
+    std::cout << std::setw(ll) << "Eccentric anomaly (";
+    std::cout << oe.e_anomaly;
+    std::cout << ")" << std::endl;
+
+    std::cout << std::setw(ll) << "Mean anomaly (";
+    std::cout << oe.m_anomaly;
+    std::cout << ")" << std::endl;
+}
+
+Predictor Hermite4Kepler::get_elliptical_pos_vel(double dt)
+{
+    double r_const;
+    double v_const;
+    double cos_e;
+    double sin_e;
+    double ecc_const;
+    double cos_const;
+
+    // Calculate Cosine of Eccentric Anomaly
+    oe.e_anomaly = (oe.a - r_mag) / (oe.ecc * oe.a);
+    //std::cout << "e_anomaly(0): " << oe.e_anomaly << std::endl;
+
+    // Fixing Cosine argument
+    if(oe.e_anomaly >= 1.0)
+        oe.e_anomaly = 0.0;
+    else if(oe.e_anomaly <= -1.0)
+        oe.e_anomaly = M_PI;
+    else
+        oe.e_anomaly = acos(oe.e_anomaly);
+
+    //std::cout << "e_anomaly(0_1): " << oe.e_anomaly << std::endl;
 
 
-    if(ecc < 1)
+    // TO DO: Why?
+    //if (sqrt(pkepler.r[0]*oe.b_vec.x + pkepler.r[1]*oe.b_vec.y + pkepler.r[2]*oe.b_vec.z) < 0)
+    //{
+    //    oe.e_anomaly = 2*M_PI - oe.e_anomaly;
+    //}
+
+    // Calculate Mean Anomaly
+    oe.m_anomaly = (oe.e_anomaly - oe.ecc*sin(oe.e_anomaly)) + dt * oe.w;
+
+    //std::cout << "( " << oe.m_anomaly << " , " << oe.ecc << " , " << dt << " , " << oe.w << ")" <<std::endl;
+    //std::cout << "m_anomaly(0): " << oe.m_anomaly << std::endl;
+
+    // Adjusting M anomaly to be < 2 * pi
+    if(oe.m_anomaly >= 2 * M_PI)
+        oe.m_anomaly = fmod(oe.m_anomaly, 2 * M_PI);
+
+    // Solving the Kepler equation for elliptical orbits
+    oe.e_anomaly = solve_kepler(oe.m_anomaly, oe.ecc);
+    //std::cout << "m_anomaly: " << oe.m_anomaly << std::endl;
+    //std::cout << "e_anomaly: " << oe.e_anomaly << std::endl;
+
+
+    cos_e = cos(oe.e_anomaly);
+    sin_e = sin(oe.e_anomaly);
+
+    r_const = cos_e - oe.ecc;
+    v_const = oe.w / (1.0 - oe.ecc * cos_e);
+
+    // Based on Loeckmann and Baumgardt simulations criteria
+    // This work better with 0.99 < e < 1 and |E| < 1e-3
+    //if(oe.ecc > 0.99)
+    //{
+    //    double e_tmp = (oe.e_anomaly > 2.0 * M_PI - 1e-3) ? oe.e_anomaly - 2.0 * M_PI : oe.e_anomaly;
+    //    if(e_tmp < 1e-3)
+    //    {
+    //        e_tmp *= e_tmp;
+    //        double j_mag = oe.j.x * oe.j.x +
+    //                       oe.j.y * oe.j.y +
+    //                       oe.j.z * oe.j.z;
+    //        ecc_const = j_mag/(ns->h_r[0].w * oe.a * (1 + oe.ecc));
+    //        cos_const = -0.5 * e_tmp * (1 - e_tmp / 12.0 * (1 - e_tmp / 30.0));
+
+    //        r_const = ecc_const + cos_const;
+    //        v_const = oe.w / (ecc_const - oe.ecc * cos_const);
+
+    //    }
+    //}
+
+    Predictor ppv;
+    // New position
+    ppv.r[0] =   oe.a_vec.x * r_const + oe.b_vec.x * sin_e;
+    ppv.r[1] =   oe.a_vec.y * r_const + oe.b_vec.y * sin_e;
+    ppv.r[2] =   oe.a_vec.z * r_const + oe.b_vec.z * sin_e;
+
+    // New velocity
+    ppv.v[0] = (-oe.a_vec.x * sin_e + oe.b_vec.x * cos_e) * v_const;
+    ppv.v[1] = (-oe.a_vec.y * sin_e + oe.b_vec.y * cos_e) * v_const;
+    ppv.v[2] = (-oe.a_vec.z * sin_e + oe.b_vec.z * cos_e) * v_const;
+
+    return ppv;
+}
+
+Predictor Hermite4Kepler::get_hyperbolic_pos_vel(double dt)
+{
+
+    rdotv = (pkepler.r[0] * pkepler.v[0] +
+             pkepler.r[1] * pkepler.v[1] +
+             pkepler.r[2] * pkepler.v[2]);
+    // calculate eccentric anomaly e at t+dt
+    oe.e_anomaly = (oe.a + r_mag) / (oe.ecc * oe.a);
+
+    if(oe.e_anomaly < 1.0)
+        oe.e_anomaly = 0.0;
+    else if(rdotv < 0)
+        oe.e_anomaly = -acosh(oe.e_anomaly);
+    else
+        oe.e_anomaly = acosh(oe.e_anomaly);
+
+    oe.m_anomaly = oe.ecc * sinh(oe.e_anomaly) - oe.e_anomaly + dt * oe.w;
+
+    //if(m_anomaly >= 2 * M_PI)
+    //    m_anomaly = fmod(m_anomaly, 2 * M_PI);
+
+    // Solving Kepler's equation for Hyperbolic/Parabolic orbits
+    oe.e_anomaly = kepler(oe.ecc, oe.m_anomaly);
+    double cos_e = cosh(oe.e_anomaly);
+    double sin_e = sinh(oe.e_anomaly);
+    double v_const = oe.w / (oe.ecc * cos_e - 1.);
+
+    Predictor ppv;
+    // New position
+    ppv.r[0] = oe.a_vec.x * (oe.ecc - cos_e)  + oe.b_vec.x * sin_e;
+    ppv.r[1] = oe.a_vec.y * (oe.ecc - cos_e)  + oe.b_vec.y * sin_e;
+    ppv.r[2] = oe.a_vec.z * (oe.ecc - cos_e)  + oe.b_vec.z * sin_e;
+
+    // New velocity
+    ppv.v[0] = (-oe.a_vec.x * sin_e + oe.b_vec.x * cos_e) * v_const;  // direction of v only
+    ppv.v[1] = (-oe.a_vec.y * sin_e + oe.b_vec.y * cos_e) * v_const;  // direction of v only
+    ppv.v[2] = (-oe.a_vec.z * sin_e + oe.b_vec.z * cos_e) * v_const;  // direction of v only
+
+    return ppv;
+}
+
+void Hermite4Kepler::kepler_move(int i, double dt)
+{
+
+    /** Calculating some orbital elements of the interaction between an i-particle
+     * and a BH */
+    calculate_orbital_elements();
+    //print_orbital_elements();
+    Predictor new_rv;
+
+    if(oe.ecc < 1)
     {
-        /*
-         * Elliptical Orbit case
-         */
-
-        // Calculate Cosine of Eccentric Anomaly
-        e_anomaly = (a - r) / (ecc * a);
-
-
-        // Fixing Cosine argument
-        if(e_anomaly >= 1.0)
-            e_anomaly = 0.0;
-        else if(e_anomaly <= -1.0)
-            e_anomaly = M_PI;
-        else
-            e_anomaly = acos(e_anomaly);
-
-        // TO DO: Why?
-        if (sqrt(*rx*bx + *ry*by + *rz*bz) < 0)
-        {
-            e_anomaly = 2*M_PI - e_anomaly;
-        }
-
-        // Calculate Mean Anomaly
-        m_anomaly = (e_anomaly - ecc*sin(e_anomaly)) + dt * w;
-
-
-        // Adjusting M anomaly to be < 2 * pi
-        if(m_anomaly >= 2 * M_PI)
-            m_anomaly = fmod(m_anomaly, 2 * M_PI);
-
-        // Solving the Kepler equation for elliptical orbits
-        e_anomaly = solve_kepler(m_anomaly, ecc);
-
-
-        #ifdef DEBUG_KEPLER
-        printf("[Elliptic orbit] Mean anomaly: %.10f\n", m_anomaly);
-        printf("[Elliptic orbit] Ecce anomaly: %.10f\n", e_anomaly);
-        #endif
-        cos_e = cos(e_anomaly);
-        sin_e = sin(e_anomaly);
-
-        r_const = cos_e - ecc;
-        v_const = w / (1.0 - ecc * cos_e);
-
-        #ifdef DEBUG_KEPLER
-        printf("[Elliptic orbit] r_const: %.10f\n", r_const);
-        printf("[Elliptic orbit] v_const: %.10f\n", v_const);
-        #endif
-
-        // Based on Loeckmann and Baumgardt simulations criteria
-        // This work better with 0.99 < e < 1 and |E| < 1e-3
-        if(ecc > 0.99)
-        {
-            #ifdef DEBUG_KEPLER
-            printf("[Elliptic orbit] Pericentre passage. e= %.10f\n", ecc);
-            #endif
-            e_tmp = (e_anomaly > 2.0 * M_PI - 1e-3) ? e_anomaly - 2.0 * M_PI : e_anomaly;
-            if(e_tmp < 1e-3)
-            {
-                printf("[Elliptic orbit] |E| < 1e-3\n");
-                e_tmp *= e_tmp;
-                ecc_const = (jx*jx + jy*jy + jz*jz)/(m0 * a * (1 + ecc));
-                cos_const = -0.5 * e_tmp * (1 - e_tmp / 12.0 * (1 - e_tmp / 30.0));
-
-                r_const = ecc_const + cos_const;
-                v_const = w / (ecc_const - ecc * cos_const);
-                #ifdef DEBUG_KEPLER
-                printf("[Elliptic orbit] r_const: %.10f\n", r_const);
-                printf("[Elliptic orbit] v_const: %.10f\n", v_const);
-                #endif
-
-            }
-        }
-
-        // New position
-        *rx =   ax * r_const + bx * sin_e;
-        *ry =   ay * r_const + by * sin_e;
-        *rx =   ax * r_const + bx * sin_e;
-
-        // New velocity
-        *vx = (-ax * sin_e + bx * cos_e) * v_const;
-        *vy = (-ay * sin_e + by * cos_e) * v_const;
-        *vz = (-az * sin_e + bz * cos_e) * v_const;
-
-        #ifdef DEBUG_KEPLER
-        printf("[Elliptic orbit] New Position: (%.10f,%.10f,%.10f)\n", *rx, *ry, *rz);
-        printf("[Elliptic orbit] New Velocity: (%.10f,%.10f,%.10f)\n", *vx, *vy, *vz);
-        #endif
-
+        new_rv = get_elliptical_pos_vel(dt);
+        //getchar();
     }
     else
     {
-        /*
-         * Hyperbolic or Parabolic  Orbit case
-         */
-
-        // calculate eccentric anomaly e at t+dt
-        e_anomaly = (a + r) / (ecc * a);
-        if(e_anomaly < 1.0)
-            e_anomaly = 0.0;
-        else if((*rx * *vx + *ry * *vy + *rz * *vz) < 0)
-            e_anomaly = -acosh(e_anomaly);
-        else
-            e_anomaly = acosh(e_anomaly);
-
-        m_anomaly = ecc * sinh(e_anomaly) - e_anomaly + dt * w;
-
-        //if(m_anomaly >= 2 * M_PI)
-        //    m_anomaly = fmod(m_anomaly, 2 * M_PI);
-
-        // Solving Kepler's equation for Hyperbolic/Parabolic orbits
-        e_anomaly = kepler(ecc, m_anomaly);
-        #ifdef DEBUG_KEPLER
-        printf("[Hyp/Par orbit] Mean anomaly: %.10f\n", m_anomaly);
-        printf("[Hyp/Par orbit] Ecce anomaly: %.10f\n", e_anomaly);
-        #endif
-        cos_e = cosh(e_anomaly);
-        sin_e = sinh(e_anomaly);
-        v_const = w / (ecc * cos_e - 1.);
-
-
-        // New position
-        *rx = ax * (ecc - cos_e)  + bx * sin_e;
-        *ry = ay * (ecc - cos_e)  + by * sin_e;
-        *rz = az * (ecc - cos_e)  + bz * sin_e;
-
-        // New velocity
-        *vx = (-ax * sin_e + bx * cos_e) * v_const;  // direction of v only
-        *vy = (-ay * sin_e + by * cos_e) * v_const;  // direction of v only
-        *vz = (-az * sin_e + bz * cos_e) * v_const;  // direction of v only
-
-        #ifdef DEBUG_KEPLER
-        printf("[Hyp/Par orbit] New Position: (%.10f,%.10f,%.10f)\n", *rx,*ry,*rz);
-        printf("[Hyp/Par orbit] New Velocity: (%.10f,%.10f,%.10f)\n", *vx,*vy,*vz);
-        #endif
-
+        new_rv = get_hyperbolic_pos_vel(dt);
     }
+    // Hacer algo con pkepler y el valor que obtuvimos de new_pos_vel
+    //
     // End of the orbit-type treatment
 
-    double r2 = ((*rx) * (*rx) + (*ry) * (*ry) + (*rz) * (*rz));
-    double v2 = ((*vx) * (*vx) + (*vy) * (*vy) + (*vz) * (*vz));
-    double vr = ((*vx) * (*rx) + (*vy) * (*ry) + (*vz) * (*rz));
+    //double new_r_mag = sqrt((new_rv.r[0]) * (new_rv.r[0]) +
+    //                        (new_rv.r[1]) * (new_rv.r[1]) +
+    //                        (new_rv.r[2]) * (new_rv.r[2]));
+    //double new_r2 = new_r_mag * new_r_mag;
 
-    //j = sqrt(jx*jx + jy*jy + jz*jz);
-    //rv2 = (*rx * *vx + *ry * *vy + *rz * *vz);
-    //v = j / (r * v * sin(acos(rv2/(r * v))));
+    //double new_v_mag = sqrt((new_rv.v[0]) * (new_rv.v[0]) +
+    //                        (new_rv.v[1]) * (new_rv.v[1]) +
+    //                        (new_rv.v[2]) * (new_rv.v[2]));
+    //double new_v2 = new_v_mag * new_v_mag;
+
+    //double vr = ((new_rv.v[0]) * (new_rv.r[0]) +
+    //             (new_rv.v[1]) * (new_rv.r[1]) +
+    //             (new_rv.v[2]) * (new_rv.r[2]));
+
+    //double j_mag = sqrt(oe.j.x * oe.j.x +
+    //                    oe.j.y * oe.j.y +
+    //                    oe.j.z * oe.j.z);
+
+    //double rv2 = (new_rv.r[0] * new_rv.v[0] +
+    //              new_rv.r[1] * new_rv.v[1] +
+    //              new_rv.r[2] * new_rv.v[2]);
+
+    // get |v| from j = r x v
+    // Esta mierda no se usa...
+    //new_v_mag = j_mag / (new_r_mag * new_v_mag * sin(acos(rv2/(new_r_mag * new_v_mag))));
 
     // total motion relative to fix central mass
-    // De donde se obtiene h_p[0].r ?
-    // De donde se obtiene h_p[0].v ?
-    //h_p[i].r[0] = h_p[0].r[0] + (*rx);
-    //h_p[i].r[1] = h_p[0].r[1] + (*ry);
-    //h_p[i].r[2] = h_p[0].r[2] + (*rz);
-    //h_p[i].v[0] = h_p[0].v[0] + (*vx);
-    //h_p[i].v[0] = h_p[0].v[1] + (*vy);
-    //h_p[i].v[0] = h_p[0].v[2] + (*vz);
-    h_p[i].r[0] = h_r[0].x + (*rx);
-    h_p[i].r[1] = h_r[0].y + (*ry);
-    h_p[i].r[2] = h_r[0].z + (*rz);
-    h_p[i].v[0] = h_v[0].x + (*vx);
-    h_p[i].v[0] = h_v[0].y + (*vy);
-    h_p[i].v[0] = h_v[0].z + (*vz);
+    //pkepler.r[0] = ns->h_r[0].x + (new_rv.r[0]);
+    //pkepler.r[1] = ns->h_r[0].y + (new_rv.r[1]);
+    //pkepler.r[2] = ns->h_r[0].z + (new_rv.r[2]);
 
-    /*
-     * Force contribution of the central mass on a particle
-     * (Acceleration and it 1st, 2nd and 3rd derivatives
-     */
+    //pkepler.v[0] = ns->h_v[0].x + (new_rv.v[0]);
+    //pkepler.v[0] = ns->h_v[0].y + (new_rv.v[1]);
+    //pkepler.v[0] = ns->h_v[0].z + (new_rv.v[2]);
+    pkepler.r[0] =  new_rv.r[0];
+    pkepler.r[1] =  new_rv.r[1];
+    pkepler.r[2] =  new_rv.r[2];
+
+    pkepler.v[0] =  new_rv.v[0];
+    pkepler.v[1] =  new_rv.v[1];
+    pkepler.v[2] =  new_rv.v[2];
+
+    ///*
+    // * Force contribution of the central mass on a particle
+    // * (Acceleration and it 1st, 2nd and 3rd derivatives
+    // */
 
     //double r2inv = 1/(r2);
-    //double mr3inv = - m0 * r2inv * sqrt(r2inv);
+    //double mr3inv = - ns->h_r[0].w * r2inv * sqrt(r2inv);
 
-    // Acceleration (a)
-    // a = -G * m0 * \vec{r} / r^{3}
+    //// Acceleration (a)
+    //// a = -G * ns->h_r[0].w * \vec{r} / r^{3}
 
-    //double a0x =  (*rx) * mr3inv;
-    //double a0y =  (*ry) * mr3inv;
-    //double a0z =  (*rz) * mr3inv;
+    //double a0x =  (new_rv.r[0]) * mr3inv;
+    //double a0y =  (new_rv.r[1]) * mr3inv;
+    //double a0z =  (new_rv.r[2]) * mr3inv;
 
 
-    //double a1x = mr3inv * ( (*vx) - 3 * r2inv * vr * (*rx));
-    //double a1y = mr3inv * ( (*vy) - 3 * r2inv * vr * (*ry));
-    //double a1z = mr3inv * ( (*vz) - 3 * r2inv * vr * (*rz));
+    //double a1x = mr3inv * ( (new_rv.v[0]) - 3 * r2inv * vr * (new_rv.r[0]));
+    //double a1y = mr3inv * ( (new_rv.v[1]) - 3 * r2inv * vr * (new_rv.r[1]));
+    //double a1z = mr3inv * ( (new_rv.v[2]) - 3 * r2inv * vr * (new_rv.r[2]));
 
-    //double ra0 = ((*rx)*a0x + (*ry)*a0y + (*rz)*a0z);
+    //double ra0 = ((new_rv.r[0])*a0x + (new_rv.r[1])*a0y + (new_rv.r[2])*a0z);
 
-    //double a2x = mr3inv * (a0x - 3.0 * r2inv * (vr * ( 2.0 * (*vx) - 5.0 * vr * (*rx) * r2inv)) + (v2 + ra0) * (*rx));
-    //double a2y = mr3inv * (a0y - 3.0 * r2inv * (vr * ( 2.0 * (*vy) - 5.0 * vr * (*ry) * r2inv)) + (v2 + ra0) * (*ry));
-    //double a2z = mr3inv * (a0z - 3.0 * r2inv * (vr * ( 2.0 * (*vz) - 5.0 * vr * (*rz) * r2inv)) + (v2 + ra0) * (*rz));
+    //double a2x = mr3inv * (a0x - 3.0 * r2inv * (vr * ( 2.0 * (new_rv.v[0]) - 5.0 * vr * (new_rv.r[0]) * r2inv)) + (v2 + ra0) * (new_rv.r[0]));
+    //double a2y = mr3inv * (a0y - 3.0 * r2inv * (vr * ( 2.0 * (new_rv.v[1]) - 5.0 * vr * (new_rv.r[1]) * r2inv)) + (v2 + ra0) * (new_rv.r[1]));
+    //double a2z = mr3inv * (a0z - 3.0 * r2inv * (vr * ( 2.0 * (new_rv.v[2]) - 5.0 * vr * (new_rv.r[2]) * r2inv)) + (v2 + ra0) * (new_rv.r[2]));
 
-    //double va = ((*vx)*a0x + (*vy)*a0y + (*vz)*a0z);
-    //double ra1 = ((*rx)*a1x + (*ry)*a1y + (*rz)*a1z);
+    //double va = ((new_rv.v[0])*a0x + (new_rv.v[1])*a0y + (new_rv.v[2])*a0z);
+    //double ra1 = ((new_rv.r[0])*a1x + (new_rv.r[1])*a1y + (new_rv.r[2])*a1z);
 
     //double a3x = mr3inv * ( a1x - 3.0 * r2inv * ( 3.0 * vr * a0x + 3.0
-    //            * (v2 + ra0) * ((*vx) - 5.0 * vr * r2inv * (*rx))
-    //            + (3.0 * va + ra1) * (*rx) + (vr * vr * r2inv)
-    //            * (-15.0 * (*vx) + 35.0 * vr * r2inv * (*rx))));
+    //            * (v2 + ra0) * ((new_rv.v[0]) - 5.0 * vr * r2inv * (new_rv.r[0]))
+    //            + (3.0 * va + ra1) * (new_rv.r[0]) + (vr * vr * r2inv)
+    //            * (-15.0 * (new_rv.v[0]) + 35.0 * vr * r2inv * (new_rv.r[0]))));
 
     //double a3y = mr3inv * ( a1y - 3.0 * r2inv * ( 3.0 * vr * a0y + 3.0
-    //            * (v2 + ra0) * ((*vy) - 5.0 * vr * r2inv * (*ry))
-    //            + (3.0 * va + ra1) * (*ry) + (vr * vr * r2inv)
-    //            * (-15.0 * (*vy) + 35.0 * vr * r2inv * (*ry))));
+    //            * (v2 + ra0) * ((new_rv.v[1]) - 5.0 * vr * r2inv * (new_rv.r[1]))
+    //            + (3.0 * va + ra1) * (new_rv.r[1]) + (vr * vr * r2inv)
+    //            * (-15.0 * (new_rv.v[1]) + 35.0 * vr * r2inv * (new_rv.r[1]))));
 
     //double a3z = mr3inv * ( a1z - 3.0 * r2inv * ( 3.0 * vr * a0z + 3.0
-    //            * (v2 + ra0) * ((*vz) - 5.0 * vr * r2inv * (*rz))
-    //            + (3.0 * va + ra1) * (*rz) + (vr * vr * r2inv)
-    //            * (-15.0 * (*vz) + 35.0 * vr * r2inv * (*rz))));
+    //            * (v2 + ra0) * ((new_rv.v[2]) - 5.0 * vr * r2inv * (new_rv.r[2]))
+    //            + (3.0 * va + ra1) * (new_rv.r[2]) + (vr * vr * r2inv)
+    //            * (-15.0 * (new_rv.v[2]) + 35.0 * vr * r2inv * (new_rv.r[2]))));
 
-    //h_f[i].a[0] = a0x;
-    //h_f[i].a[1] = a0y;
-    //h_f[i].a[2] = a0z;
+    //h_fbh[i].a[0] = a0x;
+    //h_fbh[i].a[1] = a0y;
+    //h_fbh[i].a[2] = a0z;
 
-    //h_f[i].a1[0] = a1x;
-    //h_f[i].a1[1] = a1y;
-    //h_f[i].a1[2] = a1z;
+    //h_fbh[i].a1[0] = a1x;
+    //h_fbh[i].a1[1] = a1y;
+    //h_fbh[i].a1[2] = a1z;
 
-    //h_a2[i].x = a2x;
-    //h_a2[i].y = a2y;
-    //h_a2[i].z = a2z;
+    //h_a2bh[i].x = a2x;
+    //h_a2bh[i].y = a2y;
+    //h_a2bh[i].z = a2z;
 
-    //h_a3[i].x = a3x;
-    //h_a3[i].y = a3y;
-    //h_a3[i].z = a3z;
+    //h_a3bh[i].x = a3x;
+    //h_a3bh[i].y = a3y;
+    //h_a3bh[i].z = a3z;
 
 }
 
-double solve_kepler(double m_anomaly, double ecc)
+double Hermite4Kepler::solve_kepler(double m_anomaly, double ecc)
 {
     // Solving Kepler's equation for an elliptical orbit
     double e_new = ecc > 0.8 ? M_PI : m_anomaly;
@@ -574,11 +793,8 @@ double solve_kepler(double m_anomaly, double ecc)
  * http://www.projectpluto.com/kepler.htm
  * (Adapted to solve only hyperbolic orbits.)
  */
-double kepler(const double ecc, double mean_anom)
+double Hermite4Kepler::kepler(const double ecc, double mean_anom)
 {
-    #ifdef DEBUG_KEPLER
-    printf("[DEBUG] kepler()\n");
-    #endif
     double curr, err;
     int is_negative = 0, n_iter = 0;
 

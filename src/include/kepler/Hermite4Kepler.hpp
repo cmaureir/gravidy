@@ -21,32 +21,60 @@ static double
     _1_4_3   = 1./4./3.,
     _1_3_2   = 1./3./2.;
 
+typedef struct orbital_elements
+{
+    double3 j; // Angular momentum vector
+    double3 e; // Runge-Lenz vector
+    double a;  // Semi-major axis
+    double b;  // Semi-minor axis
+    double w;  // Frequency of the orbit
+    double3 a_vec; // Semi-major axis vector
+    double3 b_vec; // Semi-minor axis vector
+    double ecc;       // Eccentricity
+    double e_anomaly; // Eccentric anomaly
+    double m_anomaly; // Mean anomaly
+} orbital_elements;
+
 class Hermite4Kepler : public Hermite4 {
     public:
-        Hermite4Kepler(int n, double e2, float eta) : Hermite4(n, e2, eta) { }
+        Predictor pkepler;
+        orbital_elements oe;
 
-        // Hermite
-        void predicted_pos_vel(double ITIME, Predictor *p, double4 *r, double4 *v,
-                               Forces *f, double *t, Gtime &gtime);
-        void correction_pos_vel(double ITIME, int nact, int *move, double4 *r,
-                                double4 *v, Forces *f, double *t, double *dt,
-                                Predictor *p, Forces *old, double4 *a3, double4 *a2,
-                                Gtime &gtime);
-        void force_calculation(int i, int j, Predictor *p, Forces *f);
-        void init_acc_jrk(Predictor *p, Forces* f);
-        void update_acc_jrk(int nact, int *move, Predictor *p, Forces* f, Gtime &gtime);
+        double r_mag; // Relative position magnitude
+        double rdotv; // r dot v product
+        double v_mag; // Relative velocity magnitude
 
-        // Kepler
-        void predicted_pos_vel_kepler(double, int);
-        void kepler_prediction(double*, double*, double*, double*,
-                               double*, double*, double,  int);
-        double solve_kepler(double, double);
-        double kepler(const double, double);
-
+        Hermite4Kepler(NbodySystem *ns, Logger *logger, NbodyUtils *nu);
+        ~Hermite4Kepler();
 
         void alloc_arrays_host_kepler();
         void free_arrays_host_kepler();
+        void init_data_bh();
+
+        // Hermite
+        void force_calculation(int i, int j);
+        void init_acc_jrk();
+        void update_acc_jrk(int nact);
+        void predicted_pos_vel(double ITIME);
+        void correction_pos_vel(double ITIME, int nact);
+        void integration();
+
+        // Kepler
+        void force_calculation_bh(int i);
+        void init_acc_jrk_bh();
+
+        void calculate_orbital_elements();
+        void print_orbital_elements();
+
+
+        void move_keplerian_orbit(double ITIME, int nact);
+        void kepler_move(int i, double dt);
+
+        double solve_kepler(double m_anomaly, double ecc);
+        double kepler(const double ecc, double mean_anom);
+
+        Predictor get_elliptical_pos_vel(double dt);
+        Predictor get_hyperbolic_pos_vel(double dt);
 
 };
-
-#endif
+#endif // HERMITE4KEPLER_HPP

@@ -22,7 +22,6 @@ class NbodyUtils {
         std::vector<double> layers_radii;
 
         double get_core_radius();
-        double get_relaxation_time();
         double get_half_mass_relaxation_time();
         double get_crossing_time();
         double3 get_center_of_density();

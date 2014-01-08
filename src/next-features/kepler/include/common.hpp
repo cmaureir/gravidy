@@ -11,7 +11,7 @@
  *********************************/
 
 //#define KERNEL_ERROR_DEBUG 1
-//#define DEBUG_KEPLER 1
+#define DEBUG_KEPLER 1
 //#define DEBUG_HERMITE 1
 
 #define USE_KEPLER 1

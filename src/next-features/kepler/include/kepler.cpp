@@ -31,8 +31,8 @@ void predicted_pos_vel_kepler(double ITIME, int total)
     #endif
 
 
-    //for (int i = 0; i < total; i++)
-    for (float dt = 0.0; dt <  100; dt += 0.01)
+    for (int i = 0; i < total; i++)
+    //for (float dt = 0.0; dt <  100; dt += 0.01)
     {
         int k = h_move[1];
         //double dt = ITIME - h_t[k];
@@ -68,11 +68,14 @@ void predicted_pos_vel_kepler(double ITIME, int total)
         //printf("[Old jerk] %.15f %.15f %.15f\n", h_f[k].a1[0], h_f[k].a1[1], h_f[k].a1[2]);
         #endif
 
-        //for (time = h_t[k]; time < ITIME; time+=dt)
-        //{
-        //    kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, dt, k);
-        //}
-        kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, dt, k);
+        //for (double time = h_t[k]; time < ITIME; time+=dt)
+        for (float dt = 0.0; dt <  100; dt += 0.01)
+        {
+            kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, dt, k);
+            printf("%.15f %.15f %.15f %.15f %.15f %.15f\n", h_p[k].r[0], h_p[k].r[1], h_p[k].r[2], h_p[k].v[0], h_p[k].v[1], h_p[k].v[2]);
+            getchar();
+        }
+        //kepler_prediction(&rx, &ry, &rz, &vx, &vy, &vz, dt, k);
 
         h_p[k].r[0] = rx;
         h_p[k].r[1] = ry;
@@ -95,9 +98,9 @@ void predicted_pos_vel_kepler(double ITIME, int total)
         //printf("[New jerk] %.15f %.15f %.15f\n", h_f[k].a1[0], h_f[k].a1[1], h_f[k].a1[2]);
         //printf("End particle %d\n", k);
         //#endif
+        getchar();
 
     }
-    getchar();
 }
 
 void kepler_prediction(double *rx, double *ry, double *rz,
@@ -210,6 +213,7 @@ void kepler_prediction(double *rx, double *ry, double *rz,
 
         // Calculate Cosine of Eccentric Anomaly
         e_anomaly = (a - r) / (ecc * a);
+        std::cout << "e_anomaly(0): " << e_anomaly << std::endl;
 
 
         // Fixing Cosine argument
@@ -220,6 +224,8 @@ void kepler_prediction(double *rx, double *ry, double *rz,
         else
             e_anomaly = acos(e_anomaly);
 
+        std::cout << "e_anomaly(0_1): " << e_anomaly << std::endl;
+
         // TO DO: Why?
         if (sqrt(*rx*bx + *ry*by + *rz*bz) < 0)
         {
@@ -229,6 +235,8 @@ void kepler_prediction(double *rx, double *ry, double *rz,
         // Calculate Mean Anomaly
         m_anomaly = (e_anomaly - ecc*sin(e_anomaly)) + dt * w;
 
+        std::cout << e_anomaly << " , " << ecc << " , " << dt << " , " << w << std::endl;
+        std::cout << "m_anomaly(0): " << e_anomaly << std::endl;
 
         // Adjusting M anomaly to be < 2 * pi
         if(m_anomaly >= 2 * M_PI)
@@ -364,8 +372,8 @@ void kepler_prediction(double *rx, double *ry, double *rz,
     h_p[i].r[1] = h_r[0].y + (*ry);
     h_p[i].r[2] = h_r[0].z + (*rz);
     h_p[i].v[0] = h_v[0].x + (*vx);
-    h_p[i].v[0] = h_v[0].y + (*vy);
-    h_p[i].v[0] = h_v[0].z + (*vz);
+    h_p[i].v[1] = h_v[0].y + (*vy);
+    h_p[i].v[2] = h_v[0].z + (*vz);
 
     /*
      * Force contribution of the central mass on a particle

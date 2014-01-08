@@ -13,6 +13,11 @@
 #include "common.hpp"
 #include "utils/OptionsParser.hpp"
 
+/*
+ * @class NbodySystem
+ * @desc N-body system general class with all the information of the integration
+ *       process and the particles of the system.
+ */
 class NbodySystem {
     public:
         NbodySystem(OptionsParser op);
@@ -49,6 +54,7 @@ class NbodySystem {
         Forces    *h_old;
         double    *h_t;
         double    *h_dt;
+        double    *h_dt_old;
         int       *h_move;
         Predictor *h_p;
         Predictor *h_i;

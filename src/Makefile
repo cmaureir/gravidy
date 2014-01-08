@@ -36,22 +36,20 @@ NVFLAGS=   -pg -O3 -arch=sm_20 -DGPU
 
 ############################# Objects
 
-OBJS=       include/utils/OptionsParser.o             \
-            include/NbodySystem.o                     \
-            include/utils/NbodyUtils.o                \
-            include/utils/Logger.o                    \
-            include/Hermite4.o                        \
+OBJS=       include/utils/OptionsParser.o   \
+            include/NbodySystem.o           \
+            include/utils/NbodyUtils.o      \
+            include/utils/Logger.o          \
+            include/Hermite4.o              \
 
-OBJS_CPU=   $(OBJS)                                   \
-            include/Hermite4CPU.o                     \
+OBJS_CPU=   $(OBJS)                         \
+            include/cpu/Hermite4CPU.o       \
 
-OBJS_GPU=   $(OBJS)                                   \
+OBJS_GPU=   $(OBJS)                         \
             include/gpu/Hermite4GPU.cuo
 
-OBJS_KEPLER=$(OBJS) $(OBJS_UTILS)                     \
-            include/kepler/NbodySystem_memory_host_kepler.o \
-            include/kepler/NbodySystem_integration_kepler.o \
-            include/kepler/Hermite4Kepler.o           \
+OBJS_KEPLER=$(OBJS)                         \
+            include/kepler/Hermite4Kepler.o
 
 ############################# Main rules
 
@@ -61,8 +59,11 @@ gpu: gravidy-gpu
 kepler: CXXFLAGS+=-DKEPLER
 kepler: gravidy-kepler
 
+############################# Rules to generate cuda object
 %.cuo : %.cu
 	$(NVCC) $(BOOSTFLAGS) $(NVFLAGS) -c $^ -o $@
+
+############################# Rules to generate binaries
 
 gravidy-cpu: gravidy.cpp $(OBJS_CPU)
 	$(CXX) $(CXXFLAGS) $^ -o $@
@@ -77,6 +78,7 @@ clean:
 	rm -f gravidy-gpu
 	rm -f gravidy-cpu
 	rm -f gravidy-kepler
+
 distclean: clean
 	rm -f include/*.o
 	rm -f include/utils/*.o
