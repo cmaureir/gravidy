@@ -5,6 +5,10 @@
 #include <cstdio>
 #include <omp.h>
 
+#ifdef MPI
+#include <mpi.h>
+#endif
+
 #ifndef GPU
 /** Defining the «double4» structure based on the CUDA definition for the
  * CPU version, which not include the CUDA headers */

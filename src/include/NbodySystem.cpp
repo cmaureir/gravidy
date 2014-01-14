@@ -82,10 +82,21 @@ void NbodySystem::read_input_file()
     n = (int)reader.size();
 }
 
-void NbodySystem::alloc_base_attributes()
+void NbodySystem::alloc_base_attributes(int rank)
 {
-    int d4_size = n * sizeof(double4);
 
+    #ifdef MPI
+    // Sending the amount of particles
+    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // Resizing input data vector, to be able to Bcast it
+    if (rank > 0)
+        reader.resize(n);
+
+    MPI_Bcast(&reader[0], sizeof(file_data) * n, MPI_BYTE, 0, MPI_COMM_WORLD);
+    #endif
+
+    int d4_size = n * sizeof(double4);
     h_r      = new double4[d4_size];
     h_v      = new double4[d4_size];
 

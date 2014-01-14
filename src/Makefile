@@ -3,7 +3,8 @@
 ############################# Paths
 #BOOST_PATH=/cluster/boost/1.52.0
 #CUDA_PATH=/cluster/gpu/nvidia/5.5
-CUDA_PATH=/opt/cuda
+CUDA_PATH=/usr
+MPI_PATH=/usr/lib/openmpi
 
 ############################# Compilers
 CXX=        g++
@@ -31,6 +32,18 @@ CXXFLAGS=   $(BOOSTFLAGS) \
             -lgomp        \
             -fopenmp
 
+# MPI FLAGS
+MPIFLAGS=   -L$(MPI_PATH)/lib             \
+            -I$(MPI_PATH)/include         \
+            -I$(MPI_PATH)/include/openmpi \
+            -pthread                      \
+            -lmpi_cxx                     \
+            -lmpi                         \
+            -ldl                          \
+            -lhwloc                       \
+            -DMPI                         \
+            -DOMPI_SKIP_MPICXX
+
 # CUDA FLAGS
 NVFLAGS=   -pg -O3 -arch=sm_20 -DGPU
 
@@ -45,6 +58,10 @@ OBJS=       include/utils/OptionsParser.o   \
 OBJS_CPU=   $(OBJS)                         \
             include/cpu/Hermite4CPU.o       \
 
+OBJS_MPI=   $(OBJS)                         \
+            include/mpi/Hermite4MPI.o       \
+            include/mpi/MPIUtils.o
+
 OBJS_GPU=   $(OBJS)                         \
             include/gpu/Hermite4GPU.cuo
 
@@ -54,8 +71,13 @@ OBJS_KEPLER=$(OBJS)                         \
 ############################# Main rules
 
 cpu: gravidy-cpu
+
+mpi: CXXFLAGS+=$(MPIFLAGS)
+mpi: gravidy-mpi
+
 gpu: CXXFLAGS+=$(LINKFLAGS)
 gpu: gravidy-gpu
+
 kepler: CXXFLAGS+=-DKEPLER
 kepler: gravidy-kepler
 
@@ -68,6 +90,9 @@ kepler: gravidy-kepler
 gravidy-cpu: gravidy.cpp $(OBJS_CPU)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
+gravidy-mpi: gravidy.cpp $(OBJS_MPI)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
 gravidy-gpu: gravidy.cpp $(OBJS_GPU)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
@@ -78,10 +103,12 @@ clean:
 	rm -f gravidy-gpu
 	rm -f gravidy-cpu
 	rm -f gravidy-kepler
+	rm -f gravidy-mpi
 
 distclean: clean
 	rm -f include/*.o
 	rm -f include/utils/*.o
 	rm -f include/gpu/*.{o,cuo}
 	rm -f include/kepler/*.o
+	rm -f include/mpi/*.o
 	rm -f gmon.out

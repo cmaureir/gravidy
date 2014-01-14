@@ -83,6 +83,7 @@ void Hermite4::init_dt(double &ATIME)
 
 void Hermite4::save_old_acc_jrk(int nact)
 {
+    //#pragma omp parallel for
     for (int k = 0; k < nact; k++)
     {
         int i = ns->h_move[k];

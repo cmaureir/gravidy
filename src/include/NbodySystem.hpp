@@ -83,7 +83,7 @@ class NbodySystem {
         double4   *h_a3bh;
 
         void read_input_file();
-        void alloc_base_attributes();
+        void alloc_base_attributes(int rank);
         void free_base_attributes();
         void copy_input_data();
 };
