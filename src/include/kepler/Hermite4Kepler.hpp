@@ -33,8 +33,8 @@ typedef struct orbital_elements
     double e_anomaly; // Eccentric anomaly
     double m_anomaly; // Mean anomaly
 
-    double e_anomaly0; // Eccentric anomaly
-    double m_anomaly0; // Mean anomaly
+    double e_anomaly0; // Initial Eccentric anomaly
+    double m_anomaly0; // Initial Mean anomaly
 } orbital_elements;
 
 class Hermite4Kepler : public Hermite4 {

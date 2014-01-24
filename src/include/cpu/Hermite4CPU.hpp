@@ -13,9 +13,7 @@ class Hermite4CPU : public Hermite4 {
         int **nb_list;
         int nb_number;
 
-
-
-        void force_calculation(int i, int j);
+        void force_calculation(Predictor pi, Predictor pj, Forces &fi);
         void init_acc_jrk();
         void update_acc_jrk(int nact);
         void predicted_pos_vel(double ITIME);

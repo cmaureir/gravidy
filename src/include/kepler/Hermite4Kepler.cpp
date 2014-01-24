@@ -377,6 +377,7 @@ void Hermite4Kepler::calculate_orbital_elements()
     double b_mag;
     double mu;
 
+
     mu = G * pkepler.m;
 
     r_mag = sqrt((pkepler.r[0]) * (pkepler.r[0]) +
@@ -589,9 +590,9 @@ Predictor Hermite4Kepler::get_hyperbolic_pos_vel(int i, double dt)
 
     oe.m_anomaly = oe.m_anomaly0 + dt * oe.w;
 
-
     // Solving Kepler's equation for Hyperbolic/Parabolic orbits
     oe.e_anomaly = kepler(oe.ecc, oe.m_anomaly);
+
     double cos_e = cosh(oe.e_anomaly);
     double sin_e = sinh(oe.e_anomaly);
     double v_const = oe.w / (oe.ecc * cos_e - 1.);
@@ -603,9 +604,9 @@ Predictor Hermite4Kepler::get_hyperbolic_pos_vel(int i, double dt)
     ppv.r[2] = oe.a_vec.z * (oe.ecc - cos_e)  + oe.b_vec.z * sin_e;
 
     // New velocity
-    ppv.v[0] = (-oe.a_vec.x * sin_e + oe.b_vec.x * cos_e) * v_const;  // direction of v only
-    ppv.v[1] = (-oe.a_vec.y * sin_e + oe.b_vec.y * cos_e) * v_const;  // direction of v only
-    ppv.v[2] = (-oe.a_vec.z * sin_e + oe.b_vec.z * cos_e) * v_const;  // direction of v only
+    ppv.v[0] = (-oe.a_vec.x * sin_e + oe.b_vec.x * cos_e) * v_const;
+    ppv.v[1] = (-oe.a_vec.y * sin_e + oe.b_vec.y * cos_e) * v_const;
+    ppv.v[2] = (-oe.a_vec.z * sin_e + oe.b_vec.z * cos_e) * v_const;
 
     return ppv;
 }
@@ -613,9 +614,10 @@ Predictor Hermite4Kepler::get_hyperbolic_pos_vel(int i, double dt)
 void Hermite4Kepler::kepler_move(int i, double dt)
 {
 
-    /** Calculating some orbital elements of the interaction between an i-particle
-     * and a BH */
+    // Calculating some orbital elements of the interaction between an i-particle
+    // and a BH */
     calculate_orbital_elements();
+
     //print_orbital_elements();
     //getchar();
     Predictor new_rv;
@@ -623,12 +625,12 @@ void Hermite4Kepler::kepler_move(int i, double dt)
     if(oe.ecc < 1)
     {
         new_rv = get_elliptical_pos_vel(i, dt);
-        //getchar();
     }
     else
     {
         new_rv = get_hyperbolic_pos_vel(i, dt);
     }
+
     // Hacer algo con pkepler y el valor que obtuvimos de new_pos_vel
     //
     // End of the orbit-type treatment
