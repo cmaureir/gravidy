@@ -29,6 +29,9 @@ Hermite4MPI::Hermite4MPI(NbodySystem *ns, Logger *logger, NbodyUtils *nu,
 Hermite4MPI::~Hermite4MPI()
 {
     // free main and slaves
+    free(tmp_f);
+    free(ns->h_fout_tmp);
+
 }
 
 void Hermite4MPI::alloc_slaves_memory(int rank)
@@ -37,7 +40,8 @@ void Hermite4MPI::alloc_slaves_memory(int rank)
     define_forces_struct(&f_type);
     MPI_Op_create(forces_operation, 1, &f_op);
 
-    tmp_f   = (Forces*)malloc(sizeof(Forces) * ns->n);
+    tmp_f           = (Forces*)malloc(sizeof(Forces) * ns->n);
+    ns->h_fout_tmp  = (Forces*)malloc(sizeof(Forces) * ns->n);
 
     //#pragma omp parallel for
     for (int i = 0; i < ns->n; i++)
@@ -49,36 +53,44 @@ void Hermite4MPI::alloc_slaves_memory(int rank)
         tmp_f[i].a1[0] = 0.0;
         tmp_f[i].a1[1] = 0.0;
         tmp_f[i].a1[2] = 0.0;
+
+        ns->h_fout_tmp[i].a[0] = 0.0;
+        ns->h_fout_tmp[i].a[1] = 0.0;
+        ns->h_fout_tmp[i].a[2] = 0.0;
+
+        ns->h_fout_tmp[i].a1[0] = 0.0;
+        ns->h_fout_tmp[i].a1[1] = 0.0;
+        ns->h_fout_tmp[i].a1[2] = 0.0;
     }
 }
 
-void Hermite4MPI::force_calculation(int i, int j)
+void Hermite4MPI::force_calculation(Predictor pi, Predictor pj, Forces &fi)
 {
-    double rx = ns->h_p[j].r[0] - ns->h_p[i].r[0];
-    double ry = ns->h_p[j].r[1] - ns->h_p[i].r[1];
-    double rz = ns->h_p[j].r[2] - ns->h_p[i].r[2];
+    double rx = pj.r[0] - pi.r[0];
+    double ry = pj.r[1] - pi.r[1];
+    double rz = pj.r[2] - pi.r[2];
 
-    double vx = ns->h_p[j].v[0] - ns->h_p[i].v[0];
-    double vy = ns->h_p[j].v[1] - ns->h_p[i].v[1];
-    double vz = ns->h_p[j].v[2] - ns->h_p[i].v[2];
+    double vx = pj.v[0] - pi.v[0];
+    double vy = pj.v[1] - pi.v[1];
+    double vz = pj.v[2] - pi.v[2];
 
     double r2     = rx*rx + ry*ry + rz*rz + ns->e2;
     double rinv   = 1.0/sqrt(r2);
     double r2inv  = rinv  * rinv;
     double r3inv  = r2inv * rinv;
     double r5inv  = r2inv * r3inv;
-    double mr3inv = r3inv * ns->h_p[j].m;
-    double mr5inv = r5inv * ns->h_p[j].m;
+    double mr3inv = r3inv * pj.m;
+    double mr5inv = r5inv * pj.m;
 
     double rv = rx*vx + ry*vy + rz*vz;
 
-    tmp_f[i].a[0] += (rx * mr3inv);
-    tmp_f[i].a[1] += (ry * mr3inv);
-    tmp_f[i].a[2] += (rz * mr3inv);
+    fi.a[0] += (rx * mr3inv);
+    fi.a[1] += (ry * mr3inv);
+    fi.a[2] += (rz * mr3inv);
 
-    tmp_f[i].a1[0] += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
-    tmp_f[i].a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
-    tmp_f[i].a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
+    fi.a1[0] += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
+    fi.a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
+    fi.a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
 
 }
 
@@ -92,7 +104,7 @@ void Hermite4MPI::init_acc_jrk()
             for (int j = chunk_begin; j < chunk_end; j++)
             {
                 if(i == j) continue;
-                force_calculation(i, j);
+                force_calculation(ns->h_p[i], ns->h_p[j], tmp_f[i]);
             }
         }
         MPI_Allreduce(tmp_f, ns->h_f, ns->n, f_type, f_op, MPI_COMM_WORLD);
@@ -104,10 +116,18 @@ void Hermite4MPI::update_acc_jrk(int nact)
     ns->gtime.update_ini = omp_get_wtime();
     if (rank < MPI_NUM_SLAVES)
     {
-        int i, j, k;
-        for (k = 0; k < nact; k++)
+
+        // Temporal Predictor array with only the active particle information
+        for (int i = 0; i < nact; i++)
         {
-            i = ns->h_move[k];
+            int id = ns->h_move[i];
+            ns->h_i[i] = ns->h_p[id];
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        // Forces loop with the temporal active particles array and the whole system
+        for (int i = 0; i < nact; i++)
+        {
             tmp_f[i].a[0]  = 0.0;
             tmp_f[i].a[1]  = 0.0;
             tmp_f[i].a[2]  = 0.0;
@@ -115,13 +135,27 @@ void Hermite4MPI::update_acc_jrk(int nact)
             tmp_f[i].a1[1] = 0.0;
             tmp_f[i].a1[2] = 0.0;
 
-            for (j = chunk_begin; j < chunk_end; j++)
+            Predictor pi = ns->h_i[i];
+
+            for (int j = chunk_begin; j < chunk_end; j++)
             {
-                if(i == j) continue;
-                force_calculation(i, j);
+                if(ns->h_move[i] == j) continue;
+                force_calculation(pi, ns->h_p[j], tmp_f[i]);
             }
-            MPI_Allreduce(&tmp_f[i], &ns->h_f[i], 1, f_type, f_op, MPI_COMM_WORLD);
         }
+
+        // All the nodes will reduce the forces, having the same results for the
+        // new forces.
+        //MPI_Allreduce(tmp_f, ns->h_fout_tmp, nact, f_type, f_op, MPI_COMM_WORLD);
+        MPI_Allreduce(tmp_f, ns->h_fout_tmp, nact, f_type, f_op, MPI_COMM_WORLD);
+
+        for (int i = 0; i < nact; i++)
+        {
+            int id = ns->h_move[i];
+            ns->h_f[id] = ns->h_fout_tmp[i];
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+
     }
     ns->gtime.update_end += omp_get_wtime() - ns->gtime.update_ini;
 }

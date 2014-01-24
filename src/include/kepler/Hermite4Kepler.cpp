@@ -407,6 +407,7 @@ void Hermite4Kepler::move_keplerian_orbit(double ITIME, int nact)
 void Hermite4Kepler::calculate_orbital_elements()
 {
     double b_mag;
+    double mu = G * ns->h_r[0].w;
 
     r_mag = sqrt((pkepler.r[0]) * (pkepler.r[0]) +
                  (pkepler.r[1]) * (pkepler.r[1]) +
@@ -425,9 +426,9 @@ void Hermite4Kepler::calculate_orbital_elements()
     oe.e.z = (pkepler.v[0]) * (oe.j.y) - (pkepler.v[1]) * (oe.j.x);
 
     // G, omitted due its value of 1
-    oe.e.x = oe.e.x/ns->h_r[0].w - pkepler.r[0]/r_mag;
-    oe.e.y = oe.e.y/ns->h_r[0].w - pkepler.r[1]/r_mag;
-    oe.e.z = oe.e.z/ns->h_r[0].w - pkepler.r[2]/r_mag;
+    oe.e.x = oe.e.x/mu - pkepler.r[0]/r_mag;
+    oe.e.y = oe.e.y/mu - pkepler.r[1]/r_mag;
+    oe.e.z = oe.e.z/mu - pkepler.r[2]/r_mag;
 
     // Eccentricity
     oe.ecc = sqrt(oe.e.x * oe.e.x +
@@ -439,16 +440,19 @@ void Hermite4Kepler::calculate_orbital_elements()
     oe.a = (oe.j.x * oe.j.x +
             oe.j.y * oe.j.y +
             oe.j.z * oe.j.z);
-    oe.a /= (ns->h_r[0].w * std::abs(1 - oe.ecc * oe.ecc));
+    oe.a /= (mu  * std::abs(1 - oe.ecc * oe.ecc));
 
     // Frequency of the orbit
     // w = sqrt(( G * m )/ a^3 )
-    oe.w = sqrt( ns->h_r[0].w / (oe.a * oe.a * oe.a));
+    oe.w = sqrt( mu / (oe.a * oe.a * oe.a));
 
     // Semi-major vector
     oe.a_vec.x = oe.a * oe.e.x/oe.ecc;
     oe.a_vec.y = oe.a * oe.e.y/oe.ecc;
     oe.a_vec.z = oe.a * oe.e.z/oe.ecc;
+
+    // Semi-minor axis
+    oe.b = oe.a * sqrt(std::abs(1 - oe.ecc * oe.ecc));
 
     // Semi-minor vector
     oe.b_vec.x = (oe.j.y * oe.e.z - oe.j.z * oe.e.y);
@@ -458,8 +462,6 @@ void Hermite4Kepler::calculate_orbital_elements()
     b_mag = sqrt(oe.b_vec.x * oe.b_vec.x +
                  oe.b_vec.y * oe.b_vec.y +
                  oe.b_vec.z * oe.b_vec.z);
-    // Semi-minor axis
-    oe.b = oe.a * sqrt(std::abs(1 - oe.ecc * oe.ecc));
 
     oe.b_vec.x *= oe.b/b_mag;
     oe.b_vec.y *= oe.b/b_mag;
@@ -525,32 +527,26 @@ Predictor Hermite4Kepler::get_elliptical_pos_vel(double dt)
     double ecc_const;
     double cos_const;
 
-    // Calculate Cosine of Eccentric Anomaly
-    oe.e_anomaly = (oe.a - r_mag) / (oe.ecc * oe.a);
-    //std::cout << "e_anomaly(0): " << oe.e_anomaly << std::endl;
+    // Change this condition for the first loop value.
+    if (dt == 0)
+    {
+        // Calculate Cosine of Eccentric Anomaly
+        oe.e_anomaly0 = (oe.a - r_mag) / (oe.ecc * oe.a);
+        //std::cout << "e_anomaly(0): " << oe.e_anomaly << std::endl;
 
-    // Fixing Cosine argument
-    if(oe.e_anomaly >= 1.0)
-        oe.e_anomaly = 0.0;
-    else if(oe.e_anomaly <= -1.0)
-        oe.e_anomaly = M_PI;
-    else
-        oe.e_anomaly = acos(oe.e_anomaly);
+        // Fixing Cosine argument
+        if(oe.e_anomaly0 >= 1.0)
+            oe.e_anomaly0 = 0.0;
+        else if(oe.e_anomaly0 <= -1.0)
+            oe.e_anomaly0 = M_PI;
+        else
+            oe.e_anomaly0 = acos(oe.e_anomaly0);
 
-    //std::cout << "e_anomaly(0_1): " << oe.e_anomaly << std::endl;
-
-
-    // TO DO: Why?
-    //if (sqrt(pkepler.r[0]*oe.b_vec.x + pkepler.r[1]*oe.b_vec.y + pkepler.r[2]*oe.b_vec.z) < 0)
-    //{
-    //    oe.e_anomaly = 2*M_PI - oe.e_anomaly;
-    //}
+        oe.m_anomaly0 = (oe.e_anomaly0 - oe.ecc*sin(oe.e_anomaly0));
+    }
 
     // Calculate Mean Anomaly
-    oe.m_anomaly = (oe.e_anomaly - oe.ecc*sin(oe.e_anomaly)) + dt * oe.w;
-
-    //std::cout << "( " << oe.m_anomaly << " , " << oe.ecc << " , " << dt << " , " << oe.w << ")" <<std::endl;
-    //std::cout << "m_anomaly(0): " << oe.m_anomaly << std::endl;
+    oe.m_anomaly = oe.m_anomaly0 + dt * oe.w;
 
     // Adjusting M anomaly to be < 2 * pi
     if(oe.m_anomaly >= 2 * M_PI)
@@ -558,9 +554,6 @@ Predictor Hermite4Kepler::get_elliptical_pos_vel(double dt)
 
     // Solving the Kepler equation for elliptical orbits
     oe.e_anomaly = solve_kepler(oe.m_anomaly, oe.ecc);
-    //std::cout << "m_anomaly: " << oe.m_anomaly << std::endl;
-    //std::cout << "e_anomaly: " << oe.e_anomaly << std::endl;
-
 
     cos_e = cos(oe.e_anomaly);
     sin_e = sin(oe.e_anomaly);
@@ -570,23 +563,23 @@ Predictor Hermite4Kepler::get_elliptical_pos_vel(double dt)
 
     // Based on Loeckmann and Baumgardt simulations criteria
     // This work better with 0.99 < e < 1 and |E| < 1e-3
-    //if(oe.ecc > 0.99)
-    //{
-    //    double e_tmp = (oe.e_anomaly > 2.0 * M_PI - 1e-3) ? oe.e_anomaly - 2.0 * M_PI : oe.e_anomaly;
-    //    if(e_tmp < 1e-3)
-    //    {
-    //        e_tmp *= e_tmp;
-    //        double j_mag = oe.j.x * oe.j.x +
-    //                       oe.j.y * oe.j.y +
-    //                       oe.j.z * oe.j.z;
-    //        ecc_const = j_mag/(ns->h_r[0].w * oe.a * (1 + oe.ecc));
-    //        cos_const = -0.5 * e_tmp * (1 - e_tmp / 12.0 * (1 - e_tmp / 30.0));
+    if(oe.ecc > 0.99)
+    {
+        double e_tmp = (oe.e_anomaly > 2.0 * M_PI - 1e-3) ? oe.e_anomaly - 2.0 * M_PI : oe.e_anomaly;
+        if(e_tmp < 1e-3)
+        {
+            e_tmp *= e_tmp;
+            double j_mag = oe.j.x * oe.j.x +
+                           oe.j.y * oe.j.y +
+                           oe.j.z * oe.j.z;
+            ecc_const = j_mag/(ns->h_r[0].w * oe.a * (1 + oe.ecc));
+            cos_const = -0.5 * e_tmp * (1 - e_tmp / 12.0 * (1 - e_tmp / 30.0));
 
-    //        r_const = ecc_const + cos_const;
-    //        v_const = oe.w / (ecc_const - oe.ecc * cos_const);
+            r_const = ecc_const + cos_const;
+            v_const = oe.w / (ecc_const - oe.ecc * cos_const);
 
-    //    }
-    //}
+        }
+    }
 
     Predictor ppv;
     // New position
@@ -605,26 +598,31 @@ Predictor Hermite4Kepler::get_elliptical_pos_vel(double dt)
 Predictor Hermite4Kepler::get_hyperbolic_pos_vel(double dt)
 {
 
-    rdotv = (pkepler.r[0] * pkepler.v[0] +
-             pkepler.r[1] * pkepler.v[1] +
-             pkepler.r[2] * pkepler.v[2]);
-    // calculate eccentric anomaly e at t+dt
-    oe.e_anomaly = (oe.a + r_mag) / (oe.ecc * oe.a);
+    // Fix this with the real initial value
+    if (dt == 0)
+    {
+        rdotv = (pkepler.r[0] * pkepler.v[0] +
+                 pkepler.r[1] * pkepler.v[1] +
+                 pkepler.r[2] * pkepler.v[2]);
+        // calculate eccentric anomaly e at t+dt
+        oe.e_anomaly0 = (oe.a + r_mag) / (oe.ecc * oe.a);
 
-    if(oe.e_anomaly < 1.0)
-        oe.e_anomaly = 0.0;
-    else if(rdotv < 0)
-        oe.e_anomaly = -acosh(oe.e_anomaly);
-    else
-        oe.e_anomaly = acosh(oe.e_anomaly);
+        if(oe.e_anomaly0 < 1.0)
+            oe.e_anomaly0 = 0.0;
+        else if(rdotv < 0)
+            oe.e_anomaly0 = -acosh(oe.e_anomaly0);
+        else
+            oe.e_anomaly0 = acosh(oe.e_anomaly0);
 
-    oe.m_anomaly = oe.ecc * sinh(oe.e_anomaly) - oe.e_anomaly + dt * oe.w;
+        oe.m_anomaly0 = oe.ecc * sinh(oe.e_anomaly0) - oe.e_anomaly0;
 
-    //if(m_anomaly >= 2 * M_PI)
-    //    m_anomaly = fmod(m_anomaly, 2 * M_PI);
+    }
+
+    oe.m_anomaly = oe.m_anomaly0 + dt * oe.w;
 
     // Solving Kepler's equation for Hyperbolic/Parabolic orbits
     oe.e_anomaly = kepler(oe.ecc, oe.m_anomaly);
+
     double cos_e = cosh(oe.e_anomaly);
     double sin_e = sinh(oe.e_anomaly);
     double v_const = oe.w / (oe.ecc * cos_e - 1.);
@@ -636,9 +634,9 @@ Predictor Hermite4Kepler::get_hyperbolic_pos_vel(double dt)
     ppv.r[2] = oe.a_vec.z * (oe.ecc - cos_e)  + oe.b_vec.z * sin_e;
 
     // New velocity
-    ppv.v[0] = (-oe.a_vec.x * sin_e + oe.b_vec.x * cos_e) * v_const;  // direction of v only
-    ppv.v[1] = (-oe.a_vec.y * sin_e + oe.b_vec.y * cos_e) * v_const;  // direction of v only
-    ppv.v[2] = (-oe.a_vec.z * sin_e + oe.b_vec.z * cos_e) * v_const;  // direction of v only
+    ppv.v[0] = (-oe.a_vec.x * sin_e + oe.b_vec.x * cos_e) * v_const;
+    ppv.v[1] = (-oe.a_vec.y * sin_e + oe.b_vec.y * cos_e) * v_const;
+    ppv.v[2] = (-oe.a_vec.z * sin_e + oe.b_vec.z * cos_e) * v_const;
 
     return ppv;
 }
@@ -646,21 +644,22 @@ Predictor Hermite4Kepler::get_hyperbolic_pos_vel(double dt)
 void Hermite4Kepler::kepler_move(int i, double dt)
 {
 
-    /** Calculating some orbital elements of the interaction between an i-particle
-     * and a BH */
+    // Calculating some orbital elements of the interaction between an i-particle
+    // and a BH */
     calculate_orbital_elements();
+
     //print_orbital_elements();
     Predictor new_rv;
 
     if(oe.ecc < 1)
     {
         new_rv = get_elliptical_pos_vel(dt);
-        //getchar();
     }
     else
     {
         new_rv = get_hyperbolic_pos_vel(dt);
     }
+
     // Hacer algo con pkepler y el valor que obtuvimos de new_pos_vel
     //
     // End of the orbit-type treatment

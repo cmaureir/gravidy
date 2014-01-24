@@ -5,33 +5,33 @@ Hermite4CPU::~Hermite4CPU()
     // None
 }
 
-void Hermite4CPU::force_calculation(int i, int j)
+void Hermite4CPU::force_calculation(Predictor pi, Predictor pj, Forces &fi)
 {
-    double rx = ns->h_p[j].r[0] - ns->h_p[i].r[0];
-    double ry = ns->h_p[j].r[1] - ns->h_p[i].r[1];
-    double rz = ns->h_p[j].r[2] - ns->h_p[i].r[2];
+    double rx = pj.r[0] - pi.r[0];
+    double ry = pj.r[1] - pi.r[1];
+    double rz = pj.r[2] - pi.r[2];
 
-    double vx = ns->h_p[j].v[0] - ns->h_p[i].v[0];
-    double vy = ns->h_p[j].v[1] - ns->h_p[i].v[1];
-    double vz = ns->h_p[j].v[2] - ns->h_p[i].v[2];
+    double vx = pj.v[0] - pi.v[0];
+    double vy = pj.v[1] - pi.v[1];
+    double vz = pj.v[2] - pi.v[2];
 
     double r2     = rx*rx + ry*ry + rz*rz + ns->e2;
     double rinv   = 1.0/sqrt(r2);
     double r2inv  = rinv  * rinv;
     double r3inv  = r2inv * rinv;
     double r5inv  = r2inv * r3inv;
-    double mr3inv = r3inv * ns->h_p[j].m;
-    double mr5inv = r5inv * ns->h_p[j].m;
+    double mr3inv = r3inv * pj.m;
+    double mr5inv = r5inv * pj.m;
 
     double rv = rx*vx + ry*vy + rz*vz;
 
-    ns->h_f[i].a[0] += (rx * mr3inv);
-    ns->h_f[i].a[1] += (ry * mr3inv);
-    ns->h_f[i].a[2] += (rz * mr3inv);
+    fi.a[0] += (rx * mr3inv);
+    fi.a[1] += (ry * mr3inv);
+    fi.a[2] += (rz * mr3inv);
 
-    ns->h_f[i].a1[0] += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
-    ns->h_f[i].a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
-    ns->h_f[i].a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
+    fi.a1[0] += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
+    fi.a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
+    fi.a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
 }
 
 void Hermite4CPU::init_acc_jrk()
@@ -43,7 +43,7 @@ void Hermite4CPU::init_acc_jrk()
         for (j = 0; j < ns->n; j++)
         {
             if(i == j) continue;
-            force_calculation(i, j);
+            force_calculation(ns->h_p[i], ns->h_p[j], ns->h_f[i]);
         }
     }
 }
@@ -67,7 +67,7 @@ void Hermite4CPU::update_acc_jrk(int nact)
         for (j = 0; j < ns->n; j++)
         {
             if(i == j) continue;
-            force_calculation(i, j);
+            force_calculation(ns->h_p[i], ns->h_p[j], ns->h_f[i]);
         }
     }
     ns->gtime.update_end += omp_get_wtime() - ns->gtime.update_ini;

@@ -32,7 +32,9 @@ typedef struct orbital_elements
     double3 b_vec; // Semi-minor axis vector
     double ecc;       // Eccentricity
     double e_anomaly; // Eccentric anomaly
+    double e_anomaly0; // initial Eccentric anomaly
     double m_anomaly; // Mean anomaly
+    double m_anomaly0; // initial Mean anomaly
 } orbital_elements;
 
 class Hermite4Kepler : public Hermite4 {
