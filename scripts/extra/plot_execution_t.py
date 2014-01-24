@@ -11,15 +11,17 @@ import subprocess
 
 x_upper = 10**5
 y_upper = 10**4
-n = np.array([1024, 2048,4096,8192,16384,32768])
+
+n = np.array([1024,2048,4096,8192,16384,32768])
 nn = np.array([i for i in range(1,x_upper)])
 fig = plt.figure()
 f1 = fig.add_subplot(111)
-time = np.array([1.21, 3.22, 9.45, 23.31, 82.63, 275.53])
+time = np.array([1.27, 2.84, 10.47, 27.63, 104.06, 367.55]) # t2-t1
+
 f1.plot(n , time                 , 'o-')
-f1.plot(nn     , 3e-8*(nn**3)   , '--'   , color='green')
-f1.plot(nn     , 9e-7*(nn**2)    , '--'   , color='cyan')
-f1.plot(nn     , 1e-4*nn*np.log(nn) , '--'   , color='red')
+f1.plot(nn     , 4e-8*(nn**3)   , '--'   , color='green')
+f1.plot(nn     , 4e-7*(nn**2)    , '--'   , color='cyan')
+f1.plot(nn     , 4e-5*nn*np.log(nn) , '--'   , color='red')
 f1.set_ylabel(r'Clock time $(s)$', fontsize=15)
 f1.set_xlabel(r'$N$', fontsize=15)
 f1.set_xlim(1e3,x_upper)

@@ -1,5 +1,23 @@
 #include "Hermite4CPU.hpp"
 
+
+Hermite4CPU::Hermite4CPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
+                         : Hermite4(ns, logger, nu)
+{
+
+    h_fn     = new Forces[ns->n];
+    h_fn_old = new Forces[ns->n];
+    h_tn     = new double[ns->n];
+
+    nb_list  = new int*[ns->n];
+    nb_number = 2 * sqrt(ns->n);
+
+    for(int i = 0; i < ns->n; ++i)
+        nb_list[i] = new int[nb_number];
+
+}
+
+
 Hermite4CPU::~Hermite4CPU()
 {
     // None
@@ -37,7 +55,7 @@ void Hermite4CPU::force_calculation(int i, int j)
 void Hermite4CPU::init_acc_jrk()
 {
     int i,j;
-    #pragma omp parallel for private(j) schedule(dynamic, 24)
+    #pragma omp parallel for private(j)
     for (i = 0; i < ns->n; i++)
     {
         for (j = 0; j < ns->n; j++)

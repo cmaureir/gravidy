@@ -4,9 +4,16 @@
 
 class Hermite4CPU : public Hermite4 {
     public:
-        Hermite4CPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
-            : Hermite4(ns, logger, nu) {}
+        Hermite4CPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu);
         ~Hermite4CPU();
+
+        Forces *h_fn;
+        Forces *h_fn_old;
+        double *h_tn;
+        int **nb_list;
+        int nb_number;
+
+
 
         void force_calculation(int i, int j);
         void init_acc_jrk();

@@ -572,7 +572,7 @@ void Hermite4GPU::integration()
 
         if(std::ceil(ITIME) == ITIME)
         {
-            assert(nact == ns->n);
+            //assert(nact == ns->n);
             logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, get_energy_gpu());
             if (ns->ops.print_all)
             {

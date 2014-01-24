@@ -3,10 +3,11 @@
 ############################# Paths
 #BOOST_PATH=/cluster/boost/1.52.0
 #CUDA_PATH=/cluster/gpu/nvidia/5.5
-CUDA_PATH=/usr
+#CUDA_PATH=/usr
 MPI_PATH=/usr/lib/openmpi
 
 ############################# Compilers
+#CXX=        vtc++
 CXX=        g++
 NVCC=       $(CUDA_PATH)/bin/nvcc
 
@@ -31,9 +32,11 @@ CXXFLAGS=   $(BOOSTFLAGS) \
             -pg           \
             -lgomp        \
             -fopenmp
+#            -vt:verbose   \
 
 # MPI FLAGS
-MPIFLAGS=   -L$(MPI_PATH)/lib             \
+#MPIFLAGS=   -L$(MPI_PATH)/lib
+MPIFLAGS=   -L$(MPI_PATH)             \
             -I$(MPI_PATH)/include         \
             -I$(MPI_PATH)/include/openmpi \
             -pthread                      \
