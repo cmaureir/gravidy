@@ -1,10 +1,26 @@
 ## Makefile
+HOST := $(shell hostname | cut -d . -f 1)
 
-############################# Paths
-#BOOST_PATH=/cluster/boost/1.52.0
-#CUDA_PATH=/cluster/gpu/nvidia/5.5
+# Cluster at AEI
+ifeq ($(HOST), gpu-01)
+BOOST_PATH=/cluster/boost/1.52.0
+CUDA_PATH=/cluster/gpu/nvidia/5.5
+MPI_PATH=/cluster/openmpi/SL6/1.5.4/gcc
+endif
+# Cluster at AEI
+ifeq ($(HOST), pinatubo)
+BOOST_PATH=/usr
 CUDA_PATH=/usr
 MPI_PATH=/usr/lib/openmpi
+endif
+ifeq ($(HOST), neXus)
+BOOST_PATH=/usr
+CUDA_PATH=/opt/cuda
+MPI_PATH=/usr/lib/openmpi
+endif
+
+############################# Paths
+#CUDA_PATH=/usr
 
 ############################# Compilers
 CXX=        g++
@@ -40,8 +56,7 @@ MPIFLAGS=   -L$(MPI_PATH)/lib             \
             -lmpi_cxx                     \
             -lmpi                         \
             -ldl                          \
-            -lhwloc                       \
-            -DMPI                         \
+            -D_MPI                        \
             -DOMPI_SKIP_MPICXX
 
 # CUDA FLAGS

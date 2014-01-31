@@ -2,7 +2,7 @@
 #include "include/gpu/Hermite4GPU.cuh"
 #elif KEPLER
 #include "include/kepler/Hermite4Kepler.hpp"
-#elif MPI
+#elif _MPI
 #include "include/mpi/Hermite4MPI.hpp"
 #else
 #include "include/cpu/Hermite4CPU.hpp"
@@ -18,7 +18,7 @@
 int main(int argc, char *argv[]) {
 
 
-    #ifdef MPI
+    #ifdef _MPI
     int rank, nprocs;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     NbodySystem ns(op);
 
     // Reading the input file, storing the information in a temporal structure
-    #ifdef MPI
+    #ifdef _MPI
     if (rank == 0)
     {
         ns.read_input_file();
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
     Hermite4GPU h4(&ns, &logger, &nu);
     #elif KEPLER
     Hermite4Kepler h4(&ns, &logger, &nu);
-    #elif MPI
+    #elif _MPI
     Hermite4MPI h4(&ns, &logger, &nu, rank, nprocs);
     #else
     Hermite4CPU h4(&ns, &logger, &nu);
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     // Calling the integration process using the corresponding Hermite object
     h4.integration();
 
-    #ifdef MPI
+    #ifdef _MPI
     MPI_Finalize();
     #endif
     return 0;

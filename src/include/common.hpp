@@ -1,13 +1,15 @@
 #ifndef COMMON_HPP
 #define COMMON_HPP
+
+#ifdef _MPI
+#include <mpi.h>
+#endif
+
 #include <iomanip>
 #include <iostream>
 #include <cstdio>
 #include <omp.h>
 
-#ifdef MPI
-#include <mpi.h>
-#endif
 
 #ifndef GPU
 /** Defining the «double4» structure based on the CUDA definition for the
