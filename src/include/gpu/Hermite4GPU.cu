@@ -484,33 +484,33 @@ float Hermite4GPU::gpu_timer_stop(std::string f){
     return msec;
 }
 
-void Hermite4GPU::force_calculation(int i, int j)
+void Hermite4GPU::force_calculation(Predictor pi, Predictor pj, Forces &fi)
 {
-    double rx = ns->h_p[j].r[0] - ns->h_p[i].r[0];
-    double ry = ns->h_p[j].r[1] - ns->h_p[i].r[1];
-    double rz = ns->h_p[j].r[2] - ns->h_p[i].r[2];
+    double rx = pj.r[0] - pi.r[0];
+    double ry = pj.r[1] - pi.r[1];
+    double rz = pj.r[2] - pi.r[2];
 
-    double vx = ns->h_p[j].v[0] - ns->h_p[i].v[0];
-    double vy = ns->h_p[j].v[1] - ns->h_p[i].v[1];
-    double vz = ns->h_p[j].v[2] - ns->h_p[i].v[2];
+    double vx = pj.v[0] - pi.v[0];
+    double vy = pj.v[1] - pi.v[1];
+    double vz = pj.v[2] - pi.v[2];
 
     double r2     = rx*rx + ry*ry + rz*rz + ns->e2;
     double rinv   = 1.0/sqrt(r2);
     double r2inv  = rinv  * rinv;
     double r3inv  = r2inv * rinv;
     double r5inv  = r2inv * r3inv;
-    double mr3inv = r3inv * ns->h_p[j].m;
-    double mr5inv = r5inv * ns->h_p[j].m;
+    double mr3inv = r3inv * pj.m;
+    double mr5inv = r5inv * pj.m;
 
     double rv = rx*vx + ry*vy + rz*vz;
 
-    ns->h_f[i].a[0] += (rx * mr3inv);
-    ns->h_f[i].a[1] += (ry * mr3inv);
-    ns->h_f[i].a[2] += (rz * mr3inv);
+    fi.a[0] += (rx * mr3inv);
+    fi.a[1] += (ry * mr3inv);
+    fi.a[2] += (rz * mr3inv);
 
-    ns->h_f[i].a1[0] += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
-    ns->h_f[i].a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
-    ns->h_f[i].a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
+    fi.a1[0] += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
+    fi.a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
+    fi.a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
 }
 
 void Hermite4GPU::integration()
@@ -572,7 +572,7 @@ void Hermite4GPU::integration()
 
         if(std::ceil(ITIME) == ITIME)
         {
-            assert(nact == ns->n);
+            //assert(nact == ns->n);
             logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, get_energy_gpu());
             if (ns->ops.print_all)
             {

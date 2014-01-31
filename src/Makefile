@@ -23,6 +23,7 @@ endif
 #CUDA_PATH=/usr
 
 ############################# Compilers
+#CXX=        vtc++
 CXX=        g++
 NVCC=       $(CUDA_PATH)/bin/nvcc
 
@@ -47,9 +48,11 @@ CXXFLAGS=   $(BOOSTFLAGS) \
             -pg           \
             -lgomp        \
             -fopenmp
+#            -vt:verbose   \
 
 # MPI FLAGS
-MPIFLAGS=   -L$(MPI_PATH)/lib             \
+#MPIFLAGS=   -L$(MPI_PATH)/lib
+MPIFLAGS=   -L$(MPI_PATH)             \
             -I$(MPI_PATH)/include         \
             -I$(MPI_PATH)/include/openmpi \
             -pthread                      \

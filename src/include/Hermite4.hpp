@@ -25,7 +25,7 @@ class Hermite4 {
         virtual void integration() {}
         virtual void predicted_pos_vel(double ITIME) {}
         virtual void correction_pos_vel(double ITIME, int nact) {}
-        virtual void force_calculation(int i, int j) {}
+        virtual void force_calculation(Predictor pi, Predictor pj, Forces &fi) {}
         virtual void init_acc_jrk() {}
         virtual void update_acc_jrk(int nact) {}
 

@@ -23,7 +23,7 @@ class Hermite4MPI : public Hermite4 {
         Forces *tmp_f;
 
         void alloc_slaves_memory(int rank);
-        void force_calculation(int i, int j);
+        void force_calculation(Predictor pi, Predictor pj, Forces &fi);
         void init_acc_jrk();
         void update_acc_jrk(int nact);
         void predicted_pos_vel(double ITIME);

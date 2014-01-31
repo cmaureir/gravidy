@@ -30,7 +30,7 @@ class Hermite4GPU : public Hermite4 {
         void alloc_arrays_device();
         void free_arrays_device();
 
-        void force_calculation(int i, int j);
+        void force_calculation(Predictor pi, Predictor pj, Forces &fi);
         void init_acc_jrk();
         void update_acc_jrk(int nact);
         void predicted_pos_vel(double ITIME);

@@ -5,21 +5,20 @@
 #include <cmath>
 #include <iostream>
 
-static double
-    _1_17_16 = 1./17./16.,
-    _1_16_15 = 1./16./15.,
-    _1_15_14 = 1./15./14.,
-    _1_14_13 = 1./14./13.,
-    _1_13_12 = 1./13./12.,
-    _1_12_11 = 1./12./11.,
-    _1_11_10 = 1./11./10.,
-    _1_10_9  = 1./10./9.,
-    _1_9_8   = 1./9./8.,
-    _1_8_7   = 1./8./7.,
-    _1_7_6   = 1./7./6.,
-    _1_6_5   = 1./6./5.,
-    _1_4_3   = 1./4./3.,
-    _1_3_2   = 1./3./2.;
+static const double _1_17_16 = 1./17./16.,
+                    _1_16_15 = 1./16./15.,
+                    _1_15_14 = 1./15./14.,
+                    _1_14_13 = 1./14./13.,
+                    _1_13_12 = 1./13./12.,
+                    _1_12_11 = 1./12./11.,
+                    _1_11_10 = 1./11./10.,
+                    _1_10_9  = 1./10./9.,
+                    _1_9_8   = 1./9./8.,
+                    _1_8_7   = 1./8./7.,
+                    _1_7_6   = 1./7./6.,
+                    _1_6_5   = 1./6./5.,
+                    _1_4_3   = 1./4./3.,
+                    _1_3_2   = 1./3./2.;
 
 typedef struct orbital_elements
 {
@@ -33,6 +32,9 @@ typedef struct orbital_elements
     double ecc;       // Eccentricity
     double e_anomaly; // Eccentric anomaly
     double m_anomaly; // Mean anomaly
+
+    double e_anomaly0; // Initial Eccentric anomaly
+    double m_anomaly0; // Initial Mean anomaly
 } orbital_elements;
 
 class Hermite4Kepler : public Hermite4 {
@@ -73,8 +75,8 @@ class Hermite4Kepler : public Hermite4 {
         double solve_kepler(double m_anomaly, double ecc);
         double kepler(const double ecc, double mean_anom);
 
-        Predictor get_elliptical_pos_vel(double dt);
-        Predictor get_hyperbolic_pos_vel(double dt);
+        Predictor get_elliptical_pos_vel(int i, double dt);
+        Predictor get_hyperbolic_pos_vel(int i, double dt);
 
 };
 #endif // HERMITE4KEPLER_HPP
