@@ -24,13 +24,13 @@ void Hermite4Kepler::alloc_arrays_host_kepler()
 {
 
     size_t ff_size = ns->n * sizeof(Forces);
-    size_t d4_size = ns->n * sizeof(double4);
+    size_t d3_size = ns->n * sizeof(double3);
     size_t d1_size = ns->n * sizeof(double);
 
     ns->h_fbh    = new Forces[ff_size];
-    ns->h_a2bh   = new double4[d4_size];
-    ns->h_a3bh   = new double4[d4_size];
-    ns->h_dt_old = new double[d1_size];
+    ns->h_a2bh   = new double3[d3_size];
+    ns->h_a3bh   = new double3[d3_size];
+    ns->h_dtlast = new double[d1_size];
 }
 
 void Hermite4Kepler::free_arrays_host_kepler()
@@ -38,12 +38,12 @@ void Hermite4Kepler::free_arrays_host_kepler()
     delete ns->h_fbh;
     delete ns->h_a2bh;
     delete ns->h_a2bh;
-    delete ns->h_dt_old;
+    delete ns->h_dtlast;
 }
 
 void Hermite4Kepler::init_data_bh()
 {
-    double4 empty = {0.0, 0.0, 0.0, 0.0};
+    double3 empty = {0.0, 0.0, 0.0};
     int i;
     #pragma omp parallel for schedule(dynamic, 24)
     for (i = 1; i < ns->n; i++) {
@@ -57,37 +57,8 @@ void Hermite4Kepler::init_data_bh()
 
         ns->h_a2bh[i] = empty;
         ns->h_a3bh[i] = empty;
-        ns->h_dt_old[i] = 0.0;
+        ns->h_dtlast[i] = 0.0;
     }
-}
-
-void Hermite4Kepler::force_calculation(int i, int j)
-{
-    double rx = ns->h_p[j].r[0] - ns->h_p[i].r[0];
-    double ry = ns->h_p[j].r[1] - ns->h_p[i].r[1];
-    double rz = ns->h_p[j].r[2] - ns->h_p[i].r[2];
-
-    double vx = ns->h_p[j].v[0] - ns->h_p[i].v[0];
-    double vy = ns->h_p[j].v[1] - ns->h_p[i].v[1];
-    double vz = ns->h_p[j].v[2] - ns->h_p[i].v[2];
-
-    double r2     = (rx * rx + ry * ry) + (rz * rz + ns->e2);
-    double rinv   = 1.0/sqrt(r2);
-    double r2inv  = rinv  * rinv;
-    double r3inv  = r2inv * rinv;
-    double r5inv  = r2inv * r3inv;
-    double mr3inv = r3inv * ns->h_p[j].m;
-    double mr5inv = r5inv * ns->h_p[j].m;
-
-    double rv = rx*vx + ry*vy + rz*vz;
-
-    ns->h_f[i].a[0] += (rx * mr3inv);
-    ns->h_f[i].a[1] += (ry * mr3inv);
-    ns->h_f[i].a[2] += (rz * mr3inv);
-
-    ns->h_f[i].a1[0] += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
-    ns->h_f[i].a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
-    ns->h_f[i].a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
 }
 
 /*
@@ -96,57 +67,57 @@ void Hermite4Kepler::force_calculation(int i, int j)
  * @desc Method to calculate the gravitational interaction between
  * a certain i-particle and the BH
  */
-void Hermite4Kepler::force_calculation_bh(int i)
+void Hermite4Kepler::force_calculation(Predictor pi, Predictor pj, Forces &fi)
 {
-    double rx = ns->h_p[0].r[0] - ns->h_p[i].r[0];
-    double ry = ns->h_p[0].r[1] - ns->h_p[i].r[1];
-    double rz = ns->h_p[0].r[2] - ns->h_p[i].r[2];
+    double rx = pj.r[0] - pi.r[0];
+    double ry = pj.r[1] - pi.r[1];
+    double rz = pj.r[2] - pi.r[2];
 
-    double vx = ns->h_p[0].v[0] - ns->h_p[i].v[0];
-    double vy = ns->h_p[0].v[1] - ns->h_p[i].v[1];
-    double vz = ns->h_p[0].v[2] - ns->h_p[i].v[2];
+    double vx = pj.v[0] - pi.v[0];
+    double vy = pj.v[1] - pi.v[1];
+    double vz = pj.v[2] - pi.v[2];
 
-    double r2     = (rx * rx + ry * ry) + (rz * rz + ns->e2);
+    double r2     = rx*rx + ry*ry + rz*rz + ns->e2;
     double rinv   = 1.0/sqrt(r2);
     double r2inv  = rinv  * rinv;
     double r3inv  = r2inv * rinv;
     double r5inv  = r2inv * r3inv;
-    double mr3inv = r3inv * ns->h_p[0].m;
-    double mr5inv = r5inv * ns->h_p[0].m;
+    double mr3inv = r3inv * pj.m;
+    double mr5inv = r5inv * pj.m;
 
     double rv = rx*vx + ry*vy + rz*vz;
 
-    ns->h_fbh[i].a[0] += (rx * mr3inv);
-    ns->h_fbh[i].a[1] += (ry * mr3inv);
-    ns->h_fbh[i].a[2] += (rz * mr3inv);
+    fi.a[0] += (rx * mr3inv);
+    fi.a[1] += (ry * mr3inv);
+    fi.a[2] += (rz * mr3inv);
 
-    ns->h_fbh[i].a1[0] += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
-    ns->h_fbh[i].a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
-    ns->h_fbh[i].a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
+    fi.a1[0] += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
+    fi.a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
+    fi.a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
 }
 
 void Hermite4Kepler::init_acc_jrk()
 {
     int i,j;
+
+    // Related to the central BH
+    #pragma omp parallel for schedule(dynamic, 24)
+    for (i = 1; i < ns->n; i++)
+    {
+        force_calculation(ns->h_p[i], ns->h_p[0], ns->h_fbh[i]);
+    }
+
+    // Related to the globular cluster
     #pragma omp parallel for private(j) schedule(dynamic, 24)
     for (i = 1; i < ns->n; i++)
     {
         for (j = 1; j < ns->n; j++)
         {
             if(i == j) continue;
-            force_calculation(i, j);
+            force_calculation(ns->h_p[i], ns->h_p[j], ns->h_f[i]);
         }
     }
-}
 
-void Hermite4Kepler::init_acc_jrk_bh()
-{
-    int i;
-    #pragma omp parallel for schedule(dynamic, 24)
-    for (i = 1; i < ns->n; i++)
-    {
-        force_calculation_bh(i);
-    }
 }
 
 void Hermite4Kepler::update_acc_jrk(int nact)
@@ -154,7 +125,7 @@ void Hermite4Kepler::update_acc_jrk(int nact)
     ns->gtime.update_ini = omp_get_wtime();
     int i, j, k;
     #pragma omp parallel for private(i,j)
-    for (k = 0; k < nact; k++)
+    for (k = FIRST_PARTICLE; k < nact; k++)
     {
         i = ns->h_move[k];
         ns->h_f[i].a[0]  = 0.0;
@@ -168,31 +139,62 @@ void Hermite4Kepler::update_acc_jrk(int nact)
         for (j = FIRST_PARTICLE; j < ns->n; j++)
         {
             if(i == j) continue;
-            force_calculation(i, j);
+            force_calculation(ns->h_p[i], ns->h_p[j], ns->h_f[i]);
         }
     }
     ns->gtime.update_end += omp_get_wtime() - ns->gtime.update_ini;
 }
 
-void Hermite4Kepler::predicted_pos_vel(double ITIME)
+// Empty, not used
+void Hermite4Kepler::predicted_pos_vel(double ITIME) {}
+
+void Hermite4Kepler::predicted_pos_vel(double ITIME, int nact)
 {
 
     ns->gtime.prediction_ini = omp_get_wtime();
     for (int i = 1; i < ns->n; i++)
     {
-        double dt  = ITIME - ns->h_t[i];
-        double dt2 = (dt  * dt);
-        double dt3 = (dt2 * dt);
+        bool active = false;
+        for (int j = 0; j < nact ; j++)
+        {
+            if ( i == ns->h_move[j])
+                active = true;
+        }
 
-        ns->h_p[i].r[0] = (dt3/6 * ns->h_f[i].a1[0]) + (dt2/2 * ns->h_f[i].a[0]) + (dt * ns->h_v[i].x) + ns->h_r[i].x;
-        ns->h_p[i].r[1] = (dt3/6 * ns->h_f[i].a1[1]) + (dt2/2 * ns->h_f[i].a[1]) + (dt * ns->h_v[i].y) + ns->h_r[i].y;
-        ns->h_p[i].r[2] = (dt3/6 * ns->h_f[i].a1[2]) + (dt2/2 * ns->h_f[i].a[2]) + (dt * ns->h_v[i].z) + ns->h_r[i].z;
+        if (!active)
+        {
+            double dt  = ITIME - ns->h_t[i];
+            double dt2 = (dt  * dt);
+            double dt3 = (dt2 * dt);
 
-        ns->h_p[i].v[0] = (dt2/2 * ns->h_f[i].a1[0]) + (dt * ns->h_f[i].a[0]) + ns->h_v[i].x;
-        ns->h_p[i].v[1] = (dt2/2 * ns->h_f[i].a1[1]) + (dt * ns->h_f[i].a[1]) + ns->h_v[i].y;
-        ns->h_p[i].v[2] = (dt2/2 * ns->h_f[i].a1[2]) + (dt * ns->h_f[i].a[2]) + ns->h_v[i].z;
+            ns->h_p[i].r[0] = (dt3/6 * (ns->h_f[i].a1[0] + ns->h_fbh[i].a1[0])) + (dt2/2 * (ns->h_f[i].a[0] + ns->h_fbh[i].a[0])) + (dt * ns->h_v[i].x) + ns->h_r[i].x;
+            ns->h_p[i].r[1] = (dt3/6 * (ns->h_f[i].a1[1] + ns->h_fbh[i].a1[1])) + (dt2/2 * (ns->h_f[i].a[1] + ns->h_fbh[i].a[1])) + (dt * ns->h_v[i].y) + ns->h_r[i].y;
+            ns->h_p[i].r[2] = (dt3/6 * (ns->h_f[i].a1[2] + ns->h_fbh[i].a1[2])) + (dt2/2 * (ns->h_f[i].a[2] + ns->h_fbh[i].a[2])) + (dt * ns->h_v[i].z) + ns->h_r[i].z;
 
-        ns->h_p[i].m = ns->h_r[i].w;
+            ns->h_p[i].v[0] = (dt2/2 * (ns->h_f[i].a1[0] + ns->h_fbh[i].a1[0])) + (dt * (ns->h_f[i].a[0] + ns->h_fbh[i].a[0])) + ns->h_v[i].x;
+            ns->h_p[i].v[1] = (dt2/2 * (ns->h_f[i].a1[1] + ns->h_fbh[i].a1[1])) + (dt * (ns->h_f[i].a[1] + ns->h_fbh[i].a[0])) + ns->h_v[i].y;
+            ns->h_p[i].v[2] = (dt2/2 * (ns->h_f[i].a1[2] + ns->h_fbh[i].a1[2])) + (dt * (ns->h_f[i].a[2] + ns->h_fbh[i].a[0])) + ns->h_v[i].z;
+            ns->h_p[i].m = ns->h_r[i].w;
+        }
+        else
+        {
+
+            double dt  = ns->h_dt[i];
+            double dt2 = dt * dt;
+            double dt3 = dt * dt2;
+
+            ns->h_p[i].r[0] += (dt3/6 * ns->h_f[i].a1[0]) + (dt2/2 * ns->h_f[i].a[0]);
+            ns->h_p[i].r[1] += (dt3/6 * ns->h_f[i].a1[1]) + (dt2/2 * ns->h_f[i].a[1]);
+            ns->h_p[i].r[2] += (dt3/6 * ns->h_f[i].a1[2]) + (dt2/2 * ns->h_f[i].a[2]);
+
+            ns->h_p[i].v[0] += (dt2/2 * ns->h_f[i].a1[0]) + (dt * ns->h_f[i].a[0]);
+            ns->h_p[i].v[1] += (dt2/2 * ns->h_f[i].a1[1]) + (dt * ns->h_f[i].a[1]);
+            ns->h_p[i].v[2] += (dt2/2 * ns->h_f[i].a1[2]) + (dt * ns->h_f[i].a[2]);
+            ns->h_p[i].m = ns->h_r[i].w;
+
+
+        }
+
 
     }
     ns->gtime.prediction_end += omp_get_wtime() - ns->gtime.prediction_ini;
@@ -233,17 +235,41 @@ void Hermite4Kepler::correction_pos_vel(double ITIME, int nact)
 
 
         // Save old timestep
-        ns->h_dt_old[i] = ns->h_dt[i];
+        ns->h_dtlast[i] = ns->h_dt[i];
         // Update self timej
         ns->h_t[i] = ITIME;
 
         // Get new timestep
-        double normal_dt  = nu->get_timestep_normal(i);
-        normal_dt = nu->normalize_dt(normal_dt, ns->h_dt[i], ns->h_t[i], i);
+        double normal_dt  = nu->get_timestep_normal(i, ETA_K);
+        double central_dt  = nu->get_timestep_central(i);
+        normal_dt = nu->normalize_dt(std::min(central_dt, normal_dt), ns->h_dt[i], ns->h_t[i], i);
         ns->h_dt[i] = normal_dt;
 
     }
     ns->gtime.correction_end += omp_get_wtime() - ns->gtime.correction_ini;
+}
+
+void Hermite4Kepler::init_dt_bh(double &CTIME)
+{
+    // Get timestep respect the bh
+    for (int i = FIRST_PARTICLE; i < ns->n; i++) {
+        double tmp_dt = ETA_K * nu->get_timestep_central(i);
+
+        int exp = (int)(std::ceil(log(tmp_dt)/log(2.0))-1);
+        tmp_dt = pow(2,exp);
+
+        if (tmp_dt < D_TIME_MIN)
+            tmp_dt = D_TIME_MIN;
+        else if (tmp_dt > D_TIME_MAX)
+            tmp_dt = D_TIME_MAX;
+
+        ns->h_dt[i] = tmp_dt;
+        ns->h_t[i] = 0.0;
+
+        // Obtaining the first integration time
+        if(tmp_dt < CTIME)
+            CTIME = tmp_dt;
+    }
 }
 
 void Hermite4Kepler::integration()
@@ -251,25 +277,24 @@ void Hermite4Kepler::integration()
 
     ns->gtime.integration_ini = omp_get_wtime();
 
-    double ATIME = 1.0e+10; // Actual integration time
+    double CTIME = 1.0e+10; // Current integration time
     double ITIME = 0.0;     // Integration time
     int nact     = 0;       // Active particles
     int nsteps   = 0;       // Amount of steps per particles on the system
     static long long interactions = 0;
 
-
     int max_threads = omp_get_max_threads();
     omp_set_num_threads( max_threads - 1);
 
     init_acc_jrk();
-    init_acc_jrk_bh();
-    init_dt(ATIME);
+    init_dt(CTIME, ETA_K);
+    //init_dt_bh(CTIME);
 
     ns->en.ini = nu->get_energy();   // Initial calculation of the energy of the system
     ns->en.tmp = ns->en.ini;
 
-    ns->hmr_time = nu->get_half_mass_relaxation_time();
-    ns->cr_time  = nu->get_crossing_time();
+    //ns->hmr_time = nu->get_half_mass_relaxation_time();
+    //ns->cr_time  = nu->get_crossing_time();
 
     logger->print_info();
     logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, ns->en.ini);
@@ -286,14 +311,44 @@ void Hermite4Kepler::integration()
 
     while (ITIME < ns->integration_time)
     {
-        ITIME = ATIME;
+        ITIME = CTIME;
 
         nact = find_particles_to_move(ITIME);
+        printf("%.10f %d\n", ITIME, nact);
+        /****************************/
+        //std::cout << ITIME << " " << nact << " | ";
+        //for (int ii = 0; ii < nact; ii++) {
+        //    std::cout << ns->h_move[ii] << " ";
+        //}
+        //std::cout << std::endl;
+        /****************************/
 
         save_old_acc_jrk(nact);
 
+        //printf("%d %.20f %.20f %.20f %.20f %.20f %.20f\n", ns->h_move[0],
+        //                                                   ns->h_p[ns->h_move[0]].r[0],
+        //                                                   ns->h_p[ns->h_move[0]].r[1],
+        //                                                   ns->h_p[ns->h_move[0]].r[2],
+        //                                                   ns->h_p[ns->h_move[0]].v[0],
+        //                                                   ns->h_p[ns->h_move[0]].v[1],
+        //                                                   ns->h_p[ns->h_move[0]].v[2]);
         move_keplerian_orbit(ITIME, nact);
-        predicted_pos_vel(ITIME);
+        //printf("%d %.20f %.20f %.20f %.20f %.20f %.20f\n", ns->h_move[0],
+        //                                                   ns->h_p[ns->h_move[0]].r[0],
+        //                                                   ns->h_p[ns->h_move[0]].r[1],
+        //                                                   ns->h_p[ns->h_move[0]].r[2],
+        //                                                   ns->h_p[ns->h_move[0]].v[0],
+        //                                                   ns->h_p[ns->h_move[0]].v[1],
+        //                                                   ns->h_p[ns->h_move[0]].v[2]);
+        predicted_pos_vel(ITIME, nact);
+
+        //printf("%d %.20f %.20f %.20f %.20f %.20f %.20f\n", ns->h_move[0],
+        //                                                   ns->h_p[ns->h_move[0]].r[0],
+        //                                                   ns->h_p[ns->h_move[0]].r[1],
+        //                                                   ns->h_p[ns->h_move[0]].r[2],
+        //                                                   ns->h_p[ns->h_move[0]].v[0],
+        //                                                   ns->h_p[ns->h_move[0]].v[1],
+        //                                                   ns->h_p[ns->h_move[0]].v[2]);
 
         update_acc_jrk(nact);
 
@@ -303,18 +358,13 @@ void Hermite4Kepler::integration()
         interactions += nact * ns->n;
 
         // Find the next integration time
-        next_integration_time(ATIME);
+        next_integration_time(CTIME);
 
-        /****************************/
-        //std::cout << nact << " | ";
-        //for (int ii = 0; ii < nact; ii++) {
-        //    std::cout << ns->h_move[ii] << " ";
-        //}
-        //std::cout << std::endl;
-        /****************************/
 
         if(std::ceil(ITIME) == ITIME)
         {
+
+            getchar();
             assert(nact == ns->n - FIRST_PARTICLE);
             logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy());
             if (ns->ops.print_all)
@@ -620,123 +670,134 @@ void Hermite4Kepler::kepler_move(int i, double dt)
 
     //print_orbital_elements();
     //getchar();
-    Predictor new_rv;
+    //Predictor pkepler;
 
     if(oe.ecc < 1)
     {
-        new_rv = get_elliptical_pos_vel(i, dt);
+        pkepler = get_elliptical_pos_vel(i, dt);
     }
     else
     {
-        new_rv = get_hyperbolic_pos_vel(i, dt);
+        pkepler = get_hyperbolic_pos_vel(i, dt);
     }
-
-    // Hacer algo con pkepler y el valor que obtuvimos de new_pos_vel
-    //
     // End of the orbit-type treatment
 
-    //double new_r_mag = sqrt((new_rv.r[0]) * (new_rv.r[0]) +
-    //                        (new_rv.r[1]) * (new_rv.r[1]) +
-    //                        (new_rv.r[2]) * (new_rv.r[2]));
-    //double new_r2 = new_r_mag * new_r_mag;
+    // Total motion relative to fix central mass
+    pkepler.r[0] = ns->h_r[0].x + (pkepler.r[0]);
+    pkepler.r[1] = ns->h_r[0].y + (pkepler.r[1]);
+    pkepler.r[2] = ns->h_r[0].z + (pkepler.r[2]);
 
-    //double new_v_mag = sqrt((new_rv.v[0]) * (new_rv.v[0]) +
-    //                        (new_rv.v[1]) * (new_rv.v[1]) +
-    //                        (new_rv.v[2]) * (new_rv.v[2]));
-    //double new_v2 = new_v_mag * new_v_mag;
+    pkepler.v[0] = ns->h_v[0].x + (pkepler.v[0]);
+    pkepler.v[1] = ns->h_v[0].y + (pkepler.v[1]);
+    pkepler.v[2] = ns->h_v[0].z + (pkepler.v[2]);
 
-    //double vr = ((new_rv.v[0]) * (new_rv.r[0]) +
-    //             (new_rv.v[1]) * (new_rv.r[1]) +
-    //             (new_rv.v[2]) * (new_rv.r[2]));
+    double r_mag = sqrt((pkepler.r[0]) * (pkepler.r[0]) +
+                        (pkepler.r[1]) * (pkepler.r[1]) +
+                        (pkepler.r[2]) * (pkepler.r[2]));
 
-    //double j_mag = sqrt(oe.j.x * oe.j.x +
-    //                    oe.j.y * oe.j.y +
-    //                    oe.j.z * oe.j.z);
+    double v_mag = sqrt((pkepler.v[0]) * (pkepler.v[0]) +
+                        (pkepler.v[1]) * (pkepler.v[1]) +
+                        (pkepler.v[2]) * (pkepler.v[2]));
 
-    //double rv2 = (new_rv.r[0] * new_rv.v[0] +
-    //              new_rv.r[1] * new_rv.v[1] +
-    //              new_rv.r[2] * new_rv.v[2]);
+    double rv = ((pkepler.r[0]) * (pkepler.v[0]) +
+                 (pkepler.r[1]) * (pkepler.v[1]) +
+                 (pkepler.r[2]) * (pkepler.v[2]));
 
-    // get |v| from j = r x v
-    // Esta mierda no se usa...
-    //new_v_mag = j_mag / (new_r_mag * new_v_mag * sin(acos(rv2/(new_r_mag * new_v_mag))));
+    double j_mag = sqrt(oe.j.x * oe.j.x +
+                        oe.j.y * oe.j.y +
+                        oe.j.z * oe.j.z);
 
-    // total motion relative to fix central mass
-    //pkepler.r[0] = ns->h_r[0].x + (new_rv.r[0]);
-    //pkepler.r[1] = ns->h_r[0].y + (new_rv.r[1]);
-    //pkepler.r[2] = ns->h_r[0].z + (new_rv.r[2]);
+    double r2 = r_mag * r_mag;
+    double v2 = v_mag * v_mag;
 
-    //pkepler.v[0] = ns->h_v[0].x + (new_rv.v[0]);
-    //pkepler.v[0] = ns->h_v[0].y + (new_rv.v[1]);
-    //pkepler.v[0] = ns->h_v[0].z + (new_rv.v[2]);
-    pkepler.r[0] =  new_rv.r[0];
-    pkepler.r[1] =  new_rv.r[1];
-    pkepler.r[2] =  new_rv.r[2];
-
-    pkepler.v[0] =  new_rv.v[0];
-    pkepler.v[1] =  new_rv.v[1];
-    pkepler.v[2] =  new_rv.v[2];
-
-    ///*
-    // * Force contribution of the central mass on a particle
-    // * (Acceleration and it 1st, 2nd and 3rd derivatives
-    // */
-
-    //double r2inv = 1/(r2);
-    //double mr3inv = - ns->h_r[0].w * r2inv * sqrt(r2inv);
-
-    //// Acceleration (a)
-    //// a = -G * ns->h_r[0].w * \vec{r} / r^{3}
-
-    //double a0x =  (new_rv.r[0]) * mr3inv;
-    //double a0y =  (new_rv.r[1]) * mr3inv;
-    //double a0z =  (new_rv.r[2]) * mr3inv;
+    //v_mag = j_mag / (new_r_mag * new_v_mag * sin(acos(rv2/(new_r_mag * new_v_mag))));
 
 
-    //double a1x = mr3inv * ( (new_rv.v[0]) - 3 * r2inv * vr * (new_rv.r[0]));
-    //double a1y = mr3inv * ( (new_rv.v[1]) - 3 * r2inv * vr * (new_rv.r[1]));
-    //double a1z = mr3inv * ( (new_rv.v[2]) - 3 * r2inv * vr * (new_rv.r[2]));
+    /*
+     * Force contribution of the central mass on a particle
+     * (Acceleration and it 1st, 2nd and 3rd derivatives
+     */
 
-    //double ra0 = ((new_rv.r[0])*a0x + (new_rv.r[1])*a0y + (new_rv.r[2])*a0z);
+    // Constant to calculate the forces in a clear way
+    float cx, cy, cz;
 
-    //double a2x = mr3inv * (a0x - 3.0 * r2inv * (vr * ( 2.0 * (new_rv.v[0]) - 5.0 * vr * (new_rv.r[0]) * r2inv)) + (v2 + ra0) * (new_rv.r[0]));
-    //double a2y = mr3inv * (a0y - 3.0 * r2inv * (vr * ( 2.0 * (new_rv.v[1]) - 5.0 * vr * (new_rv.r[1]) * r2inv)) + (v2 + ra0) * (new_rv.r[1]));
-    //double a2z = mr3inv * (a0z - 3.0 * r2inv * (vr * ( 2.0 * (new_rv.v[2]) - 5.0 * vr * (new_rv.r[2]) * r2inv)) + (v2 + ra0) * (new_rv.r[2]));
+    float r2inv = 1/r2;
+    float mr3inv = - G *  ns->h_r[0].w * (r2inv * sqrt(r2inv));
 
-    //double va = ((new_rv.v[0])*a0x + (new_rv.v[1])*a0y + (new_rv.v[2])*a0z);
-    //double ra1 = ((new_rv.r[0])*a1x + (new_rv.r[1])*a1y + (new_rv.r[2])*a1z);
+    /**************************************** Acceleration (a) */
+    float a0x =  (pkepler.r[0]) * mr3inv;
+    float a0y =  (pkepler.r[1]) * mr3inv;
+    float a0z =  (pkepler.r[2]) * mr3inv;
 
-    //double a3x = mr3inv * ( a1x - 3.0 * r2inv * ( 3.0 * vr * a0x + 3.0
-    //            * (v2 + ra0) * ((new_rv.v[0]) - 5.0 * vr * r2inv * (new_rv.r[0]))
-    //            + (3.0 * va + ra1) * (new_rv.r[0]) + (vr * vr * r2inv)
-    //            * (-15.0 * (new_rv.v[0]) + 35.0 * vr * r2inv * (new_rv.r[0]))));
+    /**************************************** First derivative acceleration (a) */
+    float a1x = mr3inv * ((pkepler.v[0]) - 3 * r2inv * rv * (pkepler.r[0]));
+    float a1y = mr3inv * ((pkepler.v[1]) - 3 * r2inv * rv * (pkepler.r[1]));
+    float a1z = mr3inv * ((pkepler.v[2]) - 3 * r2inv * rv * (pkepler.r[2]));
 
-    //double a3y = mr3inv * ( a1y - 3.0 * r2inv * ( 3.0 * vr * a0y + 3.0
-    //            * (v2 + ra0) * ((new_rv.v[1]) - 5.0 * vr * r2inv * (new_rv.r[1]))
-    //            + (3.0 * va + ra1) * (new_rv.r[1]) + (vr * vr * r2inv)
-    //            * (-15.0 * (new_rv.v[1]) + 35.0 * vr * r2inv * (new_rv.r[1]))));
 
-    //double a3z = mr3inv * ( a1z - 3.0 * r2inv * ( 3.0 * vr * a0z + 3.0
-    //            * (v2 + ra0) * ((new_rv.v[2]) - 5.0 * vr * r2inv * (new_rv.r[2]))
-    //            + (3.0 * va + ra1) * (new_rv.r[2]) + (vr * vr * r2inv)
-    //            * (-15.0 * (new_rv.v[2]) + 35.0 * vr * r2inv * (new_rv.r[2]))));
+    /**************************************** Second derivative acceleration (a) */
+    float ra0 = pkepler.r[0] * a0x +
+                pkepler.r[1] * a0y +
+                pkepler.r[2] * a0z;
 
-    //h_fbh[i].a[0] = a0x;
-    //h_fbh[i].a[1] = a0y;
-    //h_fbh[i].a[2] = a0z;
 
-    //h_fbh[i].a1[0] = a1x;
-    //h_fbh[i].a1[1] = a1y;
-    //h_fbh[i].a1[2] = a1z;
+    cx = (rv * ( 2.0 * pkepler.v[0] - 5.0 * rv * pkepler.r[0] * r2inv));
+    cy = (rv * ( 2.0 * pkepler.v[1] - 5.0 * rv * pkepler.r[1] * r2inv));
+    cz = (rv * ( 2.0 * pkepler.v[2] - 5.0 * rv * pkepler.r[2] * r2inv));
+    float a2x = mr3inv * (a0x - 3.0 * r2inv * cx + (v2 + ra0) * (pkepler.r[0]));
+    float a2y = mr3inv * (a0y - 3.0 * r2inv * cy + (v2 + ra0) * (pkepler.r[1]));
+    float a2z = mr3inv * (a0z - 3.0 * r2inv * cz + (v2 + ra0) * (pkepler.r[2]));
 
-    //h_a2bh[i].x = a2x;
-    //h_a2bh[i].y = a2y;
-    //h_a2bh[i].z = a2z;
+    /**************************************** Third derivative acceleration (a) */
+    float va0 = pkepler.v[0] * a0x +
+                pkepler.v[1] * a0y +
+                pkepler.v[2] * a0z;
 
-    //h_a3bh[i].x = a3x;
-    //h_a3bh[i].y = a3y;
-    //h_a3bh[i].z = a3z;
+    float ra1 = pkepler.r[0] * a1x +
+                pkepler.r[1] * a1y +
+                pkepler.r[2] * a1z;
 
+    cx  = 3.0 * rv * a0x + 3.0 * (v2 + ra0);
+    cy  = 3.0 * rv * a0y + 3.0 * (v2 + ra0);
+    cz  = 3.0 * rv * a0z + 3.0 * (v2 + ra0);
+
+    cx *= (pkepler.v[0] - 5.0 * rv * r2inv * pkepler.r[0]);
+    cy *= (pkepler.v[1] - 5.0 * rv * r2inv * pkepler.r[1]);
+    cz *= (pkepler.v[2] - 5.0 * rv * r2inv * pkepler.r[2]);
+
+    cx += 3.0 * va0 + ra1 * pkepler.r[0] + rv * rv * r2inv;
+    cy += 3.0 * va0 + ra1 * pkepler.r[1] + rv * rv * r2inv;
+    cz += 3.0 * va0 + ra1 * pkepler.r[2] + rv * rv * r2inv;
+
+    cx *= -15.0 * pkepler.v[0] + 35.0 * rv * r2inv * pkepler.r[0];
+    cy *= -15.0 * pkepler.v[1] + 35.0 * rv * r2inv * pkepler.r[1];
+    cz *= -15.0 * pkepler.v[2] + 35.0 * rv * r2inv * pkepler.r[2];
+
+    float a3x = mr3inv * ( a1x - 3.0 * r2inv * cx);
+    float a3y = mr3inv * ( a1y - 3.0 * r2inv * cy);
+    float a3z = mr3inv * ( a1z - 3.0 * r2inv * cz);
+    /**************************************** Writing the forces */
+
+    //std::cout << "a0: " << a0x << " " << a0y << " " << a0z << std::endl;
+    //std::cout << "a1: " << a1x << " " << a1y << " " << a1z << std::endl;
+    //std::cout << "a2: " << a2x << " " << a2y << " " << a2z << std::endl;
+    //std::cout << "a3: " << a3x << " " << a3y << " " << a3z << std::endl;
+
+    ns->h_fbh[i].a[0] = a0x;
+    ns->h_fbh[i].a[1] = a0y;
+    ns->h_fbh[i].a[2] = a0z;
+
+    ns->h_fbh[i].a1[0] = a1x;
+    ns->h_fbh[i].a1[1] = a1y;
+    ns->h_fbh[i].a1[2] = a1z;
+
+    ns->h_a2bh[i].x = a2x;
+    ns->h_a2bh[i].y = a2y;
+    ns->h_a2bh[i].z = a2z;
+
+    ns->h_a3bh[i].x = a3x;
+    ns->h_a3bh[i].y = a3y;
+    ns->h_a3bh[i].z = a3z;
 }
 
 double Hermite4Kepler::solve_kepler(double m_anomaly, double ecc)

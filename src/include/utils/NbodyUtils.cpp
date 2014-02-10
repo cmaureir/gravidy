@@ -223,7 +223,7 @@ double NbodyUtils::get_magnitude(double x, double y, double z)
     return sqrt(x*x + y*y + z*z);
 }
 
-double NbodyUtils::get_timestep_normal(int i)
+double NbodyUtils::get_timestep_normal(int i, float ETA)
 {
     // Calculating a_{1,i}^{(2)} = a_{0,i}^{(2)} + dt * a_{0,i}^{(3)}
     double ax1_2 = ns->h_a2[i].x + ns->h_dt[i] * ns->h_a3[i].x;
@@ -249,7 +249,7 @@ double NbodyUtils::get_timestep_normal(int i)
     // |a_{1,i}^{(2)}|^{2}
     double abs_a1_22  = abs_a1_2 * abs_a1_2;
 
-    double normal_dt = sqrt(ns->eta * ((abs_a1 * abs_a1_2 + abs_j12) / (abs_j1 * abs_a1_3 + abs_a1_22)));
+    double normal_dt = sqrt(ETA * ((abs_a1 * abs_a1_2 + abs_j12) / (abs_j1 * abs_a1_3 + abs_a1_22)));
     return normal_dt;
 }
 
@@ -315,6 +315,14 @@ double NbodyUtils::get_timestep_central(int i)
                              ns->h_r[i].z - ns->h_r[0].z);
     double r3 = r*r*r;
     double central_dt = (((2.0 * M_PI )/OSTEPS) * sqrt(r3/(G * ns->h_r[0].w)));
+    //printf("r(x,y,z) = %.20f %.20f %.20f\n", ns->h_r[i].x, ns->h_r[i].y, ns->h_r[i].z);
+    //printf("r0(x,y,z) = %.20f %.20f %.20f\n", ns->h_r[0].x, ns->h_r[0].y, ns->h_r[0].z);
+    //printf("r = %.20f\n", r);
+    //printf("r3 = %.20f\n", r3);
+    //printf("OSTEPS = %.20f\n", OSTEPS);
+    //printf("G = %.20f\n", G);
+    //printf("M = %.20f\n", ns->h_r[0].w);
+    //printf("central_dt = %.20f\n", central_dt);
 
     return central_dt;
 }

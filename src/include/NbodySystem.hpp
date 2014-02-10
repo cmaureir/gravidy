@@ -28,63 +28,68 @@ class NbodySystem {
         options ops;
 
         // Configuration parameters
-        int n;
+        int    n;
+        float  eta;
+        float  total_mass;
+        float  integration_time;
         long long int iterations;
         double e2;
-        float eta;
-        float total_mass;
-        float integration_time;
 
         // Global parameters
         Energy en;
-        float hmr_time;
-        float cr_time;
+        float  hmr_time;
+        float  cr_time;
 
         // Files
-        std::string input_filename;
-        std::string output_filename;
+        std::string   input_filename;
+        std::string   output_filename;
         std::ofstream out_file;
 
-        // Host Particles arrays
-        double4   *h_r;
-        double4   *h_v;
-        Forces    *h_f;
-        double4   *h_a2;
-        double4   *h_a3;
-        Forces    *h_old;
-        double    *h_t;
-        double    *h_dt;
-        double    *h_dt_old;
-        int       *h_move;
-        Predictor *h_p;
-        Predictor *h_i;
-        double    *h_ekin;
-        double    *h_epot;
-        Forces    *h_fout_tmp;
+        /******************************** Host Particles arrays */
 
-        // Device Particles arrays
+        int       *h_move; // Array with index of the active particles
+        double    *h_t;    // Particle's time
+        double    *h_dt;   // Particle's timestep
+        double    *h_ekin; // Kinetic energy
+        double    *h_epot; // Potential Energy
+        double4   *h_r;    // Position + Mass
+        double4   *h_v;    // Velocity + Empty
+        double3   *h_a2;   // 2nd acceleration derivative (from interpolation)
+        double3   *h_a3;   // 3rd acceleration derivative (from interpolation)
+        Predictor *h_p;    // Predicted position and velocities
+        Predictor *h_i;    // Temporary array of the position and velocity of the
+                           //   active particle only
+        Forces    *h_f;    // Struct with the acceleration and jerk
+        Forces    *h_old;  // Old forces (from previous step)
+        Forces    *h_fout_tmp; // Temporary array for partial forces
+
+        /******************************** Device Particles arrays */
+
+        int       *d_move;
+        double    *d_t;
+        double    *d_dt;
+        double    *d_ekin;
+        double    *d_epot;
         double4   *d_r;
         double4   *d_v;
+        Predictor *d_p;
+        Predictor *d_i;
         Forces    *d_f;
         Forces    *d_fout;
         Forces    *d_fout_tmp;
         Forces    *d_old;
-        double    *d_t;
-        double    *d_dt;
-        int       *d_move;
-        Predictor *d_p;
-        Predictor *d_i;
-        double    *d_ekin;
-        double    *d_epot;
 
-        // For keplerian correction
-        Forces    *h_fbh;
-        double4   *h_a2bh;
-        double4   *h_a3bh;
+        /******************************** Keplerian correction */
+        double  *h_tlast;
+        double  *h_dtlast;
+        double3 *h_a2bh;
+        double3 *h_a3bh;
+        Forces  *h_fbh;
 
+        /******************************** General functions of the system */
         void read_input_file();
+        void copy_input_data();
         void alloc_base_attributes(int rank);
         void free_base_attributes();
-        void copy_input_data();
 };
 #endif // NBODYSYSTEM_HPP

@@ -32,21 +32,21 @@ int Hermite4::find_particles_to_move(double ITIME)
     return j;
 }
 
-void Hermite4::next_integration_time(double &ATIME)
+void Hermite4::next_integration_time(double &CTIME)
 {
     // Initial number as the maximum
-    ATIME = ns->h_t[FIRST_PARTICLE] + ns->h_dt[FIRST_PARTICLE];
+    CTIME = ns->h_t[FIRST_PARTICLE] + ns->h_dt[FIRST_PARTICLE];
     for (int i = FIRST_PARTICLE + 1; i < ns->n; i++)
     {
         double time = ns->h_t[i] + ns->h_dt[i];
-        if(time < ATIME)
+        if(time < CTIME)
         {
-            ATIME = time;
+            CTIME = time;
         }
     }
 }
 
-void Hermite4::init_dt(double &ATIME)
+void Hermite4::init_dt(double &CTIME, float ETA)
 {
     // Aarseth initial timestep
     // dt_{i} = ETA_S * sqrt( (|a|) / (|j|) )
@@ -59,7 +59,7 @@ void Hermite4::init_dt(double &ATIME)
         double j2 = nu->get_magnitude(ns->h_f[i].a1[0],
                                       ns->h_f[i].a1[1],
                                       ns->h_f[i].a1[2]);
-        tmp_dt = ETA_S * (a2/j2);
+        tmp_dt = ETA * (a2/j2);
 
         // Adjusting to block timesteps
         // to the nearest-lower power of two
@@ -76,8 +76,8 @@ void Hermite4::init_dt(double &ATIME)
         ns->h_t[i] = 0.0;
 
         // Obtaining the first integration time
-        if(tmp_dt < ATIME)
-            ATIME = tmp_dt;
+        if(tmp_dt < CTIME)
+            CTIME = tmp_dt;
     }
 }
 
@@ -107,8 +107,8 @@ void Hermite4::alloc_arrays_host()
     int pp_size = ns->n * sizeof(Predictor);
 
     ns->h_f    = new Forces[ff_size];
-    ns->h_a2   = new double4[d4_size];
-    ns->h_a3   = new double4[d4_size];
+    ns->h_a2   = new double3[d4_size];
+    ns->h_a3   = new double3[d4_size];
     ns->h_old  = new Forces[ff_size];
     ns->h_t    = new double[d1_size];
     ns->h_dt   = new double[d1_size];
@@ -137,7 +137,7 @@ void Hermite4::free_arrays_host()
 
 void Hermite4::init_data()
 {
-    double4 empty = {0.0, 0.0, 0.0, 0.0};
+    double3 empty = {0.0, 0.0, 0.0};
     for (int i = 0; i < ns->n; i++) {
 
         ns->h_p[i].m    = ns->h_r[i].w;

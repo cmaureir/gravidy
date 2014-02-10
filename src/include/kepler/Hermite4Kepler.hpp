@@ -52,18 +52,16 @@ class Hermite4Kepler : public Hermite4 {
         void alloc_arrays_host_kepler();
         void free_arrays_host_kepler();
         void init_data_bh();
+        void init_dt_bh(double &ATIME);
 
         // Hermite
-        void force_calculation(int i, int j);
+        void force_calculation(Predictor pi, Predictor pj, Forces &fi);
         void init_acc_jrk();
         void update_acc_jrk(int nact);
         void predicted_pos_vel(double ITIME);
+        void predicted_pos_vel(double ITIME, int nact);
         void correction_pos_vel(double ITIME, int nact);
         void integration();
-
-        // Kepler
-        void force_calculation_bh(int i);
-        void init_acc_jrk_bh();
 
         void calculate_orbital_elements();
         void print_orbital_elements();

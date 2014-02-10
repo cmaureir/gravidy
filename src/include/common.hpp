@@ -47,6 +47,8 @@ const double ETA_S                  = 0.01;
 /** Iteration ETA parameter to calculate new timestep of all the active particles
  * of the system, in a certain integration time. Based on Aarseth formula */
 const double ETA_N                  = 0.01;
+/** For Kepler **/
+const double ETA_K                  = 0.1;
 /** Lower boundary for the particles timesteps, \f$2^{-23}\f$ */
 const double D_TIME_MIN             = 1.1920928955078125e-07;
 /** Upper boundary for the particles timesteps, \f$2^{-3}\f$ */

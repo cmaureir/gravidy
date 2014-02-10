@@ -10,7 +10,7 @@ OptionsParser::OptionsParser(int argc, char *argv[])
     po::options_description main("Required options");
     main.add_options()
         ("input,i",     po::value<std::string>()->value_name("<filename>"), "Input data filename")
-        ("time,t",      po::value<float>()->value_name("<value>"),       "Integration time (In N-body units)")
+        ("time,t",      po::value<float>()->value_name("<value>")->default_value(1),       "Integration time (In N-body units)")
     ;
 
     po::options_description optional("Optional options");

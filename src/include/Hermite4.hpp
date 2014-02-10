@@ -15,7 +15,7 @@ class Hermite4 {
 
         int  find_particles_to_move(double ITIME);
         void next_integration_time(double &ATIME);
-        void init_dt(double &ATIME);
+        void init_dt(double &ATIME, float ETA);
         void save_old_acc_jrk(int nact);
         void alloc_arrays_host();
         void free_arrays_host();

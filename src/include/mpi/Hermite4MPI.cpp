@@ -24,6 +24,7 @@ Hermite4MPI::Hermite4MPI(NbodySystem *ns, Logger *logger, NbodyUtils *nu,
     {
         alloc_slaves_memory(rank);
     }
+
 }
 
 Hermite4MPI::~Hermite4MPI()
@@ -223,7 +224,7 @@ void Hermite4MPI::correction_pos_vel(double ITIME, int nact)
 
 
         ns->h_t[i] = ITIME;
-        double normal_dt  = nu->get_timestep_normal(i);
+        double normal_dt  = nu->get_timestep_normal(i, ETA_N);
         normal_dt = nu->normalize_dt(normal_dt, ns->h_dt[i], ns->h_t[i], i);
         ns->h_dt[i] = normal_dt;
 
@@ -251,7 +252,7 @@ void Hermite4MPI::integration()
     omp_set_num_threads( max_threads - 1);
 
     init_acc_jrk();
-    init_dt(ATIME);
+    init_dt(ATIME, ETA_S);
 
     ns->en.ini = nu->get_energy();   // Initial calculation of the energy of the system
     ns->en.tmp = ns->en.ini;

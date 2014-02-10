@@ -31,7 +31,7 @@ class NbodyUtils {
         void lagrange_radii();
         void core_radius_and_density();
         double get_magnitude(double x, double y, double z);
-        double get_timestep_normal(int i);
+        double get_timestep_normal(int i, float ETA);
         double normalize_dt(double new_dt, double old_dt, double t, int i);
         double get_timestep_central(int i);
         double get_energy();
