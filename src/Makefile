@@ -93,7 +93,7 @@ all: mpigpu
 cpu: gravidy-cpu
 mpigpu: CXXFLAGS+=-DMPIGPU
 mpigpu: NVFLAGS+=-DMPIGPU
-mpigpu: NVFLAGS+=-L/cluster/openmpi/SL6/1.5.4/gcc/lib -I/cluster/openmpi/SL6/1.5.4/gcc/include
+mpigpu: NVFLAGS+=-L$(MPI_PATH)/lib -I$(MPI_PATH)/include
 mpigpu: CXXFLAGS+=$(MPIFLAGS)
 mpigpu: CXXFLAGS+=$(LINKFLAGS)
 mpigpu: CXXFLAGS:=$(filter-out -D_MPI,$(CXXFLAGS))

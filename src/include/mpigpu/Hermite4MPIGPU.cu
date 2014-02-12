@@ -16,11 +16,9 @@ Hermite4MPIGPU::Hermite4MPIGPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu,
     // so after every node made some procedure with the particles
     // the root node (rank 0) will take care and perform the necesarry
     // synchronization and reduction process.
-    std::printf("Rank %d: %d\n",rank, ns->n);
     this->chunk_size  = std::ceil((float)ns->n / this->nprocs);
     this->chunk_begin = this->chunk_size * rank;
     this->chunk_end   = this->chunk_begin + this->chunk_size;
-    getchar();
     //printf("Rank %d (%d, %d) %f\n", rank, this->chunk_begin, this->chunk_end, ns->h_r[5].y);
 
     /**************************************** GPU Configuration */
@@ -30,12 +28,6 @@ Hermite4MPIGPU::Hermite4MPIGPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu,
     smem_reduce = sizeof(Forces) * NJBLOCK + 1;
 
     /**************************************** Memory allocation */
-    if (rank < MPI_NUM_SLAVES)
-    {
-        std::printf("I'm the rank %d and my range is %d to %d\n", rank, chunk_begin, chunk_end);
-        alloc_slaves_memory(rank);
-    }
-
     if (rank == 0)
     {
         cudaGetDeviceCount(&num_devices);
@@ -44,6 +36,13 @@ Hermite4MPIGPU::Hermite4MPIGPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu,
         printf("CPU cores: %d\n", num_cores);
         assert(nprocs == num_devices);
     }
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (rank < MPI_NUM_SLAVES)
+    {
+        std::printf("I'm the rank %d and my range is %d to %d\n", rank, chunk_begin, chunk_end);
+        alloc_slaves_memory(rank);
+    }
+
 
 }
 
@@ -89,8 +88,8 @@ void Hermite4MPIGPU::alloc_slaves_memory(int rank)
         ns->h_fout_tmp  = (Forces*)malloc(ff_size);
         //ns->h_fout_tmp= new Forces[ff_size*NJBLOCK];
 
-        memset(&h_tmp_f,        0, sizeof(Forces) * ns->n);
-        memset(&ns->h_fout_tmp, 0, sizeof(Forces) * ns->n);
+        memset(h_tmp_f,        0, sizeof(Forces) * ns->n);
+        memset(ns->h_fout_tmp, 0, sizeof(Forces) * ns->n);
 
         cudaSetDevice(rank);
         CUDA_SAFE_CALL(cudaMalloc((void**)&d_tmp_f,        ff_size));
@@ -120,6 +119,8 @@ void Hermite4MPIGPU::alloc_slaves_memory(int rank)
         CUDA_SAFE_CALL(cudaMemset(ns->d_i,        0, pp_size));
         CUDA_SAFE_CALL(cudaMemset(ns->d_fout,     0, ff_size * NJBLOCK));
         CUDA_SAFE_CALL(cudaMemset(ns->d_fout_tmp, 0, ff_size * NJBLOCK));
+
+        MPI_Barrier(MPI_COMM_WORLD);
     }
 }
 
@@ -402,6 +403,7 @@ void Hermite4MPIGPU::integration()
     //omp_set_num_threads( max_threads - 1);
 
     init_acc_jrk();
+    getchar();
     init_dt(ATIME, ETA_S);
 
     ns->en.ini = nu->get_energy();   // Initial calculation of the energy of the system
