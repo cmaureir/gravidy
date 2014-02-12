@@ -1,12 +1,17 @@
 #ifdef GPU
 #include "include/gpu/Hermite4GPU.cuh"
-#elif KEPLER
-#include "include/kepler/Hermite4Kepler.hpp"
 #elif _MPI
 #include "include/mpi/Hermite4MPI.hpp"
+#elif MPIGPU
+#include "include/mpigpu/Hermite4MPIGPU.cuh"
+#elif KEPLER
+#include "include/kepler/Hermite4Kepler.hpp"
 #else
 #include "include/cpu/Hermite4CPU.hpp"
 #endif
+
+
+
 
 /*
  * Main routing of the initialization and exeucutio of GraviDy
@@ -18,7 +23,7 @@
 int main(int argc, char *argv[]) {
 
 
-    #ifdef _MPI
+    #if defined(_MPI) || defined(MPIGPU)
     int rank, nprocs;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -33,7 +38,7 @@ int main(int argc, char *argv[]) {
     NbodySystem ns(op);
 
     // Reading the input file, storing the information in a temporal structure
-    #ifdef _MPI
+    #if defined(_MPI) || defined(MPIGPU)
     if (rank == 0)
     {
         ns.read_input_file();
@@ -61,6 +66,8 @@ int main(int argc, char *argv[]) {
     Hermite4Kepler h4(&ns, &logger, &nu);
     #elif _MPI
     Hermite4MPI h4(&ns, &logger, &nu, rank, nprocs);
+    #elif MPIGPU
+    Hermite4MPIGPU h4(&ns, &logger, &nu, rank, nprocs);
     #else
     Hermite4CPU h4(&ns, &logger, &nu);
     #endif
@@ -68,7 +75,7 @@ int main(int argc, char *argv[]) {
     // Calling the integration process using the corresponding Hermite object
     h4.integration();
 
-    #ifdef _MPI
+    #if defined(_MPI) || defined(MPIGPU)
     MPI_Finalize();
     #endif
     return 0;

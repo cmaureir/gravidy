@@ -63,7 +63,7 @@ MPIFLAGS=   -L$(MPI_PATH)             \
             -DOMPI_SKIP_MPICXX
 
 # CUDA FLAGS
-NVFLAGS=   -pg -O3 -arch=sm_20 -DGPU  -DBOOST_NOINLINE='__attribute__ ((noinline))'
+NVFLAGS=   -pg -O3 -arch=sm_20 -DBOOST_NOINLINE='__attribute__ ((noinline))'
 
 ############################# Objects
 
@@ -77,8 +77,12 @@ OBJS_CPU=   $(OBJS)                         \
             include/cpu/Hermite4CPU.o       \
 
 OBJS_MPI=   $(OBJS)                         \
-            include/mpi/Hermite4MPI.o       \
+            include/mpi/Hermite4MPI.cuo     \
             include/mpi/MPIUtils.o
+
+OBJS_MPIGPU=   $(OBJS)                         \
+            include/mpigpu/Hermite4MPIGPU.cuo  \
+            include/mpigpu/MPIUtils.o
 
 OBJS_GPU=   $(OBJS)                         \
             include/gpu/Hermite4GPU.cuo
@@ -88,7 +92,15 @@ OBJS_KEPLER=$(OBJS)                         \
 
 ############################# Main rules
 
+all: mpigpu
 cpu: gravidy-cpu
+mpigpu: CXXFLAGS+=-DMPIGPU
+mpigpu: NVFLAGS+=-DMPIGPU
+mpigpu: CXXFLAGS+=$(MPIFLAGS)
+mpigpu: CXXFLAGS+=$(LINKFLAGS)
+mpigpu: CXXFLAGS:=$(filter-out -D_MPI,$(CXXFLAGS))
+mpigpu: CXXFLAGS:=$(filter-out -DGPU,$(CXXFLAGS))
+mpigpu: gravidy
 
 mpi: CXXFLAGS+=$(MPIFLAGS)
 mpi: gravidy-mpi
@@ -105,6 +117,9 @@ kepler: gravidy-kepler
 
 ############################# Rules to generate binaries
 
+gravidy: gravidy.cpp $(OBJS_MPIGPU)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
 gravidy-cpu: gravidy.cpp $(OBJS_CPU)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
@@ -117,7 +132,10 @@ gravidy-gpu: gravidy.cpp $(OBJS_GPU)
 gravidy-kepler: gravidy.cpp $(OBJS_KEPLER)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
+
+
 clean:
+	rm -f gravidy
 	rm -f gravidy-gpu
 	rm -f gravidy-cpu
 	rm -f gravidy-kepler
@@ -129,4 +147,5 @@ distclean: clean
 	rm -f include/gpu/*.{o,cuo}
 	rm -f include/kepler/*.o
 	rm -f include/mpi/*.o
+	rm -f include/mpigpu/*.o
 	rm -f gmon.out
