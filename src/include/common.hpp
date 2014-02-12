@@ -15,6 +15,7 @@
 /** If we are compiling the CUDA version, we add the definition of the
  * vector types and structs from the CUDA library */
 #include <cuda_runtime.h>
+#define MPI_NUM_SLAVES 32
 
 #else
 /** Defining the «double4» structure based on the CUDA definition for the

@@ -5,6 +5,54 @@
 #include <cassert>
 #include <string>
 
+#define CUDA_SAFE_CALL_NO_SYNC( call) do {                          \
+    cudaError err = call;                                             \
+    if( cudaSuccess != err) {                                         \
+        fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", \
+                __FILE__, __LINE__, cudaGetErrorString( err) );       \
+        exit(EXIT_FAILURE);                                           \
+    } } while (0)
+#define CUDA_SAFE_CALL( call)     CUDA_SAFE_CALL_NO_SYNC(call);
+
+inline __host__ __device__ double4 operator+(const double4 &a, const double4 &b)
+{
+    double4 tmp = {a.x + b.x, a.y + b.y, a.z + b.z,  a.w + b.w};
+    return tmp;
+}
+
+inline __host__ __device__ void operator+=(double4 &a, double4 &b)
+{
+    a.x += b.x;
+    a.y += b.y;
+    a.z += b.z;
+    a.w += b.w;
+}
+
+inline __host__ __device__ Forces operator+(Forces &a, Forces &b)
+{
+    Forces tmp;
+    tmp.a[0] = a.a[0] + b.a[0];
+    tmp.a[1] = a.a[1] + b.a[1];
+    tmp.a[2] = a.a[2] + b.a[2];
+
+    tmp.a1[0] = a.a1[0] + b.a1[0];
+    tmp.a1[1] = a.a1[1] + b.a1[1];
+    tmp.a1[2] = a.a1[2] + b.a1[2];
+
+    return tmp;
+}
+
+inline __host__ __device__ void operator+=(Forces &a, Forces &b)
+{
+    a.a[0] += b.a[0];
+    a.a[1] += b.a[1];
+    a.a[2] += b.a[2];
+
+    a.a1[0] += b.a1[0];
+    a.a1[1] += b.a1[1];
+    a.a1[2] += b.a1[2];
+}
+
 class Hermite4GPU : public Hermite4 {
     public:
         Hermite4GPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)

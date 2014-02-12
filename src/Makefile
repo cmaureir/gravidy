@@ -1,5 +1,5 @@
 ## Makefile
-HOST := $(shell hostname | cut -d . -f 1)
+HOST:=$(shell hostname | cut -d . -f 1)
 
 # Cluster at AEI
 ifeq ($(HOST), gpu-01)
@@ -48,22 +48,19 @@ CXXFLAGS=   $(BOOSTFLAGS) \
             -pg           \
             -lgomp        \
             -fopenmp
-#            -vt:verbose   \
 
 # MPI FLAGS
-#MPIFLAGS=   -L$(MPI_PATH)/lib
-MPIFLAGS=   -L$(MPI_PATH)             \
+MPIFLAGS=   -L$(MPI_PATH)/lib             \
             -I$(MPI_PATH)/include         \
-            -I$(MPI_PATH)/include/openmpi \
             -pthread                      \
-            -lmpi_cxx                     \
             -lmpi                         \
+            -lmpi_cxx                     \
             -ldl                          \
             -D_MPI                        \
             -DOMPI_SKIP_MPICXX
 
 # CUDA FLAGS
-NVFLAGS=   -pg -O3 -arch=sm_20 -DBOOST_NOINLINE='__attribute__ ((noinline))'
+NVFLAGS=   -DGPU -pg -O3 -arch=sm_20 -DBOOST_NOINLINE='__attribute__ ((noinline))'
 
 ############################# Objects
 
@@ -77,7 +74,7 @@ OBJS_CPU=   $(OBJS)                         \
             include/cpu/Hermite4CPU.o       \
 
 OBJS_MPI=   $(OBJS)                         \
-            include/mpi/Hermite4MPI.cuo     \
+            include/mpi/Hermite4MPI.o     \
             include/mpi/MPIUtils.o
 
 OBJS_MPIGPU=   $(OBJS)                         \
@@ -96,6 +93,7 @@ all: mpigpu
 cpu: gravidy-cpu
 mpigpu: CXXFLAGS+=-DMPIGPU
 mpigpu: NVFLAGS+=-DMPIGPU
+mpigpu: NVFLAGS+=-L/cluster/openmpi/SL6/1.5.4/gcc/lib -I/cluster/openmpi/SL6/1.5.4/gcc/include
 mpigpu: CXXFLAGS+=$(MPIFLAGS)
 mpigpu: CXXFLAGS+=$(LINKFLAGS)
 mpigpu: CXXFLAGS:=$(filter-out -D_MPI,$(CXXFLAGS))
@@ -113,6 +111,7 @@ kepler: gravidy-kepler
 
 ############################# Rules to generate cuda object
 %.cuo : %.cu
+	@echo $(NVFLAGS)
 	$(NVCC) $(BOOSTFLAGS) $(NVFLAGS) -c $^ -o $@
 
 ############################# Rules to generate binaries

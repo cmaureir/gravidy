@@ -16,15 +16,17 @@ Hermite4MPIGPU::Hermite4MPIGPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu,
     // so after every node made some procedure with the particles
     // the root node (rank 0) will take care and perform the necesarry
     // synchronization and reduction process.
+    std::printf("Rank %d: %d\n",rank, ns->n);
     this->chunk_size  = std::ceil((float)ns->n / this->nprocs);
     this->chunk_begin = this->chunk_size * rank;
     this->chunk_end   = this->chunk_begin + this->chunk_size;
+    getchar();
     //printf("Rank %d (%d, %d) %f\n", rank, this->chunk_begin, this->chunk_end, ns->h_r[5].y);
 
     /**************************************** GPU Configuration */
-    nthreads = BSIZE;
-    nblocks = std::ceil(ns->n/(float)nthreads);
-    smem = sizeof(Predictor) * BSIZE;
+    nthreads    = BSIZE;
+    nblocks     = std::ceil(ns->n/(float)nthreads);
+    smem        = sizeof(Predictor) * BSIZE;
     smem_reduce = sizeof(Forces) * NJBLOCK + 1;
 
     /**************************************** Memory allocation */

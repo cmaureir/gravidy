@@ -2,7 +2,6 @@
 #define HERMITE4MPI_HPP
 #include "../Hermite4.hpp"
 
-#define MPI_NUM_SLAVES 32
 
 #define CUDA_SAFE_CALL_NO_SYNC( call) do {                          \
     cudaError err = call;                                             \
