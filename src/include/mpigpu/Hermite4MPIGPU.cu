@@ -19,7 +19,7 @@ Hermite4MPIGPU::Hermite4MPIGPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu,
     this->chunk_size  = std::ceil((float)ns->n / this->nprocs);
     this->chunk_begin = this->chunk_size * rank;
     this->chunk_end   = this->chunk_begin + this->chunk_size;
-    //printf("Rank %d (%d, %d) %f\n", rank, this->chunk_begin, this->chunk_end, ns->h_r[5].y);
+    printf("Rank %d (%d, %d) %f\n", rank, this->chunk_begin, this->chunk_end, ns->h_r[5].y);
 
     /**************************************** GPU Configuration */
     nthreads    = BSIZE;
@@ -34,12 +34,10 @@ Hermite4MPIGPU::Hermite4MPIGPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu,
         num_cores = omp_get_num_procs();
         printf("GPU devices: %d\n", num_devices);
         printf("CPU cores: %d\n", num_cores);
-        assert(nprocs == num_devices);
+//        assert(nprocs == num_devices);
     }
-    MPI_Barrier(MPI_COMM_WORLD);
     if (rank < MPI_NUM_SLAVES)
     {
-        std::printf("I'm the rank %d and my range is %d to %d\n", rank, chunk_begin, chunk_end);
         alloc_slaves_memory(rank);
     }
 
@@ -48,13 +46,12 @@ Hermite4MPIGPU::Hermite4MPIGPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu,
 
 Hermite4MPIGPU::~Hermite4MPIGPU()
 {
-    if (rank < num_devices)
+    if (rank < MPI_NUM_SLAVES)
     {
         // free main and slaves
         free(h_tmp_f);
         free(ns->h_fout_tmp);
 
-        cudaSetDevice(rank);
         CUDA_SAFE_CALL(cudaFree(ns->d_r));
         CUDA_SAFE_CALL(cudaFree(ns->d_v));
         CUDA_SAFE_CALL(cudaFree(ns->d_f));
@@ -73,7 +70,7 @@ Hermite4MPIGPU::~Hermite4MPIGPU()
 
 void Hermite4MPIGPU::alloc_slaves_memory(int rank)
 {
-    if (rank < num_devices)
+    if (rank < MPI_NUM_SLAVES)
     {
         int d4_size = ns->n * sizeof(double4);
         int d1_size = ns->n * sizeof(double);
@@ -120,8 +117,8 @@ void Hermite4MPIGPU::alloc_slaves_memory(int rank)
         CUDA_SAFE_CALL(cudaMemset(ns->d_fout,     0, ff_size * NJBLOCK));
         CUDA_SAFE_CALL(cudaMemset(ns->d_fout_tmp, 0, ff_size * NJBLOCK));
 
-        MPI_Barrier(MPI_COMM_WORLD);
     }
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 void Hermite4MPIGPU::force_calculation(Predictor pi, Predictor pj, Forces &fi)
@@ -157,23 +154,9 @@ void Hermite4MPIGPU::force_calculation(Predictor pi, Predictor pj, Forces &fi)
 void Hermite4MPIGPU::init_acc_jrk()
 {
 
-    //if (rank < MPI_NUM_SLAVES)
-    //{
-    //    for (int i = 0; i < ns->n; i++)
-    //    {
-    //        for (int j = chunk_begin; j < chunk_end; j++)
-    //        {
-    //            if(i == j) continue;
-    //            force_calculation(ns->h_p[i], ns->h_p[j], tmp_f[i]);
-    //        }
-    //    }
-    //    MPI_Allreduce(tmp_f, ns->h_f, ns->n, f_type, f_op, MPI_COMM_WORLD);
-    //}
-
-
     if (rank < MPI_NUM_SLAVES)
     {
-        cudaSetDevice(rank);
+        std::printf("init_acc_jrk rank %d\n",rank);
         CUDA_SAFE_CALL(cudaMemcpy(ns->d_p,
                                   ns->h_p,
                                   ns->n * sizeof(Predictor),
@@ -402,8 +385,9 @@ void Hermite4MPIGPU::integration()
     //int max_threads = omp_get_max_threads();
     //omp_set_num_threads( max_threads - 1);
 
+    double a = omp_get_wtime();
     init_acc_jrk();
-    getchar();
+    std::printf("t= %.15f\n", omp_get_wtime() - a);
     init_dt(ATIME, ETA_S);
 
     ns->en.ini = nu->get_energy();   // Initial calculation of the energy of the system
@@ -426,7 +410,8 @@ void Hermite4MPIGPU::integration()
             logger->print_lagrange_radii(ITIME, nu->layers_radii);
         }
     }
-    getchar();
+    // TEMP
+    ITIME = ns->integration_time;
 
     while (ITIME < ns->integration_time)
     {

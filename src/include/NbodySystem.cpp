@@ -85,7 +85,7 @@ void NbodySystem::read_input_file()
 void NbodySystem::alloc_base_attributes(int rank)
 {
 
-    #ifdef _MPI
+    #if defined(_MPI) || defined(MPIGPU)
     // Sending the amount of particles
     MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
