@@ -50,7 +50,8 @@ CXXFLAGS=   $(BOOSTFLAGS) \
             -fopenmp
 
 # MPI FLAGS
-MPIFLAGS=   -L$(MPI_PATH)/lib             \
+MPIFLAGS=   -L$(MPI_PATH)                 \
+            -L$(MPI_PATH)/lib             \
             -I$(MPI_PATH)/include         \
             -pthread                      \
             -lmpi                         \
@@ -74,11 +75,11 @@ OBJS_CPU=   $(OBJS)                         \
             include/cpu/Hermite4CPU.o       \
 
 OBJS_MPI=   $(OBJS)                         \
-            include/mpi/Hermite4MPI.o     \
+            include/mpi/Hermite4MPI.o       \
             include/mpi/MPIUtils.o
 
-OBJS_MPIGPU=   $(OBJS)                         \
-            include/mpigpu/Hermite4MPIGPU.cuo  \
+OBJS_MPIGPU=   $(OBJS)                        \
+            include/mpigpu/Hermite4MPIGPU.cuo \
             include/mpigpu/MPIUtils.o
 
 OBJS_GPU=   $(OBJS)                         \
@@ -111,7 +112,6 @@ kepler: gravidy-kepler
 
 ############################# Rules to generate cuda object
 %.cuo : %.cu
-	@echo $(NVFLAGS)
 	$(NVCC) $(BOOSTFLAGS) $(NVFLAGS) -c $^ -o $@
 
 ############################# Rules to generate binaries
@@ -146,5 +146,5 @@ distclean: clean
 	rm -f include/gpu/*.{o,cuo}
 	rm -f include/kepler/*.o
 	rm -f include/mpi/*.o
-	rm -f include/mpigpu/*.o
+	rm -f include/mpigpu/*.{o,cuo}
 	rm -f gmon.out

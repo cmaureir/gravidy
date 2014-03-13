@@ -28,13 +28,11 @@ Hermite4MPIGPU::Hermite4MPIGPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu,
     smem_reduce = sizeof(Forces) * NJBLOCK + 1;
 
     /**************************************** Memory allocation */
+    cudaGetDeviceCount(&num_devices);
     if (rank == 0)
     {
-        cudaGetDeviceCount(&num_devices);
-        num_cores = omp_get_num_procs();
         printf("GPU devices: %d\n", num_devices);
         printf("CPU cores: %d\n", num_cores);
-//        assert(nprocs == num_devices);
     }
     if (rank < MPI_NUM_SLAVES)
     {
@@ -227,71 +225,98 @@ void Hermite4MPIGPU::update_acc_jrk(int nact)
     //}
     //ns->gtime.update_end += omp_get_wtime() - ns->gtime.update_ini;
 
-    // Copying to the device the predicted r and v
-    CUDA_SAFE_CALL(cudaMemcpy(ns->d_p,
-                              ns->h_p,
-                              ns->n * sizeof(Predictor),
-                              cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(ns->d_move,
-                              ns->h_move,
-                              ns->n * sizeof(int),
-                              cudaMemcpyHostToDevice));
-
-    // Fill the h_i Predictor array with the particles that we need
-    // to move in this iteration
-    for (int i = 0; i < nact; i++)
+    ns->gtime.update_ini = omp_get_wtime();
+    if (rank < MPI_NUM_SLAVES)
     {
-        int id = ns->h_move[i];
-        ns->h_i[i] = ns->h_p[id];
-    }
 
-    // Copy to the GPU (d_i) the preddictor host array (h_i)
-    CUDA_SAFE_CALL(cudaMemcpy(ns->d_i,
-                              ns->h_i,
-                              nact * sizeof(Predictor),
-                              cudaMemcpyHostToDevice));
+        int slave_nact[nprocs];
+        int s_nact;
+
+        s_nact = nact / num_devices;
+
+        if (rank < nact%num_devices)
+        {
+            s_nact += 1;
+        }
+        // Send the array to all the nodes
+        MPI_Allgather(&s_nact,    1, MPI_INT,
+                      slave_nact, 1, MPI_INT, MPI_COMM_WORLD);
+
+        for (int i = 0; i < nprocs; i++)
+            std::printf("%d ", slave_nact[i]);
+        std::printf("\n");
+        getchar();
+
+        if (slave_nact > 0)
+        {
+            // Copying to the device the predicted r and v
+            CUDA_SAFE_CALL(cudaMemcpy(ns->d_p,
+                                      ns->h_p,
+                                      ns->n * sizeof(Predictor),
+                                      cudaMemcpyHostToDevice));
+            CUDA_SAFE_CALL(cudaMemcpy(ns->d_move,
+                                      ns->h_move,
+                                      ns->n * sizeof(int),
+                                      cudaMemcpyHostToDevice));
 
 
-    // Blocks, threads and shared memory configuration
-    int  nact_blocks = 1 + (nact-1)/BSIZE;
-    dim3 nblocks(nact_blocks,NJBLOCK, 1);
-    dim3 nthreads(BSIZE, 1, 1);
+            // Fill the h_i Predictor array with the particles that we need
+            // to move in this iteration
+            for (int i = 0; i < nact; i++)
+            {
+                int id = ns->h_move[i];
+                ns->h_i[i] = ns->h_p[id];
+            }
 
-    // Kernel to update the forces for the particles in d_i
-    ns->gtime.grav_ini = omp_get_wtime();
-    k_update <<< nblocks, nthreads, smem >>> (ns->d_i,
-                                              ns->d_p,
-                                              ns->d_fout,
-                                              ns->d_move,
-                                              ns->n,
-                                              nact,
-                                              ns->e2);
-    cudaThreadSynchronize();
-    ns->gtime.grav_end += omp_get_wtime() - ns->gtime.grav_ini;
-    //get_kernel_error();
+            // Copy to the GPU (d_i) the preddictor host array (h_i)
+            CUDA_SAFE_CALL(cudaMemcpy(ns->d_i,
+                                      ns->h_i,
+                                      nact * sizeof(Predictor),
+                                      cudaMemcpyHostToDevice));
 
-    // Blocks, threads and shared memory configuration for the reduction.
-    dim3 rgrid   (nact,   1, 1);
-    dim3 rthreads(NJBLOCK, 1, 1);
 
-    // Kernel to reduce que temp array with the forces
-    ns->gtime.reduce_ini = omp_get_wtime();
-    reduce <<< rgrid, rthreads, smem_reduce >>>(ns->d_fout,
-                                                ns->d_fout_tmp);
-    ns->gtime.reduce_end += omp_get_wtime() - ns->gtime.reduce_ini;
-    //get_kernel_error();
+            // Blocks, threads and shared memory configuration
+            int  nact_blocks = 1 + (nact-1)/BSIZE;
+            dim3 nblocks(nact_blocks,NJBLOCK, 1);
+            dim3 nthreads(BSIZE, 1, 1);
 
-    // Copy from the GPU the new forces for the d_i particles.
-    CUDA_SAFE_CALL(cudaMemcpy(ns->h_fout_tmp,
-                              ns->d_fout_tmp,
-                              nact * sizeof(Forces),
-                              cudaMemcpyDeviceToHost));
+            // Kernel to update the forces for the particles in d_i
+            ns->gtime.grav_ini = omp_get_wtime();
+            k_update <<< nblocks, nthreads, smem >>> (ns->d_i,
+                                                      ns->d_p,
+                                                      ns->d_fout,
+                                                      ns->d_move,
+                                                      ns->n,
+                                                      nact,
+                                                      ns->e2);
+            cudaThreadSynchronize();
+            ns->gtime.grav_end += omp_get_wtime() - ns->gtime.grav_ini;
+            //get_kernel_error();
 
-    // Update forces in the host
-    for (int i = 0; i < nact; i++)
-    {
-        int id = ns->h_move[i];
-        ns->h_f[id] = ns->h_fout_tmp[i];
+            // Blocks, threads and shared memory configuration for the reduction.
+            dim3 rgrid   (nact,   1, 1);
+            dim3 rthreads(NJBLOCK, 1, 1);
+
+            // Kernel to reduce que temp array with the forces
+            ns->gtime.reduce_ini = omp_get_wtime();
+            reduce <<< rgrid, rthreads, smem_reduce >>>(ns->d_fout,
+                                                        ns->d_fout_tmp);
+            ns->gtime.reduce_end += omp_get_wtime() - ns->gtime.reduce_ini;
+            //get_kernel_error();
+
+            // Copy from the GPU the new forces for the d_i particles.
+            CUDA_SAFE_CALL(cudaMemcpy(ns->h_fout_tmp,
+                                      ns->d_fout_tmp,
+                                      nact * sizeof(Forces),
+                                      cudaMemcpyDeviceToHost));
+
+            // Update forces in the host
+            for (int i = 0; i < nact; i++)
+            {
+                int id = ns->h_move[i];
+                ns->h_f[id] = ns->h_fout_tmp[i];
+            }
+        }
     }
 }
 
@@ -385,9 +410,7 @@ void Hermite4MPIGPU::integration()
     //int max_threads = omp_get_max_threads();
     //omp_set_num_threads( max_threads - 1);
 
-    double a = omp_get_wtime();
     init_acc_jrk();
-    std::printf("t= %.15f\n", omp_get_wtime() - a);
     init_dt(ATIME, ETA_S);
 
     ns->en.ini = nu->get_energy();   // Initial calculation of the energy of the system
@@ -410,14 +433,13 @@ void Hermite4MPIGPU::integration()
             logger->print_lagrange_radii(ITIME, nu->layers_radii);
         }
     }
-    // TEMP
-    ITIME = ns->integration_time;
 
     while (ITIME < ns->integration_time)
     {
         ITIME = ATIME;
 
         nact = find_particles_to_move(ITIME);
+        std::printf("Nact: %d\n",nact);
 
         save_old_acc_jrk(nact);
 

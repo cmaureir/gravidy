@@ -1,5 +1,0 @@
-TO DO
-* The GPU Implementation is giving wrong values
-* New Kepler class to have a different integration scheme.
-* Adding option to consider the PN-expansion
-* Try an Hermite 6th instead of 4th.

@@ -10,7 +10,6 @@
 #include <cstdio>
 #include <omp.h>
 
-
 #if defined(GPU) || defined(MPIGPU)
 /** If we are compiling the CUDA version, we add the definition of the
  * vector types and structs from the CUDA library */
@@ -34,27 +33,27 @@ typedef struct double3
 #endif
 
 /** Gravitational constant. Since we are working in N-body units we set G as one. */
-const int    G                      = 1;
+const int G = 1;
 /** Amount of neighbours to calculate the center of density of the system */
-const int    J                      = 10;
+const int J = 10;
 /** Common radius for the core of a globular cluster */
 const float  RADIUS_RATIO = 0.05;
 /** Softening parameter */
-const double E                      = 1e-4;
+const double E = 1e-4;
 /** Softening parameter squared */
-const double E2                     = 1e-8;
+const double E2 = 1e-8;
 /** Initial ETA parameter to calculate the first timestep of all the particles
  * of the system. Based on Aarseth formula */
-const double ETA_S                  = 0.01;
+const double ETA_S = 0.01;
 /** Iteration ETA parameter to calculate new timestep of all the active particles
  * of the system, in a certain integration time. Based on Aarseth formula */
-const double ETA_N                  = 0.01;
+const double ETA_N = 0.01;
 /** For Kepler **/
-const double ETA_K                  = 0.1;
+const double ETA_K = 0.1;
 /** Lower boundary for the particles timesteps, \f$2^{-23}\f$ */
-const double D_TIME_MIN             = 1.1920928955078125e-07;
+const double D_TIME_MIN = 1.1920928955078125e-07;
 /** Upper boundary for the particles timesteps, \f$2^{-3}\f$ */
-const double D_TIME_MAX             = 0.125;
+const double D_TIME_MAX = 0.125;
 
 #ifdef KEPLER
 const int FIRST_PARTICLE = 1;
@@ -62,12 +61,21 @@ const int FIRST_PARTICLE = 1;
 const int FIRST_PARTICLE = 0;
 #endif
 
-
 #define KEPLER_ITE (50)      // Maximum of iteration when solving Kepler's equation
 #define DEL_E      (9.0e-16) // Maximum error in E in elliptical orbits.
 #define DEL_E_HYP  (2.e-15)  // Maximum error in E in hyperbolic orbits.
 #define OSTEPS     (50)      // Maximum of steps when calculating the central
                              // time-steps distribution
+
+/** @struct Distance
+ *  @brief ...
+ *  @var Distance::index
+ *  Member 'index' ...
+ *  @var Distance::value
+ *  Member 'value' ...
+ *  @fn Distance::operator<
+ *  Member 'operator<' ...
+ */
 struct Distance
 {
     int index;
@@ -102,6 +110,21 @@ typedef struct Energy
     double potential;
 } Energy;
 
+/** @struct options
+ *  @brief Options to handling printing options, like printing the snapshot on the
+ *  screen instead of a file; print the informaton of all the particles (id, mass, position, velocity,
+ *  acceleration, jerk, current timestep); calculating and printing the lagrange
+ *  radii.
+ *  @var options::print_screen
+ *  Member 'print_screen' contains the boolean value of printing the snapshot
+ *  on the screen (true) or a file (false).
+ *  @var options::print_all
+ *  Member 'print_all' contains the boolean value of printing the information
+ *  of all the particles of the system.
+ *  @var options::print_lagrange
+ *  Member 'print_lagrange' contains the boolean value for calculating and printing
+ *  the lagrange radii of the system.
+ */
 typedef struct options
 {
     bool print_screen;
@@ -198,7 +221,15 @@ typedef struct Gtime {
     float gflops;
 } Gtime;
 
-
+/** @struct file_data
+ *  @brief ...
+ *  @var file_data::m
+ *  Member 'm' ...
+ *  @var file_data::r
+ *  Member 'r' ...
+ *  @var file_data::v
+ *  Member 'v' ...
+ *  */
 typedef struct file_data
 {
     float m;
@@ -209,7 +240,6 @@ typedef struct file_data
 #if defined(GPU) || defined(MPIGPU)
 const int BSIZE   = 32;
 const int NJBLOCK = 16;
-
 #endif
 
 #endif
