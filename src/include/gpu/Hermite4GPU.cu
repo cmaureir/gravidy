@@ -121,7 +121,6 @@ void Hermite4GPU::correction_pos_vel(double ITIME, int nact)
         ns->h_v[i].y = ns->h_p[i].v[1] + (dt3/6)*ns->h_a2[i].y + (dt4/24)*ns->h_a3[i].y;
         ns->h_v[i].z = ns->h_p[i].v[2] + (dt3/6)*ns->h_a2[i].z + (dt4/24)*ns->h_a3[i].z;
 
-
         ns->h_t[i] = ITIME;
         double normal_dt  = nu->get_timestep_normal(i, ns->eta);
         normal_dt = nu->normalize_dt(normal_dt, ns->h_dt[i], ns->h_t[i], i);
@@ -143,7 +142,7 @@ void Hermite4GPU::init_acc_jrk()
                                                     ns->d_f,
                                                     ns->n,
                                                     ns->e2);
-    //get_kernel_error();
+    get_kernel_error();
 
     CUDA_SAFE_CALL(cudaMemcpy(ns->h_f,
                               ns->d_f,
@@ -196,7 +195,7 @@ void Hermite4GPU::update_acc_jrk(int nact)
                                               ns->e2);
     cudaThreadSynchronize();
     ns->gtime.grav_end += omp_get_wtime() - ns->gtime.grav_ini;
-    //get_kernel_error();
+    get_kernel_error();
 
     // Blocks, threads and shared memory configuration for the reduction.
     dim3 rgrid   (nact,   1, 1);
@@ -207,7 +206,7 @@ void Hermite4GPU::update_acc_jrk(int nact)
     reduce <<< rgrid, rthreads, smem_reduce >>>(ns->d_fout,
                                                 ns->d_fout_tmp);
     ns->gtime.reduce_end += omp_get_wtime() - ns->gtime.reduce_ini;
-    //get_kernel_error();
+    get_kernel_error();
 
     // Copy from the GPU the new forces for the d_i particles.
     CUDA_SAFE_CALL(cudaMemcpy(ns->h_fout_tmp,
@@ -241,7 +240,7 @@ double Hermite4GPU::get_energy_gpu()
                                         ns->e2);
     cudaThreadSynchronize();
     //float msec = gpu_timer_stop("k_energy");
-    //get_kernel_error();
+    get_kernel_error();
 
     CUDA_SAFE_CALL(cudaMemcpy(ns->h_ekin, ns->d_ekin, sizeof(double) * ns->n,cudaMemcpyDeviceToHost));
     CUDA_SAFE_CALL(cudaMemcpy(ns->h_epot, ns->d_epot, sizeof(double) * ns->n,cudaMemcpyDeviceToHost));
@@ -590,6 +589,7 @@ void Hermite4GPU::integration()
 
         // Increase iteration counter
         ns->iterations++;
+
     }
     ns->gtime.integration_end =  omp_get_wtime() - ns->gtime.integration_ini;
 
