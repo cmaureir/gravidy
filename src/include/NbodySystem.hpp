@@ -43,7 +43,6 @@ class NbodySystem {
         // Files
         std::string   input_filename;
         std::string   output_filename;
-        std::ofstream out_file;
 
         /******************************** Host Particles arrays */
 

@@ -10,8 +10,12 @@ class Logger {
 
         NbodySystem *ns;
 
+        std::ofstream out_file;
         std::ostream *gstream;
+        bool print_screen;
+        std::string ofname;
 
+        std::string get_timestamp();
         void print_info();
         void print_all(double ITIME);
         void print_energy_log(double ITIME, int iterations, long long interactions,

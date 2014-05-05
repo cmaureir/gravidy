@@ -3,7 +3,8 @@
 Logger::Logger(NbodySystem *ns)
 {
     this->ns = ns;
-    gstream = (this->ns->ops.print_screen ? &std::cout : &this->ns->out_file);
+    this->print_screen = this->ns->ops.print_screen;
+    this->ofname = this->get_timestamp() +"_"+ ns->output_filename;
 }
 
 Logger::~Logger()
@@ -11,8 +12,36 @@ Logger::~Logger()
     // None
 }
 
+std::string Logger::get_timestamp()
+{
+    time_t now = time(0);
+    tm *ltm = localtime(&now);
+    std::ostringstream s;
+
+    s << std::setw(2) << std::setfill('0') << 1 + ltm->tm_hour << ":";
+    s << std::setw(2) << std::setfill('0') << 1 + ltm->tm_min  << ":";
+    s << std::setw(2) << std::setfill('0') << 1 + ltm->tm_sec  << "_";
+    s << std::setw(2) << std::setfill('0') << ltm->tm_mday << "-";
+    s << std::setw(2) << std::setfill('0') << 1 + ltm->tm_mon<< "-";
+    s << std::setw(4) << std::setfill('0') << 1900 + ltm->tm_year;
+
+    return s.str();
+}
+
 void Logger::print_info()
 {
+
+    if(print_screen)
+    {
+        gstream = &std::cout;
+    }
+    else
+    {
+        std::string ofname_info = ofname + ".info";
+        out_file.open(ofname_info.c_str(), std::ios::out);
+        gstream = &out_file;
+    }
+
     *gstream << std::setw(2)  << std::left  << "#";
     *gstream << std::setw(8)  << std::left  << "N:";
     *gstream << std::setw(8)  << std::right << ns->n;
@@ -43,11 +72,27 @@ void Logger::print_info()
     *gstream << std::setw(8)  << std::right << ns->cr_time;
     *gstream << std::endl;
 
+    if(!print_screen)
+    {
+        out_file.close();
+    }
 
 }
 
 void Logger::print_lagrange_radii(double ITIME, std::vector<double> lagrange_radii)
 {
+    if(print_screen)
+    {
+        gstream = &std::cout;
+    }
+    else
+    {
+        std::string ofname_radii = ofname + ".radii";
+        out_file.open(ofname_radii.c_str(), std::ios::out | std::ios::app );
+        gstream = &out_file;
+    }
+
+
     *gstream << "01 ";
     *gstream << std::fixed;
     *gstream << ITIME << " ";
@@ -56,11 +101,29 @@ void Logger::print_lagrange_radii(double ITIME, std::vector<double> lagrange_rad
         *gstream << std::setw(6) << std::right << lagrange_radii[i] << " ";
     }
     *gstream << std::endl;
+
+    if(!print_screen)
+    {
+        out_file.close();
+    }
 }
 
 void Logger::print_all(double ITIME)
 {
-    for (int i = 0; i < ns->n; i++) {
+    if(print_screen)
+    {
+        gstream = &std::cout;
+    }
+    else
+    {
+        std::ostringstream s;
+        s << std::setw(4) << std::setfill('0') << ITIME;
+        std::string ofname_all = ofname + ".all.t" + s.str();
+        out_file.open(ofname_all.c_str(), std::ios::out);
+        gstream = &out_file;
+    }
+    for (int i = 0; i < ns->n; i++)
+    {
 
             *gstream << std::fixed;
             gstream->precision(4);
@@ -92,6 +155,11 @@ void Logger::print_all(double ITIME)
             *gstream << std::setw(15) << std::right << ns->h_dt[i];
             *gstream << std::endl;
     }
+
+    if(!print_screen)
+    {
+        out_file.close();
+    }
 }
 
 void Logger::print_energy_log(double ITIME, int iterations, long long interactions, int nsteps, double new_energy)
@@ -105,6 +173,18 @@ void Logger::print_energy_log(double ITIME, int iterations, long long interactio
     if (ITIME != 0.0){
         ns->gtime.gflops =  60.10e-9 * (interactions / ns->gtime.update_end);
     }
+
+    if(print_screen)
+    {
+        gstream = &std::cout;
+    }
+    else
+    {
+        std::string ofname_log = ofname + ".log";
+        out_file.open(ofname_log.c_str(), std::ios::out | std::ios::app );
+        gstream = &out_file;
+    }
+
     if(ITIME == 0.0)
     {
             *gstream << std::setw(2)  << std::left  << "#";
@@ -140,4 +220,9 @@ void Logger::print_energy_log(double ITIME, int iterations, long long interactio
     gstream->precision(3);
     *gstream << std::setw(12) << std::right << ns->gtime.gflops;
     *gstream << std::endl;
+
+    if(!print_screen)
+    {
+        out_file.close();
+    }
 }

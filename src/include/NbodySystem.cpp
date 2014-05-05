@@ -15,19 +15,11 @@ NbodySystem::NbodySystem(OptionsParser op)
     en.end = 0.0;
     en.tmp = 0.0;
     gtime.gflops = 0.0;
-    if (! ops.print_screen)
-    {
-        out_file.open(output_filename.c_str(), std::ios::out);
-    }
 }
 
 /** Destructor */
 NbodySystem::~NbodySystem()
 {
-    if (! ops.print_screen)
-    {
-        out_file.close();
-    }
 }
 
 void NbodySystem::read_input_file()
