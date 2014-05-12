@@ -532,8 +532,8 @@ void Hermite4GPU::integration()
     ns->en.ini = get_energy_gpu();   // Initial calculation of the energy of the system
     ns->en.tmp = ns->en.ini;
 
-    //ns->hmr_time = nu->get_half_mass_relaxation_time();
-    //ns->cr_time  = nu->get_crossing_time();
+    ns->hmr_time = nu->get_half_mass_relaxation_time();
+    ns->cr_time  = nu->get_crossing_time();
 
     logger->print_info();
     logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, ns->en.ini);
