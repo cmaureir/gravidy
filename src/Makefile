@@ -47,11 +47,20 @@ CXXFLAGS=   $(BOOSTFLAGS) \
             -Wall         \
             -pg           \
             -lgomp        \
-            -fopenmp
+            -fopenmp      \
+            -pipe         \
+            -fstack-protector -Wl,-z,relro -Wl,-z,now -Wformat-security \
+            -Wpointer-arith \
+            -Wformat-nonliteral \
+            -Werror \
+            -Wl,-O1 \
+            -Wl,--discard-all \
+            -Wl,--no-undefined \
+            -rdynamic
+            #-fno-exceptions \
 
 # MPI FLAGS
-MPIFLAGS=   -L$(MPI_PATH)                 \
-            -L$(MPI_PATH)/lib             \
+MPIFLAGS=   -L$(MPI_PATH)/lib             \
             -I$(MPI_PATH)/include         \
             -pthread                      \
             -lmpi                         \
@@ -72,7 +81,11 @@ OBJS=       include/utils/OptionsParser.o   \
             include/Hermite4.o              \
 
 OBJS_CPU=   $(OBJS)                         \
-            include/cpu/Hermite4CPU.o       \
+            include/cpu/Hermite4CPU.o
+
+OBJS_TCPU=  $(OBJS)                           \
+            include/cpu-tsym/Hermite4CPU.o
+    #        include/cpu-tsym/MultipleSystem.o
 
 OBJS_MPI=   $(OBJS)                         \
             include/mpi/Hermite4MPI.o       \
@@ -90,7 +103,7 @@ OBJS_KEPLER=$(OBJS)                         \
 
 ############################# Main rules
 
-all: mpigpu
+all: gravidy-tsym
 cpu: gravidy-cpu
 mpigpu: CXXFLAGS+=-DMPIGPU
 mpigpu: NVFLAGS+=-DMPIGPU
@@ -131,12 +144,16 @@ gravidy-gpu: gravidy.cpp $(OBJS_GPU)
 gravidy-kepler: gravidy.cpp $(OBJS_KEPLER)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
+gravidy-tsym: gravidy.cpp $(OBJS_TCPU)
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
 
 
 clean:
 	rm -f gravidy
 	rm -f gravidy-gpu
 	rm -f gravidy-cpu
+	rm -f gravidy-tsym
 	rm -f gravidy-kepler
 	rm -f gravidy-mpi
 

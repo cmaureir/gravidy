@@ -27,6 +27,8 @@ int Hermite4::find_particles_to_move(double ITIME)
         {
             ns->h_move[j] = i;
             j++;
+
+            ns->h_f[i].nb = 0;
         }
     }
     return j;
@@ -106,17 +108,18 @@ void Hermite4::alloc_arrays_host()
     int ff_size = ns->n * sizeof(Forces);
     int pp_size = ns->n * sizeof(Predictor);
 
-    ns->h_f    = new Forces[ff_size];
-    ns->h_a2   = new double3[d4_size];
-    ns->h_a3   = new double3[d4_size];
-    ns->h_old  = new Forces[ff_size];
-    ns->h_t    = new double[d1_size];
-    ns->h_dt   = new double[d1_size];
-    ns->h_move = new int[i1_size];
-    ns->h_p    = new Predictor[pp_size];
-    ns->h_i    = new Predictor[pp_size];
-    ns->h_ekin = new double[d1_size];
-    ns->h_epot = new double[d1_size];
+    ns->h_f        = new Forces[ff_size];
+    ns->h_a2       = new double3[d4_size];
+    ns->h_a3       = new double3[d4_size];
+    ns->h_old      = new Forces[ff_size];
+    ns->h_t        = new double[d1_size];
+    ns->h_dt       = new double[d1_size];
+    ns->h_move     = new int[i1_size];
+    ns->h_p        = new Predictor[pp_size];
+    ns->h_i        = new Predictor[pp_size];
+    ns->h_ekin     = new double[d1_size];
+    ns->h_epot     = new double[d1_size];
+    ns->h_r_sphere = new double[d1_size];
 
 }
 
@@ -133,14 +136,18 @@ void Hermite4::free_arrays_host()
     delete ns->h_i;
     delete ns->h_ekin;
     delete ns->h_epot;
+    delete ns->h_r_sphere;
 }
 
 void Hermite4::init_data()
 {
     double3 empty = {0.0, 0.0, 0.0};
+    ns->m_g = 0.0;
     for (int i = 0; i < ns->n; i++) {
 
-        ns->h_p[i].m    = ns->h_r[i].w;
+        double mass = ns->h_r[i].w;
+
+        ns->h_p[i].m    = mass;
 
         ns->h_p[i].r[0] = ns->h_r[i].x;
         ns->h_p[i].r[1] = ns->h_r[i].y;
@@ -173,5 +180,12 @@ void Hermite4::init_data()
         ns->h_dt[i]      = 0.0;
 
         ns->h_move[i]    = 0;
+
+        ns->h_r_sphere[i] = 0.0;
+
+        // Heaviest star
+        if (mass > ns->m_g)
+            ns->m_g = mass;
+
     }
 }

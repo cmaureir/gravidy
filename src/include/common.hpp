@@ -10,6 +10,7 @@
 #include <ctime>
 #include <cstdio>
 #include <omp.h>
+#include <cmath>
 
 #if defined(GPU) || defined(MPIGPU)
 /** If we are compiling the CUDA version, we add the definition of the
@@ -35,38 +36,36 @@ typedef struct double3
 
 /** Gravitational constant. Since we are working in N-body units we set G as one. */
 const int G = 1;
+
 /** Amount of neighbours to calculate the center of density of the system */
 const int J = 10;
+
+/** Maximum neighbour number for regularization **/
+const int NBMAX = 70;
+
 /** Common radius for the core of a globular cluster */
-const float  RADIUS_RATIO = 0.05;
+const float RADIUS_RATIO = 0.05;
+
 /** Softening parameter */
 const double E = 1e-4;
+
 /** Softening parameter squared */
 const double E2 = 1e-8;
+
 /** Initial ETA parameter to calculate the first timestep of all the particles
  * of the system. Based on Aarseth formula */
 const double ETA_S = 0.01;
+
 /** Iteration ETA parameter to calculate new timestep of all the active particles
  * of the system, in a certain integration time. Based on Aarseth formula */
 const double ETA_N = 0.01;
-/** For Kepler **/
-const double ETA_K = 0.1;
+
 /** Lower boundary for the particles timesteps, \f$2^{-23}\f$ */
 const double D_TIME_MIN = 1.1920928955078125e-07;
 /** Upper boundary for the particles timesteps, \f$2^{-3}\f$ */
 const double D_TIME_MAX = 0.125;
 
-#ifdef KEPLER
-const int FIRST_PARTICLE = 1;
-#else
 const int FIRST_PARTICLE = 0;
-#endif
-
-#define KEPLER_ITE (50)      // Maximum of iteration when solving Kepler's equation
-#define DEL_E      (9.0e-16) // Maximum error in E in elliptical orbits.
-#define DEL_E_HYP  (2.e-15)  // Maximum error in E in hyperbolic orbits.
-#define OSTEPS     (50)      // Maximum of steps when calculating the central
-                             // time-steps distribution
 
 /** @struct Distance
  *  @brief ...
@@ -161,6 +160,7 @@ typedef struct Predictor {
 typedef struct Forces {
     double a[3];
     double a1[3];
+    int nb;
 } Forces;
 
 /** @struct Gtime

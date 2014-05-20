@@ -23,11 +23,16 @@ class Hermite4 {
 
         /** Virtual methods to be implemented by the different versions **/
         virtual void integration() {}
-        virtual void predicted_pos_vel(double ITIME) {}
-        virtual void correction_pos_vel(double ITIME, int nact) {}
+        virtual void predicted_pos_vel(double itime, double *t, double4 *r,
+                                       double4 *v, Forces *f, Predictor *p) {}
+        virtual void correction_pos_vel(double itime, int nact, double *dt,
+                                        double *t, int *move, Predictor *p,
+                                        Forces *f, Forces *old, double3 *a2,
+                                        double3 *a3, double4 *r, double4 *v) {}
         virtual void force_calculation(Predictor pi, Predictor pj, Forces &fi) {}
-        virtual void init_acc_jrk() {}
-        virtual void update_acc_jrk(int nact) {}
+        virtual void init_acc_jrk(Predictor *p, Forces *f, double *r_sphere) {}
+        virtual void update_acc_jrk(int nact, int *move, double *r_sphere,
+                                    Predictor *p, Forces *f) {}
 
 };
 

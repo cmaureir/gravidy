@@ -257,8 +257,8 @@ void Hermite4MPI::integration()
     ns->en.ini = nu->get_energy();   // Initial calculation of the energy of the system
     ns->en.tmp = ns->en.ini;
 
-    //ns->hmr_time = nu->get_half_mass_relaxation_time();
-    //ns->cr_time  = nu->get_crossing_time();
+    //ns->t_rlx = nu->get_half_mass_relaxation_time();
+    //ns->t_cr  = nu->get_crossing_time();
 
     if (rank == 0)
     {

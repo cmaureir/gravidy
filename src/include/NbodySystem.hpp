@@ -32,13 +32,24 @@ class NbodySystem {
         float  eta;
         float  total_mass;
         float  integration_time;
-        long long int iterations;
         double e2;
+        long long int iterations;
 
-        // Global parameters
+        // General variables
         Energy en;
-        float  hmr_time;
-        float  cr_time;
+        float t_rlx;
+        float t_cr;
+        float r_virial;
+
+        // Close encounter
+        double r_cl;
+        double dt_cl;
+
+        // Neighbour list
+        // Neighbour limit (radius) for every particle (R_{h_{i}})
+        double *h_r_sphere;
+        // Heaviest star
+        double m_g;
 
         // Files
         std::string   input_filename;

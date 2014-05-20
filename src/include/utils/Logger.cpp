@@ -64,12 +64,12 @@ void Logger::print_info()
 
     *gstream << std::setw(2)  << std::left  << "#";
     *gstream << std::setw(8)  << std::left  << "T_rh:";
-    *gstream << std::setw(8)  << std::right << ns->hmr_time;
+    *gstream << std::setw(8)  << std::right << ns->t_rlx;
     *gstream << std::endl;
 
     *gstream << std::setw(2)  << std::left  << "#";
     *gstream << std::setw(8)  << std::left  << "T_cr:";
-    *gstream << std::setw(8)  << std::right << ns->cr_time;
+    *gstream << std::setw(8)  << std::right << ns->t_cr;
     *gstream << std::endl;
 
     if(!print_screen)
