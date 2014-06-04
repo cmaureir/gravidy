@@ -58,7 +58,6 @@ double NbodyUtils::get_half_mass_relaxation_time()
     a = sqrt( (ns->n * r_h * r_h * r_h) / ( G * (ns->total_mass/(ns->n)) ));
     b = 1/log(r_h/sqrt(ns->e2));
     //b = 1/log(0.11 * ns->n); // Old non-softening depending
-
     t_rh = 0.138 * a * b;
 
     return t_rh;
