@@ -1,22 +1,25 @@
 ## Makefile
 HOST:=$(shell hostname | cut -d . -f 1)
 
-# Cluster at AEI
 ifeq ($(HOST), gpu-01)
+# Cluster at AEI
 BOOST_PATH=/cluster/boost/1.52.0
 CUDA_PATH=/cluster/gpu/nvidia/5.5
 MPI_PATH=/cluster/openmpi/SL6/1.5.4/gcc
-endif
+else ifeq ($(HOST), pinatubo)
 # Cluster at AEI
-ifeq ($(HOST), pinatubo)
 BOOST_PATH=/usr
 CUDA_PATH=/usr
 MPI_PATH=/usr/lib/openmpi
-endif
-ifeq ($(HOST), neXus)
+else ifeq ($(HOST), neXus)
+# Laptop
 BOOST_PATH=/usr
 CUDA_PATH=/opt/cuda
 MPI_PATH=/usr/lib/openmpi
+else
+BOOST_PATH=/usr
+CUDA_PATH=/usr/local/nvidia/cuda
+MPI_PATH=/usr
 endif
 
 ############################# Paths

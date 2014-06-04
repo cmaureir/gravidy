@@ -58,8 +58,13 @@ double NbodyUtils::get_half_mass_relaxation_time()
     a = sqrt( (ns->n * r_h * r_h * r_h) / ( G * (ns->total_mass/(ns->n)) ));
     b = 1/log(r_h/sqrt(ns->e2));
     //b = 1/log(0.11 * ns->n); // Old non-softening depending
+    std::cout << "cod: " << cod.x << " " << cod.y << " " << cod.z << std::endl;
+    std::cout << "r_h: " << r_h << std::endl;
+    std::cout << "a: " << a << std::endl;
+    std::cout << "b: " << b << std::endl;
 
     t_rh = 0.138 * a * b;
+    std::cout << "t_rh: " << t_rh << std::endl;
 
     return t_rh;
 }

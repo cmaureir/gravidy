@@ -152,6 +152,7 @@ void Logger::print_all(double ITIME)
             *gstream << std::setw(15) << std::right << ns->h_f[i].a1[1];
             *gstream << std::setw(15) << std::right << ns->h_f[i].a1[2];
 
+            *gstream << std::setw(15) << std::right << ns->h_t[i];
             *gstream << std::setw(15) << std::right << ns->h_dt[i];
             *gstream << std::endl;
     }
