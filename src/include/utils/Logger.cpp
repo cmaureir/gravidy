@@ -4,7 +4,23 @@ Logger::Logger(NbodySystem *ns)
 {
     this->ns = ns;
     this->print_screen = this->ns->ops.print_screen;
-    this->ofname = this->get_timestamp() +"_"+ ns->output_filename;
+    this->ofname = "";
+
+    // Stripping the output filename if it's inside a directory
+    std::vector<std::string> tmp;
+    std::stringstream ss(ns->output_filename);
+    std::string item;
+    while (std::getline(ss, item, '/')) {
+        tmp.push_back(item);
+    }
+    std::string tmp_fname = this->get_timestamp() +"_"+ tmp[tmp.size()-1];
+
+    for(int i = 0; i < (int)tmp.size() - 1;i++)
+    {
+        this->ofname += tmp[i] + "/";
+    }
+    this->ofname += tmp_fname;
+
 }
 
 Logger::~Logger()
@@ -38,7 +54,16 @@ void Logger::print_info()
     else
     {
         std::string ofname_info = ofname + ".info";
+
         out_file.open(ofname_info.c_str(), std::ios::out);
+        if(!out_file)
+        {
+          std::cerr << "gravidy: cannot open file "
+                    << ofname_info.c_str()
+                    << ": No such file or directory"
+                    << std::endl;
+          exit(1);
+        }
         gstream = &out_file;
     }
 
@@ -89,6 +114,14 @@ void Logger::print_lagrange_radii(double ITIME, std::vector<double> lagrange_rad
     {
         std::string ofname_radii = ofname + ".radii";
         out_file.open(ofname_radii.c_str(), std::ios::out | std::ios::app );
+        if(!out_file)
+        {
+          std::cerr << "gravidy: cannot open file "
+                    << ofname_radii.c_str()
+                    << ": No such file or directory"
+                    << std::endl;
+          exit(1);
+        }
         gstream = &out_file;
     }
 
@@ -120,6 +153,14 @@ void Logger::print_all(double ITIME)
         s << std::setw(4) << std::setfill('0') << ITIME;
         std::string ofname_all = ofname + ".all.t" + s.str();
         out_file.open(ofname_all.c_str(), std::ios::out);
+        if(!out_file)
+        {
+          std::cerr << "gravidy: cannot open file "
+                    << ofname_all.c_str()
+                    << ": No such file or directory"
+                    << std::endl;
+          exit(1);
+        }
         gstream = &out_file;
     }
     for (int i = 0; i < ns->n; i++)
@@ -183,6 +224,14 @@ void Logger::print_energy_log(double ITIME, int iterations, long long interactio
     {
         std::string ofname_log = ofname + ".log";
         out_file.open(ofname_log.c_str(), std::ios::out | std::ios::app );
+        if(!out_file)
+        {
+          std::cerr << "gravidy: cannot open file "
+                    << ofname_log.c_str()
+                    << ": No such file or directory"
+                    << std::endl;
+          exit(1);
+        }
         gstream = &out_file;
     }
 
