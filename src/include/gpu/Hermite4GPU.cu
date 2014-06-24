@@ -443,7 +443,7 @@ __global__ void k_energy(double4 *r,
             double rx = r[j].x - r[i].x;
             double ry = r[j].y - r[i].y;
             double rz = r[j].z - r[i].z;
-            double r2 = rx*rx + ry*ry + rz*rz + e2;
+            double r2 = rx*rx + ry*ry + rz*rz;// + e2;
 
             epot_tmp -= (r[i].w * r[j].w) * rsqrt(r2);
         }

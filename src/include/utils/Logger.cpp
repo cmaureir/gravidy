@@ -68,34 +68,54 @@ void Logger::print_info()
     }
 
     *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(8)  << std::left  << "N:";
-    *gstream << std::setw(8)  << std::right << ns->n;
+    *gstream << std::setw(35)  << std::left  << "Number of particles:";
+    *gstream << std::setw(15)  << std::right << ns->n;
+    *gstream << std::endl;
+
+    *gstream << std::scientific;
+    *gstream << std::setprecision(4);
+
+    *gstream << std::setw(2)  << std::left  << "#";
+    *gstream << std::setw(35)  << std::left  << "Softening:";
+    *gstream << std::setw(15)  << std::right << sqrt(ns->e2);
     *gstream << std::endl;
 
     *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(8)  << std::left  << "E2:";
-    *gstream << std::setw(8)  << std::right << ns->e2;
+    *gstream << std::setw(35) << std::left  << "Eta (for timesteps):";
+    *gstream << std::setw(15)  << std::right << ns->eta;
     *gstream << std::endl;
 
     *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(8)  << std::left  << "Eta:";
-    *gstream << std::setw(8)  << std::right << ns->eta;
+    *gstream << std::setw(35)  << std::left  << "Integration time:";
+    *gstream << std::setw(15)  << std::right << ns->integration_time;
     *gstream << std::endl;
 
     *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(8)  << std::left  << "T:";
-    *gstream << std::setw(8)  << std::right << ns->integration_time;
+    *gstream << std::setw(35) << std::left  << "Half-mass radius (r_h):";
+    *gstream << std::setw(15)  << std::right << ns->r_h;
     *gstream << std::endl;
 
     *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(8)  << std::left  << "T_rh:";
-    *gstream << std::setw(8)  << std::right << ns->hmr_time;
+    *gstream << std::setw(35) << std::left  << "Center of Density (cod):";
+    *gstream << std::setw(15)  << std::right << ns->cod.x << " " << ns->cod.y << " " << ns->cod.z;
     *gstream << std::endl;
 
     *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(8)  << std::left  << "T_cr:";
-    *gstream << std::setw(8)  << std::right << ns->cr_time;
+    *gstream << std::setw(35) << std::left  << "Half-mass relaxation time (T_rh):";
+    *gstream << std::setw(15)  << std::right << ns->hmr_time;
     *gstream << std::endl;
+
+    *gstream << std::setw(2)  << std::left  << "#";
+    *gstream << std::setw(35) << std::left  << "Half-mass relaxation time (soft):";
+    *gstream << std::setw(15)  << std::right << ns->hmr_time_soft;
+    *gstream << std::endl;
+
+    *gstream << std::setw(2)  << std::left  << "#";
+    *gstream << std::setw(35) << std::left  << "Crossing time (T_cr):";
+    *gstream << std::setw(15)  << std::right << ns->cr_time;
+    *gstream << std::endl;
+
+    *gstream << std::fixed;
 
     if(!print_screen)
     {

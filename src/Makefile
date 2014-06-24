@@ -91,7 +91,7 @@ OBJS_KEPLER=$(OBJS)                         \
 
 ############################# Main rules
 
-all: mpigpu
+all: gpu
 cpu: gravidy-cpu
 mpigpu: CXXFLAGS+=-DMPIGPU
 mpigpu: NVFLAGS+=-DMPIGPU
