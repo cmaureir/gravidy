@@ -46,6 +46,7 @@ LINKFLAGS=  -L$(CUDA_PATH)/lib64     \
 
 # C++ FLAGS
 CXXFLAGS=   $(BOOSTFLAGS) \
+            -std=c++11    \
             -O3           \
             -Wall         \
             -pg           \
@@ -93,7 +94,7 @@ OBJS_KEPLER=$(OBJS)                         \
 
 ############################# Main rules
 
-all: mpigpu
+all: gpu
 cpu: gravidy-cpu
 mpigpu: CXXFLAGS+=-DMPIGPU
 mpigpu: NVFLAGS+=-DMPIGPU

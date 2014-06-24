@@ -37,8 +37,11 @@ class NbodySystem {
 
         // Global parameters
         Energy en;
+        float  r_h;
         float  hmr_time;
+        float  hmr_time_soft;
         float  cr_time;
+        double3 cod;
 
         // Files
         std::string   input_filename;

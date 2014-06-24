@@ -28,8 +28,10 @@ OptionsParser::OptionsParser(int argc, char *argv[])
 
     po::options_description extra("Extra options");
     extra.add_options()
-        ("lagrange,l",    "Print information of the Lagrange Radii in every integration time")
-        ("all,a",    "Print all the information of all the particles in every integration time")
+        ("lagrange,l",
+         "Print information of the Lagrange Radii in every integration time")
+        ("all,a",
+         "Print all the information of all the particles in every integration time")
     ;
 
     desc.add(help);
@@ -70,7 +72,7 @@ bool OptionsParser::check_options()
 
         if(!file_exists(input_filename))
         {
-            std::cout << "gravidy: cannot access "
+            std::cerr << "gravidy: cannot access "
                       << input_filename
                       << ": No such file or directory"
                       << std::endl;
@@ -120,12 +122,12 @@ bool OptionsParser::check_options()
         eta = vm["eta"].as<float>();
 
     std::ostringstream ss;
-    ss << "_t";
-    ss << integration_time;
-    ss << "_s";
-    ss << softening;
-    ss << "_e";
-    ss << eta;
+    //ss << "_t";
+    //ss << integration_time;
+    //ss << "_s";
+    //ss << softening;
+    //ss << "_e";
+    //ss << eta;
     ss << ".out";
     std::string ext(ss.str());
 

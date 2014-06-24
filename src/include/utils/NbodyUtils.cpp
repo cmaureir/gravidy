@@ -51,18 +51,16 @@ double NbodyUtils::get_core_radius()
 double NbodyUtils::get_half_mass_relaxation_time()
 {
     float t_rh;
-    float r_h, a, b;
+    float a, b;
 
-    cod = get_center_of_density();
-    r_h = get_halfmass_radius();
-    a = sqrt( (ns->n * r_h * r_h * r_h) / ( G * (ns->total_mass/(ns->n)) ));
-    b = 1/log(r_h/sqrt(ns->e2));
-    //b = 1/log(0.11 * ns->n); // Old non-softening depending
-    std::cout << "cod: " << cod.x << " " << cod.y << " " << cod.z << std::endl;
-    std::cout << "r_h: " << r_h << std::endl;
-    std::cout << "a: " << a << std::endl;
-    std::cout << "b: " << b << std::endl;
+    ns->cod = get_center_of_density();
+    ns->r_h = get_halfmass_radius();
+    a = sqrt( (ns->n * ns->r_h * ns->r_h * ns->r_h) / ( G * (ns->total_mass/(ns->n)) ));
 
+    b = 1/log(ns->r_h/sqrt(ns->e2));
+    ns->hmr_time_soft = 0.138 * a * b;
+
+    b = 1/log(0.11 * ns->n);
     t_rh = 0.138 * a * b;
     std::cout << "t_rh: " << t_rh << std::endl;
 
@@ -346,7 +344,7 @@ double NbodyUtils::get_energy()
             double rx = ns->h_r[j].x - ns->h_r[i].x;
             double ry = ns->h_r[j].y - ns->h_r[i].y;
             double rz = ns->h_r[j].z - ns->h_r[i].z;
-            double r2 = rx*rx + ry*ry + rz*rz + ns->e2;
+            double r2 = rx*rx + ry*ry + rz*rz;// + ns->e2;
 
             epot_tmp -= (ns->h_r[i].w * ns->h_r[j].w) / sqrt(r2);
         }
