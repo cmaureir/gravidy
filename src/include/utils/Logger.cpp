@@ -150,7 +150,7 @@ void Logger::print_lagrange_radii(double ITIME, std::vector<double> lagrange_rad
     *gstream << std::fixed;
     *gstream << ITIME << " ";
     gstream->precision(4);
-    for (int i = 0; i < 1/RADIUS_RATIO; i++) {
+    for (int i = 0; i < 1/RADIUS_RATIO - 1; i++) {
         *gstream << std::setw(6) << std::right << lagrange_radii[i] << " ";
     }
     *gstream << std::endl;

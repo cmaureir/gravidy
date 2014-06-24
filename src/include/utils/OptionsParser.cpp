@@ -132,12 +132,12 @@ bool OptionsParser::check_options()
         eta = vm["eta"].as<float>();
 
     std::ostringstream ss;
-    ss << "_t";
-    ss << integration_time;
-    ss << "_s";
-    ss << softening;
-    ss << "_e";
-    ss << eta;
+    //ss << "_t";
+    //ss << integration_time;
+    //ss << "_s";
+    //ss << softening;
+    //ss << "_e";
+    //ss << eta;
     ss << ".out";
     std::string ext(ss.str());
 
