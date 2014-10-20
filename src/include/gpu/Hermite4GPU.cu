@@ -40,7 +40,7 @@ void Hermite4GPU::alloc_arrays_device()
     CUDA_SAFE_CALL(cudaMemset(ns->d_fout_tmp,  0, ff_size * NJBLOCK));
 
     // Extra CPU array
-    ns->h_fout_tmp= new Forces[ns->n*NJBLOCK];
+    ns->h_fout_tmp= new Forces[ff_size*NJBLOCK];
 
 }
 
@@ -443,7 +443,7 @@ __global__ void k_energy(double4 *r,
             double rx = r[j].x - r[i].x;
             double ry = r[j].y - r[i].y;
             double rz = r[j].z - r[i].z;
-            double r2 = rx*rx + ry*ry + rz*rz;// + e2;
+            double r2 = rx*rx + ry*ry + rz*rz + e2;
 
             epot_tmp -= (r[i].w * r[j].w) * rsqrt(r2);
         }
@@ -532,8 +532,8 @@ void Hermite4GPU::integration()
     ns->en.ini = get_energy_gpu();   // Initial calculation of the energy of the system
     ns->en.tmp = ns->en.ini;
 
-    ns->hmr_time = nu->get_half_mass_relaxation_time();
-    ns->cr_time  = nu->get_crossing_time();
+    //ns->hmr_time = nu->get_half_mass_relaxation_time();
+    //ns->cr_time  = nu->get_crossing_time();
 
     logger->print_info();
     logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, ns->en.ini);

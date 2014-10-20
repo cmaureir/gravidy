@@ -9,29 +9,22 @@ OptionsParser::OptionsParser(int argc, char *argv[])
 
     po::options_description main("Required options");
     main.add_options()
-        //("input,i",     po::value<std::string>()->value_name("<filename>"), "Input data filename")
-        //("time,t",      po::value<float>()->value_name("<value>")->default_value(1),       "Integration time (In N-body units)")
-        ("input,i",     po::value<std::string>(), "Input data filename")
-        ("time,t",      po::value<float>(),       "Integration time (In N-body units)")
+        ("input,i",     po::value<std::string>()->value_name("<filename>"), "Input data filename")
+        ("time,t",      po::value<float>()->value_name("<value>")->default_value(1),       "Integration time (In N-body units)")
     ;
 
     po::options_description optional("Optional options");
     optional.add_options()
-        //("output,o",    po::value<std::string>()->value_name("<filename>"), "Output data filename")
-        //("softening,s", po::value<float>()->value_name("<value>"),       "Softening parameter (default 1e-4)")
-        //("eta,e",       po::value<float>()->value_name("<value>"),       "ETA of time-step calculation (default 0.01)")
-        ("output,o",    po::value<std::string>(), "Output data filename")
-        ("softening,s", po::value<float>(),       "Softening parameter (default 1e-4)")
-        ("eta,e",       po::value<float>(),       "ETA of time-step calculation (default 0.01)")
+        ("output,o",    po::value<std::string>()->value_name("<filename>"), "Output data filename")
+        ("softening,s", po::value<float>()->value_name("<value>"),       "Softening parameter (default 1e-4)")
+        ("eta,e",       po::value<float>()->value_name("<value>"),       "ETA of time-step calculation (default 0.01)")
         ("screen,p",    "Print summary in the screen instead of a file")
     ;
 
     po::options_description extra("Extra options");
     extra.add_options()
-        ("lagrange,l",
-         "Print information of the Lagrange Radii in every integration time")
-        ("all,a",
-         "Print all the information of all the particles in every integration time")
+        ("lagrange,l",    "Print information of the Lagrange Radii in every integration time")
+        ("all,a",    "Print all the information of all the particles in every integration time")
     ;
 
     desc.add(help);
@@ -72,7 +65,7 @@ bool OptionsParser::check_options()
 
         if(!file_exists(input_filename))
         {
-            std::cerr << "gravidy: cannot access "
+            std::cout << "gravidy: cannot access "
                       << input_filename
                       << ": No such file or directory"
                       << std::endl;
@@ -122,12 +115,12 @@ bool OptionsParser::check_options()
         eta = vm["eta"].as<float>();
 
     std::ostringstream ss;
-    //ss << "_t";
-    //ss << integration_time;
-    //ss << "_s";
-    //ss << softening;
-    //ss << "_e";
-    //ss << eta;
+    ss << "_t";
+    ss << integration_time;
+    ss << "_s";
+    ss << softening;
+    ss << "_e";
+    ss << eta;
     ss << ".out";
     std::string ext(ss.str());
 

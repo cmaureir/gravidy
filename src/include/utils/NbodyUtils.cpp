@@ -48,32 +48,62 @@ double NbodyUtils::get_core_radius()
     return radius;
 }
 
+void NbodyUtils::nbody_attributes()
+{
+    // Virial radius
+    ns->r_virial = get_virial_radius(ns->en.ini);
+
+    // Crossing time
+    ns->t_cr  = get_crossing_time(ns->r_virial);
+
+    // Close encounter radius
+    ns->r_cl  = get_close_encounter_radius(ns->r_virial);
+
+    // Close encounter timestep
+    ns->dt_cl = get_close_encounter_timestep(ns->r_cl);
+
+    // Half mass relaxation time
+    ns->t_rlx = get_half_mass_relaxation_time();
+}
+
 double NbodyUtils::get_half_mass_relaxation_time()
 {
-    float t_rh;
-    float a, b;
-
-    ns->cod = get_center_of_density();
-    ns->r_h = get_halfmass_radius();
-    a = sqrt( (ns->n * ns->r_h * ns->r_h * ns->r_h) / ( G * (ns->total_mass/(ns->n)) ));
-
-    b = 1/log(ns->r_h/sqrt(ns->e2));
-    ns->hmr_time_soft = 0.138 * a * b;
-
-    b = 1/log(0.11 * ns->n);
-    t_rh = 0.138 * a * b;
-    std::cout << "t_rh: " << t_rh << std::endl;
+    cod = get_center_of_density();
+    float r_h = get_halfmass_radius();
+    float a = sqrt( (ns->n * r_h * r_h * r_h) / ( G * (ns->total_mass/(ns->n)) ));
+    //float b = 1/log(r_h/sqrt(ns->e2));
+    float b = 1/log(0.11 * ns->n); // Old non-softening depending
+    float t_rh = 0.138 * a * b;
 
     return t_rh;
 }
 
-double NbodyUtils::get_crossing_time()
+double NbodyUtils::get_virial_radius(double energy)
+{
+    return (-G * ns->total_mass * ns->total_mass) / (4 * energy);
+}
+
+double NbodyUtils::get_close_encounter_radius(double r_virial)
+{
+    return (4.0 * r_virial)/ns->n;
+}
+
+double NbodyUtils::get_close_encounter_timestep(double r_cl)
+{
+    float r_cl3 = r_cl * r_cl * r_cl;
+    return 0.04 * sqrt(r_cl3 * ns->n);
+}
+
+double NbodyUtils::get_crossing_time(double r_virial)
 {
     float M = ns->total_mass;
-    float Rv = (-G * M * M) / (4 * (ns->en.ini));
-    float Ut = sqrt( (Rv * Rv * Rv) / G * M);
+    float Rv3 = r_virial * r_virial * r_virial;
+    float Ut = sqrt( Rv3 / (G * M));
     float t_cr = 2 * sqrt(2) * Ut;
 
+    //ns->r_sphere = 0.3;
+    //// 2**(1/3)
+    //ns->r_shell  = (1.2599210498948732) * ns->r_sphere;
     return t_cr;
 }
 
@@ -311,6 +341,7 @@ double NbodyUtils::normalize_dt(double new_dt, double old_dt, double t, int i)
     return new_dt;
 }
 
+#ifdef KEPLER
 double NbodyUtils::get_timestep_central(int i)
 {
     double r = get_magnitude(ns->h_r[i].x - ns->h_r[0].x,
@@ -329,6 +360,7 @@ double NbodyUtils::get_timestep_central(int i)
 
     return central_dt;
 }
+#endif
 
 double NbodyUtils::get_energy()
 {
@@ -344,7 +376,7 @@ double NbodyUtils::get_energy()
             double rx = ns->h_r[j].x - ns->h_r[i].x;
             double ry = ns->h_r[j].y - ns->h_r[i].y;
             double rz = ns->h_r[j].z - ns->h_r[i].z;
-            double r2 = rx*rx + ry*ry + rz*rz;// + ns->e2;
+            double r2 = rx*rx + ry*ry + rz*rz + ns->e2;
 
             epot_tmp -= (ns->h_r[i].w * ns->h_r[j].w) / sqrt(r2);
         }

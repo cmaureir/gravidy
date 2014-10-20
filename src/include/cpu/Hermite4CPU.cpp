@@ -5,13 +5,12 @@ Hermite4CPU::Hermite4CPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
                          : Hermite4(ns, logger, nu)
 {
 
-    int nn = ns->n;
-    h_fn     = new Forces[nn];
-    h_fn_old = new Forces[nn];
-    h_tn     = new double[nn];
+    h_fn     = new Forces[ns->n];
+    h_fn_old = new Forces[ns->n];
+    h_tn     = new double[ns->n];
 
-    nb_list  = new int*[nn];
-    nb_number = 2 * sqrt(nn);
+    nb_list  = new int*[ns->n];
+    nb_number = 2 * sqrt(ns->n);
 
     for(int i = 0; i < ns->n; ++i)
         nb_list[i] = new int[nb_number];
@@ -182,8 +181,8 @@ void Hermite4CPU::integration()
     ns->en.ini = nu->get_energy();   // Initial calculation of the energy of the system
     ns->en.tmp = ns->en.ini;
 
-    ns->hmr_time = nu->get_half_mass_relaxation_time();
-    ns->cr_time  = nu->get_crossing_time();
+    //ns->hmr_time = nu->get_half_mass_relaxation_time();
+    //ns->cr_time  = nu->get_crossing_time();
 
     logger->print_info();
     logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, ns->en.ini);
