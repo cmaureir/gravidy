@@ -15,6 +15,14 @@ NbodySystem::NbodySystem(OptionsParser op)
     en.end = 0.0;
     en.tmp = 0.0;
     gtime.gflops = 0.0;
+
+    r_cl = 0.0;
+    dt_cl = 0.0;
+    m_g = 0.0;
+    t_rlx = 0.0;
+    t_cr = 0.0;
+    r_virial = 0.0;
+
 }
 
 /** Destructor */

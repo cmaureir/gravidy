@@ -7,7 +7,7 @@
 #elif KEPLER
 #include "include/kepler/Hermite4Kepler.hpp"
 #else
-#include "include/cpu/Hermite4CPU.hpp"
+#include "include/cpu-tsym/Hermite4CPU.hpp"
 #endif
 
 
