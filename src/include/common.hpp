@@ -43,14 +43,15 @@ const float  RADIUS_RATIO = 0.05;
 const double E = 1e-4;
 /** Softening parameter squared */
 const double E2 = 1e-8;
+
 /** Initial ETA parameter to calculate the first timestep of all the particles
  * of the system. Based on Aarseth formula */
-const double ETA_S = 0.01;
+const float ETA_S = 0.01;
+
 /** Iteration ETA parameter to calculate new timestep of all the active particles
  * of the system, in a certain integration time. Based on Aarseth formula */
-const double ETA_N = 0.01;
-/** For Kepler **/
-const double ETA_K = 0.1;
+const float ETA_N = 0.01;
+
 /** Lower boundary for the particles timesteps, \f$2^{-23}\f$ */
 const double D_TIME_MIN = 1.1920928955078125e-07;
 /** Upper boundary for the particles timesteps, \f$2^{-3}\f$ */

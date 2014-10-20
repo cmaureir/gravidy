@@ -5,12 +5,13 @@ Hermite4CPU::Hermite4CPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
                          : Hermite4(ns, logger, nu)
 {
 
-    h_fn     = new Forces[ns->n];
-    h_fn_old = new Forces[ns->n];
-    h_tn     = new double[ns->n];
+    int nn = ns->n;
+    h_fn     = new Forces[nn];
+    h_fn_old = new Forces[nn];
+    h_tn     = new double[nn];
 
-    nb_list  = new int*[ns->n];
-    nb_number = 2 * sqrt(ns->n);
+    nb_list  = new int*[nn];
+    nb_number = 2 * sqrt(nn);
 
     for(int i = 0; i < ns->n; ++i)
         nb_list[i] = new int[nb_number];

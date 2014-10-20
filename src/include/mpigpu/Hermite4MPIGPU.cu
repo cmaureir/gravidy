@@ -81,7 +81,7 @@ void Hermite4MPIGPU::alloc_slaves_memory(int rank)
 
         h_tmp_f         = (Forces*)malloc(ff_size);
         ns->h_fout_tmp  = (Forces*)malloc(ff_size);
-        //ns->h_fout_tmp= new Forces[ff_size*NJBLOCK];
+        //ns->h_fout_tmp= new Forces[ns->n*NJBLOCK];
 
         memset(h_tmp_f,        0, sizeof(Forces) * ns->n);
         memset(ns->h_fout_tmp, 0, sizeof(Forces) * ns->n);

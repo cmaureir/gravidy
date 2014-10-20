@@ -88,20 +88,16 @@ void NbodySystem::alloc_base_attributes(int rank)
     MPI_Bcast(&reader[0], sizeof(file_data) * n, MPI_BYTE, 0, MPI_COMM_WORLD);
     #endif
 
-    int d4_size = n * sizeof(double4);
-    h_r      = new double4[d4_size];
-    h_v      = new double4[d4_size];
-
+    h_r      = new double4[n];
+    h_v      = new double4[n];
 }
 
 void NbodySystem::free_base_attributes()
 {
-    int d4_size = n * sizeof(double4);
-
-    h_r      = new double4[d4_size];
-    h_v      = new double4[d4_size];
-
+    h_r      = new double4[n];
+    h_v      = new double4[n];
 }
+
 void NbodySystem::copy_input_data()
 {
     for (int i = 0; i < (int)reader.size(); i++)

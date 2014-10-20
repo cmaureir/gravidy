@@ -100,24 +100,20 @@ void Hermite4::save_old_acc_jrk(int nact)
 
 void Hermite4::alloc_arrays_host()
 {
-    int d4_size = ns->n * sizeof(double4);
-    int d1_size = ns->n * sizeof(double);
-    int i1_size = ns->n * sizeof(int);
-    int ff_size = ns->n * sizeof(Forces);
-    int pp_size = ns->n * sizeof(Predictor);
+    int nn = ns->n;
 
-    ns->h_f    = new Forces[ff_size];
-    ns->h_a2   = new double3[d4_size];
-    ns->h_a3   = new double3[d4_size];
-    ns->h_old  = new Forces[ff_size];
-    ns->h_t    = new double[d1_size];
-    ns->h_dt   = new double[d1_size];
-    ns->h_move = new int[i1_size];
-    ns->h_p    = new Predictor[pp_size];
-    ns->h_i    = new Predictor[pp_size];
-    ns->h_ekin = new double[d1_size];
-    ns->h_epot = new double[d1_size];
-
+    ns->h_f        = new Forces[nn];
+    ns->h_a2       = new double3[nn];
+    ns->h_a3       = new double3[nn];
+    ns->h_old      = new Forces[nn];
+    ns->h_t        = new double[nn];
+    ns->h_dt       = new double[nn];
+    ns->h_move     = new int[nn];
+    ns->h_p        = new Predictor[nn];
+    ns->h_i        = new Predictor[nn];
+    ns->h_ekin     = new double[nn];
+    ns->h_epot     = new double[nn];
+    ns->h_r_sphere = new double[nn];
 }
 
 void Hermite4::free_arrays_host()

@@ -78,6 +78,11 @@ OBJS=       include/utils/OptionsParser.o   \
 OBJS_CPU=   $(OBJS)                         \
             include/cpu/Hermite4CPU.o       \
 
+OBJS_TCPU=  $(OBJS)                           \
+            include/cpu-tsym/MultipleSystem.o \
+            include/cpu-tsym/Hermite4CPU.o    \
+            include/cpu-tsym/Hermite4CPU_integration.o
+
 OBJS_MPI=   $(OBJS)                         \
             include/mpi/Hermite4MPI.o       \
             include/mpi/MPIUtils.o

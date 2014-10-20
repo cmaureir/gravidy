@@ -40,7 +40,7 @@ void Hermite4GPU::alloc_arrays_device()
     CUDA_SAFE_CALL(cudaMemset(ns->d_fout_tmp,  0, ff_size * NJBLOCK));
 
     // Extra CPU array
-    ns->h_fout_tmp= new Forces[ff_size*NJBLOCK];
+    ns->h_fout_tmp= new Forces[ns->n*NJBLOCK];
 
 }
 

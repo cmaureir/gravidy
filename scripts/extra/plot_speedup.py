@@ -3,6 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rc
+import prettyplotlib as ppl
 rc('font',**{'family':'serif','serif':['Palatino']})
 rc('text', usetex=True)
 
@@ -64,14 +65,15 @@ acc3 = np.array(cpu_time) / np.array(mpi1_time)
 acc4 = np.array(cpu_time) / np.array(mpi2_time)
 acc5 = np.array(cpu_time) / np.array(gpu_time)
 
-fig = plt.figure()
-f1 = fig.add_subplot(111)
+with ppl.pretty:
+    fig = plt.figure()
+    f1 = fig.add_subplot(111)
 
-f1.plot(n, acc1, 'o-',  color='red'  , label=r'(OpenMP)/CPU')
-f1.plot(n, acc2, 'bs-', color='blue' , label=r'(CPU + GPU)/CPU')
-f1.plot(n, acc3, 'v-', color='yellow' , label=r'(MPI-1)/CPU')
-f1.plot(n, acc4, 'd-', color='orange' , label=r'(MPI-2)/CPU')
-f1.plot(n, acc5, 'g^-', color='green', label=r'GPU/CPU')
+ppl.plot(n, acc1, 'o-',  label=r'(OpenMP)/CPU')
+ppl.plot(n, acc2, 'bs-', label=r'(CPU + GPU)/CPU')
+ppl.plot(n, acc3, 'v-',  label=r'(MPI-1)/CPU')
+ppl.plot(n, acc4, 'd-',  label=r'(MPI-2)/CPU')
+ppl.plot(n, acc5, 'g^-', label=r'GPU/CPU')
 
 f1.set_ylabel(r'Acceleration', fontsize=15)
 f1.set_xlabel(r'$N$', fontsize=15)
@@ -79,7 +81,7 @@ f1.set_xlabel(r'$N$', fontsize=15)
 f1.set_ylim(0.5,10**(3))
 f1.legend(loc='upper left',ncol=1)
 
-f1.grid(True, which='both')
+f1.grid(True)
 f1.set_yscale('log')
 #f1.set_xscale('log')
-plt.show()
+plt.savefig("speedup.pdf", type="pdf")
