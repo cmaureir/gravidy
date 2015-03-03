@@ -1,0 +1,3 @@
+[submodule "input"]
+	path = input
+	url = git@github.com:cmaureir/nbody-ic

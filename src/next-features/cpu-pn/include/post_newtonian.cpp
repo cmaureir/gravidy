@@ -118,6 +118,8 @@ void pn_calculation(int i)
     // G is ommited because is 1
     for (int k = 0; k < 3; k++)
     {
+
+        // Precesion
         pn1[k] = nvec[k] * ((5.0 * mpbh + 4.0 * mbh2) * r3inv + h_m[0] * r2inv \
                  * (1.5 * nv2 * nv2 - v1_2 + 4.0 * v1v2 - 2.0 * v2_2)) + v[k]  \
                  * h_m[0] * r2inv  * (4.0 * nv1 - 3 * nv2);
@@ -132,6 +134,7 @@ void pn_calculation(int i)
                   nv1dot - 3.0 * nv2dot)) + (at1[k] - at2[k] ) * h_m[0] * r2inv \
                   * (4.0 * nv1 - 3*nv2);
 
+        // Precesion  correction
         pn2[k] = nvec[k] * ((-57./4.* mp2bh - 69./2. * mpbh2 - 9.* mbh3) * r4inv + \
                  h_m[0] * r2inv *(-15./8. * nv2_4 + 1.5 * nv2_2 * v1_2 - 6. * nv2_2\
                  * v1v2 - 2. * v1v2 * v1v2 + 4.5 * nv2_2 * v2_2 + 4. * v1v2 * v2_2 \
@@ -181,6 +184,7 @@ void pn_calculation(int i)
                   * v1v2dot) + 4. * (nv1dot * v2_2 + nv1 * v2a) - 5. * (nv2dot *   \
                   v2_2 + nv2 * v2a)));
 
+        // Radiation
         pn25[k] = ((208. * mpbh2 * nv/15.-24./5. * mp2bh * nv) * r4inv + 12. *     \
                   mpbh/5. * r3inv * nv * v1_v22) * nvec[k] + (8./5. * mp2bh *      \
                   r4inv - 32./5. * mpbh2 * r4inv - 4./5. * mpbh * r3inv * v1_v22) *\
