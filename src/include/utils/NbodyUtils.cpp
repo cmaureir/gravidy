@@ -22,6 +22,7 @@ double NbodyUtils::get_core_radius()
     double radius = 0.0;
     int i;
 
+    #pragma omp parallel for
     for (i = 0; i < ns->n; i++)
     {
         double rx  = ns->h_r[i].x - cod.x;

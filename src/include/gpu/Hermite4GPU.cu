@@ -67,6 +67,7 @@ void Hermite4GPU::predicted_pos_vel(double ITIME)
 {
 
     ns->gtime.prediction_ini = omp_get_wtime();
+    #pragma omp parallel for
     for (int i = 0; i < ns->n; i++)
     {
         double dt  = ITIME - ns->h_t[i];
@@ -91,9 +92,11 @@ void Hermite4GPU::predicted_pos_vel(double ITIME)
 void Hermite4GPU::correction_pos_vel(double ITIME, int nact)
 {
     ns->gtime.correction_ini = omp_get_wtime();
+    int i;
+    #pragma omp parallel for private(i)
     for (int k = 0; k < nact; k++)
     {
-        int i = ns->h_move[k];
+        i = ns->h_move[k];
 
         double dt1 = ns->h_dt[i];
         double dt2 = dt1 * dt1;
@@ -183,6 +186,8 @@ void Hermite4GPU::update_acc_jrk(int nact)
     int  nact_blocks = 1 + (nact-1)/BSIZE;
     dim3 nblocks(nact_blocks,NJBLOCK, 1);
     dim3 nthreads(BSIZE, 1, 1);
+    std::cout << "nblocks " << nact_blocks << ", " << NJBLOCK << ", 1" << std::endl;
+    std::cout << "nthreads " << BSIZE << ", 1, 1" << std::endl;
 
     // Kernel to update the forces for the particles in d_i
     ns->gtime.grav_ini = omp_get_wtime();
@@ -569,8 +574,8 @@ void Hermite4GPU::integration()
         next_integration_time(ATIME);
 
 
-        if(std::ceil(ITIME) == ITIME)
-        {
+        //if(std::ceil(ITIME) == ITIME)
+        //{
             //assert(nact == ns->n);
             logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, get_energy_gpu());
             if (ns->ops.print_all)
@@ -582,7 +587,7 @@ void Hermite4GPU::integration()
                 nu->lagrange_radii();
                 logger->print_lagrange_radii(ITIME, nu->layers_radii);
             }
-        }
+        //}
 
         // Update nsteps with nact
         nsteps += nact;

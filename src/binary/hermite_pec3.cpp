@@ -2,14 +2,17 @@
 #include <cmath>
 #include <iomanip>
 
-//const double D_TIME_MIN = 1.1920928955078125e-07;
-const double D_TIME_MIN = 9.5367431640625e-07;
+const double D_TIME_MIN = 1.1920928955078125e-07;
+//const double D_TIME_MIN = 9.5367431640625e-07;
 const double D_TIME_MAX = 0.125;
+//const double DT_FIX = 0.0015625;
+
+const double e2 = 1e-08;
 
 typedef struct
 {
     double m;
-    double t, dt;
+    double t, dt, old_dt;
     double rx, ry, rz;
     double vx, vy, vz;
     double prx, pry, prz;
@@ -26,7 +29,7 @@ typedef struct
 
 void prediction(double ITIME);
 void evaluation();
-void correction(double ITIME);
+void correction(double ITIME, bool check);
 void force_calculation(particle &pi, particle &pj);
 void print_all();
 void next_c_time(double &c_time);
@@ -45,28 +48,32 @@ int main(int argc, char *argv[])
     double e_time = 100.0;
     double c_time = 1e6;
 
-    // Setup: Init (a=1, e=0.1, T = pi, w = pi)
     p[0] = {0.0};
     p[1] = {0.0};
 
     // Info
-    p[0].m  = 2.0;
-    p[1].m  = 2.0;
+    p[0].m  = 0.5;
+    p[1].m  = 0.5;
 
-    double r_cte = 0.5;
-    p[0].rx =  r_cte;
-    p[0].prx = r_cte;
-    p[1].rx =  -r_cte;
-    p[1].prx = -r_cte;
+
+    double r_cte = 0.005; // a = 1, e = 0.99
+    //double r_cte = 0.05; // a = 1, e = 0.9
+    //double r_cte = 0.45; // a = 1, e = 0.1
+    p[0].rx =  -r_cte;
+    p[0].prx = -r_cte;
+    p[1].rx =   r_cte;
+    p[1].prx =  r_cte;
 
     double m  = p[0].m + p[1].m;
     double G  = 1.0;
-    double vcte = sqrt(0.99);
+    double vcte = 7.053367989832939; // a = 1, e = 0.99
+    //double vcte = 2.17944947; // a = 1, e = 0.9
+    //double vcte = 0.552770798392567; // a = 1, e = 0.1
 
-    p[0].vy =  -vcte;
-    p[0].pvy = -vcte;
-    p[1].vy =   vcte;
-    p[1].pvy =  vcte;
+    p[0].vy =   vcte;
+    p[0].pvy =  vcte;
+    p[1].vy =  -vcte;
+    p[1].pvy = -vcte;
     // Setup: end
 
     // First to get initial a0 and a1
@@ -101,22 +108,138 @@ int main(int argc, char *argv[])
     double semimajor_ini = -mu_std / (2*espec);
     double ecc_ini = sqrt(1.0+2.0*espec*j2/(mu_std*mu_std));
 
-    while (c_time < 1000)
+    //std::cout << "mu_std: " << mu_std << std::endl;
+    //std::cout << "rr: " << rr << std::endl;
+    //std::cout << "vv: " << vv << std::endl;
+    //std::cout << "jj: " << jj << std::endl;
+    //std::cout << "a: " << semimajor_ini << std::endl;
+    //std::cout << "espec: " << espec << std::endl;
+    //std::cout << "ecc: " << ecc_ini << std::endl;
+    //std::cout << "energy: " << ini_e << std::endl;
+
+
+    while (c_time < 5000)
     {
 
         prediction(c_time);
         save_old();
         // P(EC)^n, n = 3
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < (int)atoi(argv[1]); i++)
         {
             evaluation();
-            correction(c_time);
+            correction(c_time, true);
         }
 
         for (int i = 0; i < 2; i++)
         {
+            // ...
+
+            // Saving old timestep
+            p[i].old_dt = p[i].dt;
+            // Getting new timestep
+            double first_dt  = get_timestep_normal(p[i]);
+            double new_dt = 0.0;
+
+            // Check even or odd timestep
+            //std::cout << "Particle " << i << std::endl;
+            //printf(" t = %.15e\n", c_time);
+            //printf("dt = %.15e\n", p[i].dt);
+            if ((int)(c_time / p[i].dt) % 2 == 0)
+            {
+                //std::cout << "Even" << std::endl;
+                // We double it
+                p[i].dt = p[i].old_dt * 2;
+                evaluation();
+                correction(c_time, false);
+                double last_dt  = get_timestep_normal(p[i]);
+                double avg = 0.5 * (first_dt + last_dt);
+
+                if ( 2 * p[i].old_dt <= avg ||
+                         p[i].old_dt <= avg &&
+                     2 * p[i].old_dt >= avg)
+                {
+                    //std::cout << "Doubling it" << std::endl;
+                    new_dt = p[i].dt;
+                }
+                else // If not, we keep the same value and try again
+                {
+                    p[i].dt = p[i].old_dt;
+                    evaluation();
+                    correction(c_time, false);
+                    double last_dt  = get_timestep_normal(p[i]);
+                    double avg = 0.5 * (first_dt + last_dt);
+
+                    if ( 2 * p[i].old_dt <= avg ||
+                             p[i].old_dt <= avg &&
+                         2 * p[i].old_dt >= avg)
+                    {
+                        //std::cout << "Keeping the same" << std::endl;
+                        new_dt = p[i].dt;
+                    }
+                    else
+                    {
+                        if ( p[i].old_dt * 0.5 <= avg &&
+                             p[i].old_dt > avg)
+                        {
+                            //std::cout << "Halving it" << std::endl;
+                            new_dt = p[i].dt * 0.5;
+                        }
+                        else
+                        {
+                            //std::cout << "...in any other case we halve" << std::endl;
+                            new_dt = p[i].dt * 0.5;
+                        }
+                    }
+                }
+
+
+            }
+            else
+            {
+                //std::cout << "Odd" << std::endl;
+                //std::cout << "Continuing with the same..." << std::endl;
+                // p[i].dt continue with the same value
+                evaluation();
+                correction(c_time, false);
+                double last_dt  = get_timestep_normal(p[i]);
+                double avg = 0.5 * (first_dt + last_dt);
+
+                if ( 2 * p[i].old_dt <= avg ||
+                         p[i].old_dt <= avg &&
+                     2 * p[i].old_dt >= avg)
+                {
+
+                    //std::cout << "Keeping the same" << std::endl;
+                    new_dt = p[i].dt;
+                }
+                else
+                {
+                    if ( p[i].old_dt * 0.5 <= avg &&
+                         p[i].old_dt > avg)
+                    {
+                        //std::cout << "Halving it" << std::endl;
+                        new_dt = p[i].dt * 0.5;
+                    }
+                    else
+                    {
+                        //std::cout << "...in any other case we halve" << std::endl;
+                        new_dt = p[i].dt * 0.5;
+                    }
+                }
+            }
+            //printf("old_dt = %.15e\n", p[i].old_dt);
+            //printf("new_dt = %.15e\n", new_dt);
+
+
+            if (new_dt > D_TIME_MAX)
+                new_dt = D_TIME_MAX;
+
+            if (new_dt < D_TIME_MIN)
+                new_dt = D_TIME_MIN;
+
+            p[i].dt = new_dt;
+
             p[i].t = c_time;
-            //p[i].dt = 0.03125;
 
             p[i].rx = p[i].prx;
             p[i].ry = p[i].pry;
@@ -127,69 +250,69 @@ int main(int argc, char *argv[])
             p[i].vy = p[i].pvy;
             p[i].vz = p[i].pvz;
 
-            double normal_dt  = get_timestep_normal(p[i]);
-            if (normal_dt < p[i].dt)
-            {
-                if (0.5*p[i].dt < D_TIME_MIN)
-                    p[i].dt = D_TIME_MIN;
-                else
-                    p[i].dt *= 0.5;
-            }
-            else if (normal_dt > 2*p[i].dt && (fmod(p[i].t, 2*p[i].dt) == 0))
-            {
-                if (2*p[i].dt < D_TIME_MAX)
-                    p[i].dt *= 2;
-                else
-                    p[i].dt = D_TIME_MAX;
-            }
+            //if (normal_dt < p[i].dt)
+            //{
+            //    //if (0.5*p[i].dt < D_TIME_MIN)
+            //    //    p[i].dt = D_TIME_MIN;
+            //    //else
+            //        p[i].dt *= 0.5;
+            //}
+            //else if (normal_dt > 2*p[i].dt && (fmod(p[i].t, 2*p[i].dt) == 0))
+            //{
+            //    if (2*p[i].dt < D_TIME_MAX)
+            //        p[i].dt *= 2;
+            //    else
+            //        p[i].dt = D_TIME_MAX;
+            //}
         }
+        if (ite == 0)
+            std::cout << "2" << std::endl;
 
-        if(std::ceil(c_time) == c_time)
+        if(ite%100 == 0)
         {
-            double end_e = get_energy();
-            //print_all();
+            print_all();
+            //double end_e = get_energy();
 
-            double mu = p[0].m * p[1].m / (p[0].m + p[1].m);
-            double rx = p[1].rx - p[0].rx;
-            double ry = p[1].ry - p[0].ry;
-            double rz = p[1].rz - p[0].rz;
+            //double mu = p[0].m * p[1].m / (p[0].m + p[1].m);
+            //double rx = p[1].rx - p[0].rx;
+            //double ry = p[1].ry - p[0].ry;
+            //double rz = p[1].rz - p[0].rz;
 
-            double vx = p[1].vx - p[0].vx;
-            double vy = p[1].vy - p[0].vy;
-            double vz = p[1].vz - p[0].vz;
+            //double vx = p[1].vx - p[0].vx;
+            //double vy = p[1].vy - p[0].vy;
+            //double vz = p[1].vz - p[0].vz;
 
 
-            double jx = ry * vz - rz * vy;
-            double jy = rz * vx - rx * vz;
-            double jz = rx * vy - ry * vx;
+            //double jx = ry * vz - rz * vy;
+            //double jy = rz * vx - rx * vz;
+            //double jz = rx * vy - ry * vx;
 
-            double r = sqrt(rx*rx + ry*ry + rz*rz);
-            double v = sqrt(vx*vx + vy*vy + vz*vz);
-            double j = sqrt(jx*jx + jy*jy + jz*jz);
+            //double r = sqrt(rx*rx + ry*ry + rz*rz);
+            //double v = sqrt(vx*vx + vy*vy + vz*vz);
+            //double j = sqrt(jx*jx + jy*jy + jz*jz);
 
-            double j2 = j*j;
-            double v2 = v*v;
-            double m1m2 = p[0].m * p[1].m;
+            //double j2 = j*j;
+            //double v2 = v*v;
+            //double m1m2 = p[0].m * p[1].m;
 
-            double binde = 0.5 * mu * v2 - m1m2/ r;
+            //double binde = 0.5 * mu * v2 - m1m2/ r;
 
-            double semimajor = -0.5 * m1m2 / binde;
+            //double semimajor = -0.5 * m1m2 / binde;
 
-            double jmax2 = semimajor * (p[0].m + p[1].m);
-            double ecc = sqrt(1. - j2 / jmax2);
+            //double jmax2 = semimajor * (p[0].m + p[1].m);
+            //double ecc = sqrt(1. - j2 / jmax2);
 
-            printf("%.5e %.5e %.5e %.5e %.5e\n",
-                    c_time,
-                    (semimajor-semimajor_ini)/semimajor_ini,
-                    (ecc-ecc_ini)/ecc_ini,
-                    r,
-                    (end_e - ini_e)/ini_e);
+            //printf("%.15e %.15e %.15e %.15e %.15e\n",
+            //        c_time/3.1415,
+            //        std::abs((semimajor-semimajor_ini)/semimajor_ini),
+            //        std::abs((ecc-ecc_ini)/ecc_ini),
+            //        r,
+            //        std::abs((end_e - ini_e)/ini_e));
         }
         next_c_time(c_time);
         ite++;
 
         //get_energy();
-        //print_all();
         //std::cout << c_time << std::endl;
     }
     return 0;
@@ -261,13 +384,11 @@ void init_dt(double &CTIME)
              dt_min = dt_0;
 
         p[i].dt = 0.5 * D_TIME_MIN;
-        //p[i].dt = 0.03125;
         p[i].t = 0.0;
     }
 
     ETA_B = D_TIME_MIN / (2.0 * dt_min);
     CTIME = 0.5 * D_TIME_MIN;
-    //CTIME = 0.03125;
 }
 
 void next_c_time(double &c_time)
@@ -327,7 +448,7 @@ void evaluation()
     }
 }
 
-void correction(double ITIME)
+void correction(double ITIME, bool check)
 {
     for (int i = 0; i < 2; i++)
     {
@@ -347,15 +468,18 @@ void correction(double ITIME)
         p[i].a3y = (12 * (p[i].oa0y - p[i].a0y ) + 6 * dt1 * (p[i].oa1y + p[i].a1y) ) / dt3;
         p[i].a3z = (12 * (p[i].oa0z - p[i].a0z ) + 6 * dt1 * (p[i].oa1z + p[i].a1z) ) / dt3;
 
-        // Correcting position
-        p[i].prx = p[i].iprx + (dt4/24)*p[i].a2x + (dt5/120)*p[i].a3x;
-        p[i].pry = p[i].ipry + (dt4/24)*p[i].a2y + (dt5/120)*p[i].a3y;
-        p[i].prz = p[i].iprz + (dt4/24)*p[i].a2z + (dt5/120)*p[i].a3z;
+        if (check)
+        {
+            // Correcting position
+            p[i].prx = p[i].iprx + (dt4/24)*p[i].a2x + (dt5/120)*p[i].a3x;
+            p[i].pry = p[i].ipry + (dt4/24)*p[i].a2y + (dt5/120)*p[i].a3y;
+            p[i].prz = p[i].iprz + (dt4/24)*p[i].a2z + (dt5/120)*p[i].a3z;
 
-        // Correcting velocity
-        p[i].pvx = p[i].ipvx + (dt3/6)*p[i].a2x + (dt4/24)*p[i].a3x;
-        p[i].pvy = p[i].ipvy + (dt3/6)*p[i].a2y + (dt4/24)*p[i].a3y;
-        p[i].pvz = p[i].ipvz + (dt3/6)*p[i].a2z + (dt4/24)*p[i].a3z;
+            // Correcting velocity
+            p[i].pvx = p[i].ipvx + (dt3/6)*p[i].a2x + (dt4/24)*p[i].a3x;
+            p[i].pvy = p[i].ipvy + (dt3/6)*p[i].a2y + (dt4/24)*p[i].a3y;
+            p[i].pvz = p[i].ipvz + (dt3/6)*p[i].a2z + (dt4/24)*p[i].a3z;
+        }
 
 
         //// Correcting position

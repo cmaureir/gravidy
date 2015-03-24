@@ -101,13 +101,16 @@ void Hermite4CPU::predicted_pos_vel(double ITIME)
         double dt2 = (dt  * dt);
         double dt3 = (dt2 * dt);
 
-        ns->h_p[i].r[0] = (dt3/6 * ns->h_f[i].a1[0]) + (dt2/2 * ns->h_f[i].a[0]) + (dt * ns->h_v[i].x) + ns->h_r[i].x;
-        ns->h_p[i].r[1] = (dt3/6 * ns->h_f[i].a1[1]) + (dt2/2 * ns->h_f[i].a[1]) + (dt * ns->h_v[i].y) + ns->h_r[i].y;
-        ns->h_p[i].r[2] = (dt3/6 * ns->h_f[i].a1[2]) + (dt2/2 * ns->h_f[i].a[2]) + (dt * ns->h_v[i].z) + ns->h_r[i].z;
+        double dt2c = dt2/2.0;
+        double dt3c = dt3/6.0;
 
-        ns->h_p[i].v[0] = (dt2/2 * ns->h_f[i].a1[0]) + (dt * ns->h_f[i].a[0]) + ns->h_v[i].x;
-        ns->h_p[i].v[1] = (dt2/2 * ns->h_f[i].a1[1]) + (dt * ns->h_f[i].a[1]) + ns->h_v[i].y;
-        ns->h_p[i].v[2] = (dt2/2 * ns->h_f[i].a1[2]) + (dt * ns->h_f[i].a[2]) + ns->h_v[i].z;
+        ns->h_p[i].r[0] = (dt3c * ns->h_f[i].a1[0]) + (dt2c * ns->h_f[i].a[0]) + (dt * ns->h_v[i].x) + ns->h_r[i].x;
+        ns->h_p[i].r[1] = (dt3c * ns->h_f[i].a1[1]) + (dt2c * ns->h_f[i].a[1]) + (dt * ns->h_v[i].y) + ns->h_r[i].y;
+        ns->h_p[i].r[2] = (dt3c * ns->h_f[i].a1[2]) + (dt2c * ns->h_f[i].a[2]) + (dt * ns->h_v[i].z) + ns->h_r[i].z;
+
+        ns->h_p[i].v[0] = (dt2c * ns->h_f[i].a1[0]) + (dt * ns->h_f[i].a[0]) + ns->h_v[i].x;
+        ns->h_p[i].v[1] = (dt2c * ns->h_f[i].a1[1]) + (dt * ns->h_f[i].a[1]) + ns->h_v[i].y;
+        ns->h_p[i].v[2] = (dt2c * ns->h_f[i].a1[2]) + (dt * ns->h_f[i].a[2]) + ns->h_v[i].z;
 
         ns->h_p[i].m = ns->h_r[i].w;
 
