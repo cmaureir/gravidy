@@ -8,7 +8,7 @@ r2 = np.zeros(3)
 v1 = np.zeros(3)
 v2 = np.zeros(3)
 
-m1 = 1.0                     # set masses
+m1 = 10.0**6                     # set masses
 m2 = 1.0
 mtot = m1+m2
 

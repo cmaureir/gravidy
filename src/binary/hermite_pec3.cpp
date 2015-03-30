@@ -1,6 +1,7 @@
 #include <iostream>
-#include <cmath>
 #include <iomanip>
+#include <cmath>
+#include <omp.h>
 
 const double D_TIME_MIN = 1.1920928955078125e-07;
 //const double D_TIME_MIN = 9.5367431640625e-07;
@@ -45,35 +46,144 @@ double ETA_B = 0;
 
 int main(int argc, char *argv[])
 {
-    double e_time = 100.0;
     double c_time = 1e6;
 
     p[0] = {0.0};
     p[1] = {0.0};
 
-    // Info
-    p[0].m  = 0.5;
-    p[1].m  = 0.5;
-
-
-    double r_cte = 0.005; // a = 1, e = 0.99
+    /****************************************/
+    // Masses m1 = m2
+    //p[0].m  = 0.5;
+    //p[1].m  = 0.5;
+    // Position
+    //double r_cte = 0.005; // a = 1, e = 0.99
     //double r_cte = 0.05; // a = 1, e = 0.9
-    //double r_cte = 0.45; // a = 1, e = 0.1
-    p[0].rx =  -r_cte;
-    p[0].prx = -r_cte;
-    p[1].rx =   r_cte;
-    p[1].prx =  r_cte;
+    //double r_cte = 0.4; // a = 1, e = 0.2
+
+    // Velocity
+    //double vcte = 7.053367989832939; // a = 1, e = 0.99
+    //double vcte = 2.17944947; // a = 1, e = 0.9
+    //double vcte = 0.61237244; // a = 1, e = 0.2
+    //p[0].rx =  -r_cte;
+    //p[0].prx = -r_cte;
+    //p[1].rx =   r_cte;
+    //p[1].prx =  r_cte;
+
+    //p[0].vy =   vcte;
+    //p[0].pvy =  vcte;
+    //p[1].vy =  -vcte;
+    //p[1].pvy = -vcte;
+    /*****************************************/
+
+    //// Masses m1 = 2 m2
+    //p[0].m  = 0.666666666666666;
+    //p[1].m  = 0.333333333333333;
+
+    //// e = 0.2
+    //p[0].rx =  -0.26666667; p[0].prx = -0.26666667;
+    //p[1].rx =   0.53333333; p[1].prx =  0.53333333;
+
+    //p[0].vy =   0.40824829; p[0].pvy =  0.40824829;
+    //p[1].vy =  -0.81649658; p[1].pvy = -0.81649658;
+
+    //// e = 0.9
+    //p[0].rx =  -0.03333333; p[0].prx = -0.03333333;
+    //p[1].rx =   0.06666667; p[1].prx =  0.06666667;
+
+    //p[0].vy =   1.45296631; p[0].pvy =  1.45296631;
+    //p[1].vy =  -2.90593263; p[1].pvy = -2.90593263;
+
+    //// e = 0.99
+    //p[0].rx =  -0.003333333; p[0].prx = -0.003333333;
+    //p[1].rx =   0.006666667; p[1].prx =  0.006666667;
+
+    //p[0].vy =   4.70224533; p[0].pvy =  4.70224533;
+    //p[1].vy =  -9.40449065; p[1].pvy = -9.40449065;
+
+    /*****************************************/
+
+    // Masses m1 = 10 m2
+    //p[0].m  = 0.9090909090909091;
+    //p[1].m  = 0.09090909090909091;
+
+    //// e = 0.2
+    //p[0].rx = -0.07272727; p[0].prx = -0.07272727;
+    //p[1].rx = 0.72727273; p[1].prx = 0.72727273;
+
+    //p[0].vy = 0.11134044; p[0].pvy = 0.11134044;
+    //p[1].vy =  -1.11340443; p[1].pvy = -1.11340443;
+
+    //// e = 0.9
+    //p[0].rx =  -0.00909091; p[0].prx = -0.00909091;
+    //p[1].rx =  0.09090909; p[1].prx = 0.09090909;
+
+    //p[0].vy =  0.39626354; p[0].pvy = 0.39626354;
+    //p[1].vy =  -3.9626354; p[1].pvy = -3.9626354;
+
+    //// e = 0.99
+    //p[0].rx =  -0.00090909; p[0].prx = -0.00090909;
+    //p[1].rx =  0.00909091; p[1].prx = 0.00909091;
+
+    //p[0].vy =  1.28243054; p[0].pvy = 1.28243054;
+    //p[1].vy =  -12.82430544; p[1].pvy = -12.82430544;
+
+    /*****************************************/
+
+    // Masses m1 = 100 m2
+    p[0].m  = 0.9900990099009901;
+    p[1].m  = 0.009900990099009901;
+
+    //// e = 0.2
+    //p[0].rx =  -0.00792079; p[0].prx = -0.00792079;
+    //p[1].rx =  0.79207921; p[1].prx = 0.79207921;
+
+    //p[0].vy =  0.01212619; p[0].pvy = 0.01212619;
+    //p[1].vy =  -1.21261868; p[1].pvy = -1.21261868;
+
+    // e = 0.9
+    p[0].rx =  -0.0009901; p[0].prx = -0.0009901;
+    p[1].rx =  0.0990099; p[1].prx = 0.0990099;
+
+    p[0].vy =  0.04315742; p[0].pvy = 0.04315742;
+    p[1].vy =  -4.31574153; p[1].pvy = -4.31574153;
+
+    //// e = 0.99
+    //p[0].rx =  -9.90099010e-05; p[0].prx = -9.90099010e-05;
+    //p[1].rx =  0.00990099; p[1].prx = 0.00990099;
+
+    //p[0].vy =  0.13967065; p[0].pvy = 0.13967065;
+    //p[1].vy =  -13.96706533; p[1].pvy = -13.96706533;
+    /*****************************************/
+
+    // Masses m1 = 10^6 m2
+    //p[0].m  = 0.999999000001;
+    //p[1].m  = 9.99999000001e-07;
+
+    //// e = 0.2
+    //p[0].rx =  -7.99999200e-07; p[0].prx = -7.99999200e-07;
+    //p[1].rx =  0.7999992; p[1].prx = 0.7999992;
+
+    //p[0].vy =  1.22474365e-06; p[0].pvy = 1.22474365e-06;
+    //p[1].vy =  -1.22474365; p[1].pvy = -1.22474365;
+
+    // e = 0.9
+    //p[0].rx =  -9.99999000e-08; p[0].prx = -9.99999000e-08;
+    //p[1].rx =  0.0999999; p[1].prx = 0.0999999;
+
+    //p[0].vy =  4.35889458e-06; p[0].pvy = 4.35889458e-06;
+    //p[1].vy =  -4.35889458; p[1].pvy = -4.35889458;
+
+    //// e = 0.99
+    //p[0].rx =  -9.99999000e-09; p[0].prx = -9.99999000e-09;
+    //p[1].rx =  0.00999999; p[1].prx = 0.00999999;
+
+    //p[0].vy =  1.41067219e-05; p[0].pvy = 1.41067219e-05;
+    //p[1].vy =  -14.10672187; p[1].pvy = -14.10672187;
+    /*****************************************/
 
     double m  = p[0].m + p[1].m;
     double G  = 1.0;
-    double vcte = 7.053367989832939; // a = 1, e = 0.99
-    //double vcte = 2.17944947; // a = 1, e = 0.9
-    //double vcte = 0.552770798392567; // a = 1, e = 0.1
 
-    p[0].vy =   vcte;
-    p[0].pvy =  vcte;
-    p[1].vy =  -vcte;
-    p[1].pvy = -vcte;
     // Setup: end
 
     // First to get initial a0 and a1
@@ -118,7 +228,9 @@ int main(int argc, char *argv[])
     //std::cout << "energy: " << ini_e << std::endl;
 
 
-    while (c_time < 5000)
+    double ini_time = omp_get_wtime();
+    //while (c_time < 2002 * 2 * 3.1415)
+    while (c_time < 10 * 2 * 3.1415)
     {
 
         prediction(c_time);
@@ -132,7 +244,6 @@ int main(int argc, char *argv[])
 
         for (int i = 0; i < 2; i++)
         {
-            // ...
 
             // Saving old timestep
             p[i].old_dt = p[i].dt;
@@ -141,9 +252,6 @@ int main(int argc, char *argv[])
             double new_dt = 0.0;
 
             // Check even or odd timestep
-            //std::cout << "Particle " << i << std::endl;
-            //printf(" t = %.15e\n", c_time);
-            //printf("dt = %.15e\n", p[i].dt);
             if ((int)(c_time / p[i].dt) % 2 == 0)
             {
                 //std::cout << "Even" << std::endl;
@@ -268,9 +376,10 @@ int main(int argc, char *argv[])
         if (ite == 0)
             std::cout << "2" << std::endl;
 
-        if(ite%100 == 0)
+        if(ite%2 == 0)
         {
             print_all();
+            //print_all();
             //double end_e = get_energy();
 
             //double mu = p[0].m * p[1].m / (p[0].m + p[1].m);
@@ -302,12 +411,13 @@ int main(int argc, char *argv[])
             //double jmax2 = semimajor * (p[0].m + p[1].m);
             //double ecc = sqrt(1. - j2 / jmax2);
 
-            //printf("%.15e %.15e %.15e %.15e %.15e\n",
+            //printf("%.15e %.15e %.15e %.15e %.15e %.15e\n",
             //        c_time/3.1415,
-            //        std::abs((semimajor-semimajor_ini)/semimajor_ini),
-            //        std::abs((ecc-ecc_ini)/ecc_ini),
+            //        std::abs((semimajor - semimajor_ini)/semimajor_ini),
+            //        std::abs((ecc - ecc_ini)/ecc_ini),
             //        r,
-            //        std::abs((end_e - ini_e)/ini_e));
+            //        std::abs((end_e - ini_e)/ini_e),
+            //        omp_get_wtime() - ini_time);
         }
         next_c_time(c_time);
         ite++;
