@@ -86,7 +86,6 @@ void Hermite4CPU::integration()
         // passing the index of the system that it's created.
         // Consider the case that a new particle enters into the
         // system
-        //if(0 && new_binaries)
         if(new_binaries)
         {
             for (int b = 0; b < (int)pairs.size(); b++)
@@ -97,13 +96,17 @@ void Hermite4CPU::integration()
                           << std::endl;
 
                 MultipleSystem new_ms(ns, nu);
-                //getchar();
+
+                int id_a = pairs[b].id_a;
+                int id_b = pairs[b].id_b;
 
                 // Adding the binary ids
-                new_ms.add_particle(pairs[b].id_a);
-                new_ms.add_particle(pairs[b].id_b);
+                new_ms.add_particle(id_a);
+                new_ms.add_particle(id_b);
 
-                // Assigning the Center of Mass information to a new
+                // Initialization of the binary
+                new_ms.init_timestep();
+
                 // ghost particle which will be store in the first member
                 // of the new binary.
                 create_ghost_particle(new_ms);

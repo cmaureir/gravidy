@@ -357,7 +357,8 @@ void Hermite4CPU::create_ghost_particle(MultipleSystem ms)
     ns->h_v[id]  = sp.v;
     ns->h_f[id]  = sp.f;
 
-    ns->h_dt[id] = D_TIME_MIN;
+    ns->h_dt[id] = D_TIME_MIN; // Minimum time step for new ghost particle
+    // TODO: And what about the time of the particle? at the moment, we keep the same
 
     // Setting a zero mass to the second member.
     ns->h_r[ms.parts[1].id].w = 0.0;
@@ -368,24 +369,15 @@ void Hermite4CPU::create_ghost_particle(MultipleSystem ms)
 void Hermite4CPU::multiple_systems_integration(std::vector<MultipleSystem> ms, double ITIME)
 {
 
-    std::cout << "Starting binary evolution..." << (int)ms.size() << std::endl;
+    cout << "Starting binary evolution for " << (int)ms.size() << " sytems\n";
 
-    // P(EC)^3
     for (int i = 0; i < (int)ms.size(); i++)
     {
-        std::cout.precision(5);
-        std::cout << std::scientific;
-        std::cout << "t_f = "  << ITIME << std::endl;
-        std::cout << "p0.t = "  << ms[i].parts[0].t << std::endl;
-        std::cout << "p1.t = "  << ms[i].parts[1].t << std::endl;
-
         // ITIME = Final time
         // CTIME = Current time
         double CTIME = 1e6;
-
-        ms[i].evaluation();
-        ms[i].init_timestep(CTIME);
-
+        ms[i].next_ctime();
+        ms[i].get_orbital_elements();
         std::cout << "CTIME = " << CTIME << std::endl;
 
         double ini_e = ms[i].get_energy();

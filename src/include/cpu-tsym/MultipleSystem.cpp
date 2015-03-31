@@ -13,7 +13,6 @@ MultipleSystem::~MultipleSystem()
     // ...
 }
 
-
 void MultipleSystem::add_particle(int id)
 {
     if (members < MAX_MEMBERS)
@@ -351,7 +350,7 @@ double MultipleSystem::get_timestep_normal(MParticle p)
     return normal_dt;
 }
 
-void MultipleSystem::init_timestep(double &CTIME)
+void MultipleSystem::init_timestep()
 {
     double dt_min = 1e6;
     if (members < 2)
@@ -382,20 +381,56 @@ void MultipleSystem::init_timestep(double &CTIME)
             if (dt_0 < dt_min)
                 dt_min = dt_0;
 
-            //parts[i].dt = 0.0009765625;
             parts[i].dt = 0.5 * D_TIME_MIN;
-            //parts[i].t = 0.0;
         }
 
         // ETA_B for the binary system
         ETA_B = D_TIME_MIN / (2.0 * dt_min);
-        //ETA_B = 0.01;
-        //CTIME = parts[0].t + 0.5 * D_TIME_MIN;
-        CTIME = parts[0].t + D_TIME_MIN;
+    }
+}
 
-        // First timestep is the minimum
-        //std::cout << std::scientific;
-        //std::cout << "Initial dt " << 0.5 * D_TIME_MIN << std::endl;
+void MultipleSystem::get_orbtal_elements()
+{
+    // Calculate orbital elements only for binary systems
+    if (members == 2)
+    {
+        MParticle p = parts[0];
+        MParticle q = parts[1];
+
+        double mu = (q.r.w * p.r.w) / (q.r.w + p.r.w);
+
+        double rx = q.r.x - p.r.x;
+        double ry = q.r.y - p.r.y;
+        double rz = q.r.z - p.r.z;
+
+        double vx = q.v.x - p.v.x;
+        double vy = q.v.y - p.v.y;
+        double vz = q.v.z - p.v.z;
+
+        double jx = ry * vz - rz * vy;
+        double jy = rz * vx - rx * vz;
+        double jz = rx * vy - ry * vx;
+
+        double rr = sqrt(rx*rx + ry*ry + rz*rz);
+        double vv = sqrt(vx*vx + vy*vy + vz*vz);
+        double jj = sqrt(jx*jx + jy*jy + jz*jz);
+
+        double j2 = jj*jj;
+        double v2 = vv*vv;
+        double m1m2 = q.r.w * p.r.w;
+
+        double mu_std = G * m;
+        double espec = v2 * 0.5 - mu_std/rr;
+        double semimajor_ini = -mu_std / (2*espec);
+        double ecc_ini = sqrt(1.0+2.0*espec*j2/(mu_std*mu_std));
+
+        std::cout << "mu_std: " << mu_std << std::endl;
+        std::cout << "rr: " << rr << std::endl;
+        std::cout << "vv: " << vv << std::endl;
+        std::cout << "jj: " << jj << std::endl;
+        std::cout << "a: " << semimajor_ini << std::endl;
+        std::cout << "espec: " << espec << std::endl;
+        std::cout << "ecc: " << ecc_ini << std::endl;
     }
 }
 
