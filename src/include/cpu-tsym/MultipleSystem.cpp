@@ -270,7 +270,7 @@ void MultipleSystem::evaluation()
     }
 }
 
-void MultipleSystem::correction(double CTIME)
+void MultipleSystem::correction(double CTIME, bool check)
 {
 
     for (int i = 0; i < members; i++)
@@ -308,15 +308,18 @@ void MultipleSystem::correction(double CTIME)
         a3i.y = (12 * (oldi.a[1] - fi.a[1] ) + 6 * dt1 * (oldi.a1[1] + fi.a1[1])) * dt3inv;
         a3i.z = (12 * (oldi.a[2] - fi.a[2] ) + 6 * dt1 * (oldi.a1[2] + fi.a1[2])) * dt3inv;
 
-        // Correcting position
-        parts[i].p.r[0] = p0.r[0] + dt4c * a2i.x + dt5c * a3i.x;
-        parts[i].p.r[1] = p0.r[1] + dt4c * a2i.y + dt5c * a3i.y;
-        parts[i].p.r[2] = p0.r[2] + dt4c * a2i.z + dt5c * a3i.z;
+        if (check)
+        {
+            // Correcting position
+            parts[i].p.r[0] = p0.r[0] + dt4c * a2i.x + dt5c * a3i.x;
+            parts[i].p.r[1] = p0.r[1] + dt4c * a2i.y + dt5c * a3i.y;
+            parts[i].p.r[2] = p0.r[2] + dt4c * a2i.z + dt5c * a3i.z;
 
-        // Correcting velocity
-        parts[i].p.v[0] = p0.v[0] + dt3c * a2i.x + dt4c * a3i.x;
-        parts[i].p.v[1] = p0.v[1] + dt3c * a2i.y + dt4c * a3i.y;
-        parts[i].p.v[2] = p0.v[2] + dt3c * a2i.z + dt4c * a3i.z;
+            // Correcting velocity
+            parts[i].p.v[0] = p0.v[0] + dt3c * a2i.x + dt4c * a3i.x;
+            parts[i].p.v[1] = p0.v[1] + dt3c * a2i.y + dt4c * a3i.y;
+            parts[i].p.v[2] = p0.v[2] + dt3c * a2i.z + dt4c * a3i.z;
+        }
 
         // Write on the arrays
         parts[i].a2 = a2i;
@@ -389,7 +392,7 @@ void MultipleSystem::init_timestep()
     }
 }
 
-void MultipleSystem::get_orbtal_elements()
+void MultipleSystem::get_orbital_elements()
 {
     // Calculate orbital elements only for binary systems
     if (members == 2)
@@ -397,7 +400,7 @@ void MultipleSystem::get_orbtal_elements()
         MParticle p = parts[0];
         MParticle q = parts[1];
 
-        double mu = (q.r.w * p.r.w) / (q.r.w + p.r.w);
+        //double mu = (q.r.w * p.r.w) / (q.r.w + p.r.w);
 
         double rx = q.r.x - p.r.x;
         double ry = q.r.y - p.r.y;
@@ -417,9 +420,9 @@ void MultipleSystem::get_orbtal_elements()
 
         double j2 = jj*jj;
         double v2 = vv*vv;
-        double m1m2 = q.r.w * p.r.w;
+        //double m1m2 = q.r.w * p.r.w;
 
-        double mu_std = G * m;
+        double mu_std = G * (q.r.w + p.r.w);
         double espec = v2 * 0.5 - mu_std/rr;
         double semimajor_ini = -mu_std / (2*espec);
         double ecc_ini = sqrt(1.0+2.0*espec*j2/(mu_std*mu_std));
@@ -508,89 +511,113 @@ double MultipleSystem::get_energy()
     return kin + pot;
 }
 
-//void MultipleSystem::update_timestep(double CTIME)
-//{
-//    for (int i = 0; i < members; i++)
-//    {
-//        MParticle p = parts[i];
-//
-//        // |a|
-//        double a = sqrt(p.f.a[0] * p.f.a[0] +
-//                        p.f.a[1] * p.f.a[1] +
-//                        p.f.a[2] * p.f.a[2]);
-//
-//        // |a1|
-//        double a1 = sqrt(p.f.a1[0] * p.f.a1[0] +
-//                         p.f.a1[1] * p.f.a1[1] +
-//                         p.f.a1[2] * p.f.a1[2]);
-//
-//        // `dt` for every member [S. Konstantinidis 2010] eq. 22
-//        double dt_b = ETA_B * a/a1;
-//        double new_dt;
-//        double dt_avg;
-//
-//        // Check *even* or *odd* with the previous dt
-//
-//        //std::cout << "t: " << CTIME << ", dt: " << parts[i].dt << std::endl;
-//        if (fmod((CTIME/parts[i].dt),2) == 0)
-//        {
-//            // Even
-//
-//            // We double the old `dt` value
-//            new_dt = 2.0 * parts[i].dt;
-//
-//            // `dt` average
-//            dt_avg = 0.5 * (new_dt + dt_b);
-//
-//            if (new_dt  < dt_avg && 0.5 * dt_avg < new_dt)
-//            {
-//                // We use twice the value
-//                new_dt *= 2.0;
-//                //std::cout << "even, mutiplied by 2" << std::endl;
-//            }
-//            else
-//            {
-//                new_dt = new_dt;
-//                //std::cout << "even, more steps" << std::endl;
-//                if (new_dt  < dt_avg && 0.5 * dt_avg < new_dt)
-//                {
-//                    // We use the same
-//                    new_dt = new_dt;
-//                    //std::cout << "even, we use the same" << std::endl;
-//                }
-//                else
-//                {
-//                    // new_dt/2.0
-//                    new_dt *= 0.5;
-//                    //std::cout << "even, divided by 2" << std::endl;
-//                }
-//            }
-//        }
-//        else
-//        {
-//            // Odd
-//
-//            // We keep the old `dt` value
-//            new_dt = parts[i].dt;
-//
-//            // `dt` average
-//            dt_avg = 0.5 * (new_dt + dt_b);
-//
-//            if (new_dt  < dt_avg && 0.5 * dt_avg < new_dt)
-//            {
-//                // We use the same
-//                new_dt = new_dt;
-//                //std::cout << "odd, we use the same" << std::endl;
-//            }
-//            else
-//            {
-//                // new_dt/2.0
-//                new_dt *= 0.5;
-//                //std::cout << "odd, divided by 2" << std::endl;
-//            }
-//        }
-//        parts[i].dt = new_dt;
-//
-//        //std::cout << i << " dt_b=" << dt_b << " dt=" << parts[i].dt << std::endl;
-//    }
-//}
+void MultipleSystem::update_timestep(double CTIME)
+{
+    for (int i = 0; i < 2; i++)
+    {
+        // Saving old timestep
+        p[i].old_dt = p[i].dt;
+        // Getting new timestep
+        double first_dt  = get_timestep_normal(p[i]);
+        double new_dt = 0.0;
+
+        // Check even or odd timestep
+        if ((int)(c_time / p[i].dt) % 2 == 0)
+        {
+            //std::cout << "Even" << std::endl;
+            // We double it
+            p[i].dt = p[i].old_dt * 2;
+            evaluation();
+            correction(c_time, false);
+            double last_dt  = get_timestep_normal(p[i]);
+            double avg = 0.5 * (first_dt + last_dt);
+
+            if ( 2 * p[i].old_dt <= avg ||
+                     p[i].old_dt <= avg &&
+                 2 * p[i].old_dt >= avg)
+            {
+                //std::cout << "Doubling it" << std::endl;
+                new_dt = p[i].dt;
+            }
+            else // If not, we keep the same value and try again
+            {
+                p[i].dt = p[i].old_dt;
+                evaluation();
+                correction(c_time, false);
+                double last_dt  = get_timestep_normal(p[i]);
+                double avg = 0.5 * (first_dt + last_dt);
+
+                if ( 2 * p[i].old_dt <= avg ||
+                         p[i].old_dt <= avg &&
+                     2 * p[i].old_dt >= avg)
+                {
+                    //std::cout << "Keeping the same" << std::endl;
+                    new_dt = p[i].dt;
+                }
+                else
+                {
+                    if ( p[i].old_dt * 0.5 <= avg &&
+                         p[i].old_dt > avg)
+                    {
+                        //std::cout << "Halving it" << std::endl;
+                        new_dt = p[i].dt * 0.5;
+                    }
+                    else
+                    {
+                        //std::cout << "...in any other case we halve" << std::endl;
+                        new_dt = p[i].dt * 0.5;
+                    }
+                }
+            }
+        }
+        else
+        {
+            evaluation();
+            correction(c_time, false);
+            double last_dt  = get_timestep_normal(p[i]);
+            double avg = 0.5 * (first_dt + last_dt);
+
+            if ( 2 * p[i].old_dt <= avg ||
+                     p[i].old_dt <= avg &&
+                 2 * p[i].old_dt >= avg)
+            {
+                //std::cout << "Keeping the same" << std::endl;
+                new_dt = p[i].dt;
+            }
+            else
+            {
+                if ( p[i].old_dt * 0.5 <= avg &&
+                     p[i].old_dt > avg)
+                {
+                    //std::cout << "Halving it" << std::endl;
+                    new_dt = p[i].dt * 0.5;
+                }
+                else
+                {
+                    //std::cout << "...in any other case we halve" << std::endl;
+                    new_dt = p[i].dt * 0.5;
+                }
+            }
+        }
+
+        if (new_dt > D_TIME_MAX)
+            new_dt = D_TIME_MAX;
+
+        if (new_dt < D_TIME_MIN)
+            new_dt = D_TIME_MIN;
+
+        p[i].dt = new_dt;
+
+        p[i].t = c_time;
+
+        p[i].rx = p[i].prx;
+        p[i].ry = p[i].pry;
+        p[i].rz = p[i].prz;
+
+        // Correcting velocity
+        p[i].vx = p[i].pvx;
+        p[i].vy = p[i].pvy;
+        p[i].vz = p[i].pvz;
+
+    }
+}

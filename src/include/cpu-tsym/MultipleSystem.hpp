@@ -71,16 +71,17 @@ class MultipleSystem
         MParticle get_new_particle(MParticle p1, MParticle p2);
 
         void print();
-        void init_timestep(double &CTIME);
+        void init_timestep();
         void next_itime(double &CTIME);
-        //void update_timestep(double ITIME);
+        void update_timestep(double ITIME);
         void update_information(double ITIME);
         void prediction(double ITIME);
         void force_calculation(Predictor pi, Predictor pj, Forces &fi);
         void evaluation();
-        void correction(double ITIME);
+        void correction(double ITIME, bool check);
         void save_old();
         double get_timestep_normal(MParticle p);
+        void get_orbital_elements();
         double get_energy();
 };
 #endif

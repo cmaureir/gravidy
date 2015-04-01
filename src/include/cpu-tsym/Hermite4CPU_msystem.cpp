@@ -10,36 +10,22 @@ void Hermite4CPU::multiple_systems_integration(std::vector<MultipleSystem> ms, d
     {
         // ITIME = Final time
         // CTIME = Current time
-        double CTIME = 1e6;
-
-        ms[i].evaluation();
-        ms[i].init_timestep(CTIME);
-
-        std::cout << "CTIME = " << CTIME << std::endl;
+        // The time of all the members will be the same
+        double CTIME = ms[i].parts[0].t + 0.5 * D_TIME_MIN;
 
         double ini_e = ms[i].get_energy();
+        //ms[i].get_orbital_elements();
         double end_e;
 
         std::cout << "E0 = " << ini_e << std::endl;
-        printf("00 %.15f %.15f %.15f %.15f %.15f\n",
-                ms[i].parts[0].t,
-                ms[i].parts[0].dt,
-                ms[i].parts[0].r.x,
-                ms[i].parts[0].r.y,
-                ms[i].parts[0].r.z);
-
-        printf("01 %.15f %.15f %.15f %.15f %.15f\n",
-                ms[i].parts[1].t,
-                ms[i].parts[1].dt,
-                ms[i].parts[1].r.x,
-                ms[i].parts[1].r.y,
-                ms[i].parts[1].r.z);
+        printf("CTIME = %.15e\n", CTIME/D_TIME_MIN);
+        printf("ITIME = %.15e\n", ITIME/D_TIME_MIN);
         getchar();
 
         long long int iterations = 0;
         while (CTIME < ITIME)
         {
-            //ms[i].get_orbital_elements();
+            ////ms[i].get_orbital_elements();
             ms[i].prediction(CTIME);
             ms[i].save_old();
 
@@ -47,18 +33,18 @@ void Hermite4CPU::multiple_systems_integration(std::vector<MultipleSystem> ms, d
             for (int k = 0; k < 1; k++)
             {
                 ms[i].evaluation();
-                ms[i].correction(CTIME);
+                ms[i].correction(CTIME, true);
             }
 
-            ms[i].update_information(CTIME);
-            //if(std::ceil(CTIME) == CTIME)
-            //{
-            //    // orbital elements, energy
-            //}
-            // Update current time t_c = t_c + dt_b (binary)
-            // if t_c is not t_f, we repeat the process.
+            //ms[i].update_information(CTIME);
+            ////if(std::ceil(CTIME) == CTIME)
+            ////{
+            ////    // orbital elements, energy
+            ////}
+            //// Update current time t_c = t_c + dt_b (binary)
+            //// if t_c is not t_f, we repeat the process.
 
-            //ms[i].update_timestep(CTIME);
+            ms[i].update_timestep(CTIME);
             ms[i].next_itime(CTIME);
             //ms[i].print();
             iterations++;

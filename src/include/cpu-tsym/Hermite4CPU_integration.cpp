@@ -106,6 +106,7 @@ void Hermite4CPU::integration()
 
                 // Initialization of the binary
                 new_ms.init_timestep();
+                getchar();
 
                 // ghost particle which will be store in the first member
                 // of the new binary.
