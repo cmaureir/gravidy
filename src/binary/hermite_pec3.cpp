@@ -227,12 +227,10 @@ int main(int argc, char *argv[])
     //std::cout << "ecc: " << ecc_ini << std::endl;
     //std::cout << "energy: " << ini_e << std::endl;
 
-
     double ini_time = omp_get_wtime();
     //while (c_time < 2002 * 2 * 3.1415)
     while (c_time < 10 * 2 * 3.1415)
     {
-
         prediction(c_time);
         save_old();
         // P(EC)^n, n = 3
@@ -244,7 +242,6 @@ int main(int argc, char *argv[])
 
         for (int i = 0; i < 2; i++)
         {
-
             // Saving old timestep
             p[i].old_dt = p[i].dt;
             // Getting new timestep
@@ -299,14 +296,9 @@ int main(int argc, char *argv[])
                         }
                     }
                 }
-
-
             }
             else
             {
-                //std::cout << "Odd" << std::endl;
-                //std::cout << "Continuing with the same..." << std::endl;
-                // p[i].dt continue with the same value
                 evaluation();
                 correction(c_time, false);
                 double last_dt  = get_timestep_normal(p[i]);
@@ -316,7 +308,6 @@ int main(int argc, char *argv[])
                          p[i].old_dt <= avg &&
                      2 * p[i].old_dt >= avg)
                 {
-
                     //std::cout << "Keeping the same" << std::endl;
                     new_dt = p[i].dt;
                 }
@@ -335,9 +326,6 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-            //printf("old_dt = %.15e\n", p[i].old_dt);
-            //printf("new_dt = %.15e\n", new_dt);
-
 
             if (new_dt > D_TIME_MAX)
                 new_dt = D_TIME_MAX;
@@ -358,20 +346,6 @@ int main(int argc, char *argv[])
             p[i].vy = p[i].pvy;
             p[i].vz = p[i].pvz;
 
-            //if (normal_dt < p[i].dt)
-            //{
-            //    //if (0.5*p[i].dt < D_TIME_MIN)
-            //    //    p[i].dt = D_TIME_MIN;
-            //    //else
-            //        p[i].dt *= 0.5;
-            //}
-            //else if (normal_dt > 2*p[i].dt && (fmod(p[i].t, 2*p[i].dt) == 0))
-            //{
-            //    if (2*p[i].dt < D_TIME_MAX)
-            //        p[i].dt *= 2;
-            //    else
-            //        p[i].dt = D_TIME_MAX;
-            //}
         }
         if (ite == 0)
             std::cout << "2" << std::endl;
@@ -590,18 +564,6 @@ void correction(double ITIME, bool check)
             p[i].pvy = p[i].ipvy + (dt3/6)*p[i].a2y + (dt4/24)*p[i].a3y;
             p[i].pvz = p[i].ipvz + (dt3/6)*p[i].a2z + (dt4/24)*p[i].a3z;
         }
-
-
-        //// Correcting position
-        //p[i].rx = p[i].prx;
-        //p[i].ry = p[i].pry;
-        //p[i].rz = p[i].prz;
-
-        //// Correcting velocity
-        //p[i].vx = p[i].pvx;
-        //p[i].vy = p[i].pvy;
-        //p[i].vz = p[i].pvz;
-
     }
 }
 
@@ -677,27 +639,6 @@ void print_all()
         std::cout << std::setw(10) << p[i].rx  << " ";
         std::cout << std::setw(10) << p[i].ry  << " ";
         std::cout << std::setw(10) << p[i].rz  << " ";
-        //std::cout << std::setw(10) << p[i].vx  << " ";
-        //std::cout << std::setw(10) << p[i].vy  << " ";
-        //std::cout << std::setw(10) << p[i].vz  << " ";
-        //std::cout << std::setw(10) << p[i].prx << " ";
-        //std::cout << std::setw(10) << p[i].pry << " ";
-        //std::cout << std::setw(10) << p[i].prz << " ";
-        //std::cout << std::setw(10) << p[i].pvx << " ";
-        //std::cout << std::setw(10) << p[i].pvy << " ";
-        //std::cout << std::setw(10) << p[i].pvz << " ";
-        //std::cout << std::setw(10) << p[i].a0x << " ";
-        //std::cout << std::setw(10) << p[i].a0y << " ";
-        //std::cout << std::setw(10) << p[i].a0z << " ";
-        //std::cout << std::setw(10) << p[i].a1x << " ";
-        //std::cout << std::setw(10) << p[i].a1y << " ";
-        //std::cout << std::setw(10) << p[i].a1z << " ";
-        //std::cout << std::setw(10) << p[i].oa0x << " ";
-        //std::cout << std::setw(10) << p[i].oa0y << " ";
-        //std::cout << std::setw(10) << p[i].oa0z << " ";
-        //std::cout << std::setw(10) << p[i].oa1x << " ";
-        //std::cout << std::setw(10) << p[i].oa1y << " ";
-        //std::cout << std::setw(10) << p[i].oa1z << " ";
         std::cout << std::endl;
     }
 }

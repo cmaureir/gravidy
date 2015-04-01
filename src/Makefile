@@ -86,6 +86,7 @@ OBJS_CPU=   $(OBJS)                         \
 OBJS_TCPU=  $(OBJS)                          \
             include/cpu-tsym/Hermite4CPU.o   \
             include/cpu-tsym/Hermite4CPU_integration.o   \
+            include/cpu-tsym/Hermite4CPU_msystem.o   \
             include/cpu-tsym/MultipleSystem.o
 
 OBJS_MPI=   $(OBJS)                         \
