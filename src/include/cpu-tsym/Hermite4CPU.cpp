@@ -35,8 +35,8 @@ void Hermite4CPU::force_calculation(Predictor pi, Predictor pj, Forces &fi,
     double vy = pj.v[1] - pi.v[1];
     double vz = pj.v[2] - pi.v[2];
 
-    double r2   = rx*rx + ry*ry + rz*rz + ns->e2;
-    //double r2   = rx*rx + ry*ry + rz*rz;
+    //double r2   = rx*rx + ry*ry + rz*rz + ns->e2;
+    double r2   = rx*rx + ry*ry + rz*rz;
     double rinv = 1.0/sqrt(r2);
 
     double rv = rx*vx + ry*vy + rz*vz;

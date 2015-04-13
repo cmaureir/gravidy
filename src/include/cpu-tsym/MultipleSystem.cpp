@@ -13,6 +13,36 @@ MultipleSystem::~MultipleSystem()
     // ...
 }
 
+void MultipleSystem::adjust_particles(SParticle sp)
+{
+    for(int i = 0; i < members; i++)
+    {
+        parts[i].r.x -= sp.r.x;
+        parts[i].r.y -= sp.r.y;
+        parts[i].r.z -= sp.r.z;
+
+        parts[i].p.r[0] = parts[i].r.x;
+        parts[i].p.r[1] = parts[i].r.y;
+        parts[i].p.r[2] = parts[i].r.z;
+
+        parts[i].v.x -= sp.v.x;
+        parts[i].v.y -= sp.v.y;
+        parts[i].v.z -= sp.v.z;
+
+        parts[i].p.v[0] = parts[i].v.x;
+        parts[i].p.v[1] = parts[i].v.y;
+        parts[i].p.v[2] = parts[i].v.z;
+
+        parts[i].f.a[0] -= sp.f.a[0];
+        parts[i].f.a[1] -= sp.f.a[1];
+        parts[i].f.a[2] -= sp.f.a[2];
+
+        parts[i].f.a1[0] -= sp.f.a1[0];
+        parts[i].f.a1[1] -= sp.f.a1[1];
+        parts[i].f.a1[2] -= sp.f.a1[2];
+    }
+}
+
 void MultipleSystem::add_particle(int id)
 {
     if (members < MAX_MEMBERS)
@@ -134,38 +164,6 @@ SParticle MultipleSystem::get_center_of_mass(MParticle p1, MParticle p2)
     return pcm;
 }
 
-// A new particle will be created always with two members
-MParticle MultipleSystem::get_new_particle(MParticle p1, MParticle p2)
-{
-
-    MParticle newp;
-
-    newp.r.w  = p1.r.w + p2.r.w;
-
-    //newp.r.x = p2.r.x - p1.r.x;
-    //newp.r.y = p2.r.y - p1.r.y;
-    //newp.r.z = p2.r.z - p1.r.z;
-
-    //double r = sqrt(newp.r.x * newp.r.x +
-    //                newp.r.y * newp.r.y +
-    //                newp.r.z * newp.r.z);
-
-    ////double rinv = 1.0/r;
-    ////double r3inv = rinv*rinv*rinv;
-
-    //newp.v.x = p2.v.x - p1.v.x;
-    //newp.v.y = p2.v.y - p1.v.y;
-    //newp.v.z = p2.v.z - p1.v.z;
-
-    ////newp.a.x = -(newp.m * newp.r.x)*r3inv + (p2.f.a[0] - p1.f.a[0]);
-    ////newp.a.y = -(newp.m * newp.r.y)*r3inv + (p2.f.a[1] - p1.f.a[1]);
-    ////newp.a.z = -(newp.m * newp.r.z)*r3inv + (p2.f.a[2] - p1.f.a[2]);
-
-    //// TODO: Which a1, a2, a3, t, dt, we use?
-
-    return newp;
-}
-
 void MultipleSystem::prediction(double CTIME)
 {
 
@@ -205,7 +203,6 @@ void MultipleSystem::prediction(double CTIME)
         // Saving initial value
         parts[i].p0 = pp;
     }
-
 }
 
 void MultipleSystem::force_calculation(Predictor pi, Predictor pj, Forces &fi)
@@ -218,7 +215,6 @@ void MultipleSystem::force_calculation(Predictor pi, Predictor pj, Forces &fi)
     double vy = pj.v[1] - pi.v[1];
     double vz = pj.v[2] - pi.v[2];
 
-    //double r2   = rx*rx + ry*ry + rz*rz + ns->e2;
     double r2   = rx*rx + ry*ry + rz*rz;
     double rinv = 1.0/sqrt(r2);
 
@@ -241,14 +237,13 @@ void MultipleSystem::force_calculation(Predictor pi, Predictor pj, Forces &fi)
 
 void MultipleSystem::save_old()
 {
-    int i;
-    for (i = 0; i < members; i++)
+    for (int i = 0; i < members; i++)
     {
         parts[i].old_f = parts[i].f;
     }
 }
 
-void MultipleSystem::evaluation()
+void MultipleSystem::evaluation(int *nb_list)
 {
     int i, j;
     //#pragma omp parallel for private(i,j)
@@ -265,9 +260,40 @@ void MultipleSystem::evaluation()
             force_calculation(pi, parts[j].p, ff);
         }
 
-        // Write on the Forces array
         parts[i].f = ff;
     }
+    // Perturbers
+    //for (i = 0; i < members; i++)
+    //{
+    //    Forces ff = {0};
+    //    Predictor pi = parts[i].p;
+
+    //    #pragma omp parallel for
+    //    for (j = 0; j < ns->h_f[parts[0].id].nb; j++)
+    //    {
+    //        if(i == j) continue;
+    //        force_calculation(pi, ns->h_p[nb_list[j]], ff);
+    //    }
+
+    //    for (j = 0; j < ns->n; j++)
+    //    {
+    //        if(i == j) continue;
+    //        if ( j != parts[0].id)
+    //            force_calculation(pi, ns->h_p[j], ff);
+    //    }
+
+    //    printf("WHOLE %.15e %.15e %.15e\n", ff.a[0], ff.a[1], ff.a[2]);
+    //    getchar();
+
+    //    // Write on the Forces array
+    //    parts[i].f.a[0] += ff.a[0];
+    //    parts[i].f.a[1] += ff.a[1];
+    //    parts[i].f.a[2] += ff.a[2];
+
+    //    parts[i].f.a1[0] += ff.a1[0];
+    //    parts[i].f.a1[1] += ff.a1[1];
+    //    parts[i].f.a1[2] += ff.a1[2];
+    //}
 }
 
 void MultipleSystem::correction(double CTIME, bool check)
@@ -389,6 +415,7 @@ void MultipleSystem::init_timestep()
 
         // ETA_B for the binary system
         ETA_B = D_TIME_MIN / (2.0 * dt_min);
+        printf("ETA_B: %.15e\n", ETA_B);
     }
 }
 
@@ -437,46 +464,6 @@ void MultipleSystem::get_orbital_elements()
     }
 }
 
-void MultipleSystem::update_information(double c_time)
-{
-
-    for (int i = 0; i < members; i++)
-    {
-        MParticle part = parts[i];
-        // New time
-        part.t = c_time;
-
-        // Updating the real pos/vel to the last corrected one.
-        parts[i].r.x = part.p.r[0];
-        parts[i].r.y = part.p.r[1];
-        parts[i].r.z = part.p.r[2];
-
-        parts[i].v.x = part.p.v[0];
-        parts[i].v.y = part.p.v[1];
-        parts[i].v.z = part.p.v[2];
-
-        double normal_dt  = get_timestep_normal(part);
-        if (normal_dt < part.dt)
-        {
-            if (0.5 * part.dt < D_TIME_MIN)
-                part.dt = D_TIME_MIN;
-            else
-                part.dt *= 0.5;
-        }
-        else if (normal_dt > 2*part.dt && (fmod(part.t, 2*part.dt) == 0))
-        {
-            if (2*part.dt < D_TIME_MAX)
-                part.dt *= 2;
-            else
-                part.dt = D_TIME_MAX;
-        }
-        parts[i].dt = part.dt;
-        parts[i].t = part.t;
-    }
-
-}
-
-
 double MultipleSystem::get_energy()
 {
     double pot = 0.0;
@@ -508,94 +495,98 @@ double MultipleSystem::get_energy()
         kin += ekin_tmp;
         pot += epot_tmp;
     }
+
+    //printf("BB: K = %.15e | U = %.15e\n", kin, pot);
     return kin + pot;
 }
 
 void MultipleSystem::update_timestep(double CTIME)
 {
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < members; i++)
     {
         // Saving old timestep
-        p[i].old_dt = p[i].dt;
+        MParticle part = parts[i];
+
+        part.old_dt = part.dt;
         // Getting new timestep
-        double first_dt  = get_timestep_normal(p[i]);
+        double first_dt  = get_timestep_normal(part);
         double new_dt = 0.0;
 
         // Check even or odd timestep
-        if ((int)(c_time / p[i].dt) % 2 == 0)
+        if ((int)(CTIME / part.dt) % 2 == 0)
         {
             //std::cout << "Even" << std::endl;
             // We double it
-            p[i].dt = p[i].old_dt * 2;
-            evaluation();
-            correction(c_time, false);
-            double last_dt  = get_timestep_normal(p[i]);
+            part.dt = part.old_dt * 2;
+            evaluation(NULL);
+            correction(CTIME, false);
+            double last_dt  = get_timestep_normal(part);
             double avg = 0.5 * (first_dt + last_dt);
 
-            if ( 2 * p[i].old_dt <= avg ||
-                     p[i].old_dt <= avg &&
-                 2 * p[i].old_dt >= avg)
+            if ( (2 * part.old_dt <= avg ||
+                     part.old_dt <= avg) &&
+                 2 * part.old_dt >= avg )
             {
                 //std::cout << "Doubling it" << std::endl;
-                new_dt = p[i].dt;
+                new_dt = part.dt;
             }
             else // If not, we keep the same value and try again
             {
-                p[i].dt = p[i].old_dt;
-                evaluation();
-                correction(c_time, false);
-                double last_dt  = get_timestep_normal(p[i]);
+                part.dt = part.old_dt;
+                evaluation(NULL);
+                correction(CTIME, false);
+                double last_dt  = get_timestep_normal(part);
                 double avg = 0.5 * (first_dt + last_dt);
 
-                if ( 2 * p[i].old_dt <= avg ||
-                         p[i].old_dt <= avg &&
-                     2 * p[i].old_dt >= avg)
+                if ( (2 * part.old_dt <= avg ||
+                         part.old_dt <= avg) &&
+                     2 * part.old_dt >= avg )
                 {
                     //std::cout << "Keeping the same" << std::endl;
-                    new_dt = p[i].dt;
+                    new_dt = part.dt;
                 }
                 else
                 {
-                    if ( p[i].old_dt * 0.5 <= avg &&
-                         p[i].old_dt > avg)
+                    if ( part.old_dt * 0.5 <= avg &&
+                         part.old_dt > avg)
                     {
                         //std::cout << "Halving it" << std::endl;
-                        new_dt = p[i].dt * 0.5;
+                        new_dt = part.dt * 0.5;
                     }
                     else
                     {
                         //std::cout << "...in any other case we halve" << std::endl;
-                        new_dt = p[i].dt * 0.5;
+                        new_dt = part.dt * 0.5;
                     }
                 }
             }
         }
         else
         {
-            evaluation();
-            correction(c_time, false);
-            double last_dt  = get_timestep_normal(p[i]);
+            evaluation(NULL);
+            correction(CTIME, false);
+            double last_dt  = get_timestep_normal(part);
             double avg = 0.5 * (first_dt + last_dt);
 
-            if ( 2 * p[i].old_dt <= avg ||
-                     p[i].old_dt <= avg &&
-                 2 * p[i].old_dt >= avg)
+            if ( (2 * part.old_dt <= avg ||
+                     part.old_dt <= avg) &&
+                 2 * part.old_dt >= avg )
             {
                 //std::cout << "Keeping the same" << std::endl;
-                new_dt = p[i].dt;
+                new_dt = part.dt;
             }
             else
             {
-                if ( p[i].old_dt * 0.5 <= avg &&
-                     p[i].old_dt > avg)
+                if ( part.old_dt * 0.5 <= avg &&
+                     part.old_dt > avg )
                 {
                     //std::cout << "Halving it" << std::endl;
-                    new_dt = p[i].dt * 0.5;
+                    new_dt = part.dt * 0.5;
                 }
                 else
                 {
                     //std::cout << "...in any other case we halve" << std::endl;
-                    new_dt = p[i].dt * 0.5;
+                    new_dt = part.dt * 0.5;
                 }
             }
         }
@@ -606,18 +597,18 @@ void MultipleSystem::update_timestep(double CTIME)
         if (new_dt < D_TIME_MIN)
             new_dt = D_TIME_MIN;
 
-        p[i].dt = new_dt;
-
-        p[i].t = c_time;
-
-        p[i].rx = p[i].prx;
-        p[i].ry = p[i].pry;
-        p[i].rz = p[i].prz;
+        part.dt = new_dt;
+        part.t = CTIME;
+        part.r.x = part.p.r[0];
+        part.r.y = part.p.r[1];
+        part.r.z = part.p.r[2];
 
         // Correcting velocity
-        p[i].vx = p[i].pvx;
-        p[i].vy = p[i].pvy;
-        p[i].vz = p[i].pvz;
+        part.v.x = part.p.v[0];
+        part.v.y = part.p.v[1];
+        part.v.z = part.p.v[2];
 
+        // Writing information
+        parts[i] = part;
     }
 }

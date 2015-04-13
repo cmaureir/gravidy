@@ -25,6 +25,7 @@ typedef struct MultipleSystemParticle
     double3 a3;
     double t;
     double dt;
+    double old_dt;
     bool status;
 } MParticle;
 
@@ -67,9 +68,6 @@ class MultipleSystem
         //          (Also called virtual or ghost particle)
         SParticle get_center_of_mass(MParticle p1, MParticle p2);
 
-        /// @brief Forming
-        MParticle get_new_particle(MParticle p1, MParticle p2);
-
         void print();
         void init_timestep();
         void next_itime(double &CTIME);
@@ -77,11 +75,12 @@ class MultipleSystem
         void update_information(double ITIME);
         void prediction(double ITIME);
         void force_calculation(Predictor pi, Predictor pj, Forces &fi);
-        void evaluation();
+        void evaluation(int *nb_list);
         void correction(double ITIME, bool check);
         void save_old();
         double get_timestep_normal(MParticle p);
         void get_orbital_elements();
         double get_energy();
+        void adjust_particles(SParticle sp);
 };
 #endif

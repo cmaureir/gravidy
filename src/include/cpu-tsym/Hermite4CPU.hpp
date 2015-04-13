@@ -47,8 +47,8 @@ class Hermite4CPU : public Hermite4 {
         void integration();
 
 
-        void create_ghost_particle(MultipleSystem ms);
+        SParticle create_ghost_particle(MultipleSystem ms);
 
-        void multiple_systems_integration(std::vector<MultipleSystem> ms, double ITIME);
+        void multiple_systems_integration(std::vector<MultipleSystem> &ms, double ITIME, int **nb_list);
 };
 #endif

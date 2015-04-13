@@ -38,7 +38,7 @@ class NbodyUtils {
         double get_timestep_normal(int i, float ETA);
         double normalize_dt(double new_dt, double old_dt, double t, int i);
         double get_timestep_central(int i);
-        double get_energy();
+        double get_energy(double ext = 0);
 
         double3 get_center_of_density();
 };

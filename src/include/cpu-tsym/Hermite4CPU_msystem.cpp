@@ -1,10 +1,7 @@
 #include "Hermite4CPU.hpp"
 
-void Hermite4CPU::multiple_systems_integration(std::vector<MultipleSystem> ms, double ITIME)
+void Hermite4CPU::multiple_systems_integration(std::vector<MultipleSystem> &ms, double ITIME, int **nb_list)
 {
-
-    std::cout << "Starting binary evolution..." << (int)ms.size() << std::endl;
-
     // P(EC)^3
     for (int i = 0; i < (int)ms.size(); i++)
     {
@@ -14,13 +11,9 @@ void Hermite4CPU::multiple_systems_integration(std::vector<MultipleSystem> ms, d
         double CTIME = ms[i].parts[0].t + 0.5 * D_TIME_MIN;
 
         double ini_e = ms[i].get_energy();
+        printf("E0 = %.15e\n", ini_e);
         //ms[i].get_orbital_elements();
         double end_e;
-
-        std::cout << "E0 = " << ini_e << std::endl;
-        printf("CTIME = %.15e\n", CTIME/D_TIME_MIN);
-        printf("ITIME = %.15e\n", ITIME/D_TIME_MIN);
-        getchar();
 
         long long int iterations = 0;
         while (CTIME < ITIME)
@@ -30,27 +23,19 @@ void Hermite4CPU::multiple_systems_integration(std::vector<MultipleSystem> ms, d
             ms[i].save_old();
 
             // (EC)^3
-            for (int k = 0; k < 1; k++)
+            for (int k = 0; k < 3; k++)
             {
-                ms[i].evaluation();
+                ms[i].evaluation(nb_list[ms[i].parts[0].id]);
                 ms[i].correction(CTIME, true);
             }
 
-            //ms[i].update_information(CTIME);
-            ////if(std::ceil(CTIME) == CTIME)
-            ////{
-            ////    // orbital elements, energy
-            ////}
-            //// Update current time t_c = t_c + dt_b (binary)
-            //// if t_c is not t_f, we repeat the process.
-
             ms[i].update_timestep(CTIME);
             ms[i].next_itime(CTIME);
-            //ms[i].print();
             iterations++;
         }
-            end_e = ms[i].get_energy();
-            printf("Adios: DE = %.15e | Ite: %lld\n", (end_e - ini_e)/ini_e, iterations);
+
+        end_e = ms[i].get_energy();
+        printf("End binary evolution: DE = %.15e | Ite: %lld\n", (end_e - ini_e)/ini_e, iterations);
 
     }
 }
@@ -132,6 +117,7 @@ bool Hermite4CPU::get_close_encounters(double itime, int **nb_list, Forces *f,
                             // Binding energy
                             if (kin - pot < 0)
                             {
+                                printf(">>>> r: %.15e | r_crit: %.15e\n", r, r_crit);
 
                                 std::cout << "Adding a pair "
                                           << i << " " << k
@@ -171,10 +157,12 @@ bool Hermite4CPU::get_close_encounters(double itime, int **nb_list, Forces *f,
     return false;
 }
 
-void Hermite4CPU::create_ghost_particle(MultipleSystem ms)
+SParticle Hermite4CPU::create_ghost_particle(MultipleSystem ms)
 {
     // Getting center of mass of the new multiple system
     SParticle sp = ms.get_center_of_mass(ms.parts[0], ms.parts[1]);
+
+    printf("CoM %.15e %.15e %.15e\n", sp.r.x, sp.r.y, sp.r.z);
 
     // Replacing first member by a ghost particle
     int id = ms.parts[0].id;
@@ -194,5 +182,7 @@ void Hermite4CPU::create_ghost_particle(MultipleSystem ms)
     ns->h_r[ms.parts[1].id].w = 0.0;
     // TODO: Maybe add a blacklist to the method "find_particles_to_move"
     // using all the particles that have no mass.
+
+    return sp;
 }
 

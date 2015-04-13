@@ -363,7 +363,7 @@ double NbodyUtils::get_timestep_central(int i)
 }
 #endif
 
-double NbodyUtils::get_energy()
+double NbodyUtils::get_energy(double ext)
 {
     ns->en.potential = 0.0;
     ns->en.kinetic   = 0.0;
@@ -377,7 +377,7 @@ double NbodyUtils::get_energy()
             double rx = ns->h_r[j].x - ns->h_r[i].x;
             double ry = ns->h_r[j].y - ns->h_r[i].y;
             double rz = ns->h_r[j].z - ns->h_r[i].z;
-            double r2 = rx*rx + ry*ry + rz*rz + ns->e2;
+            double r2 = rx*rx + ry*ry + rz*rz;// + ns->e2;
 
             epot_tmp -= (ns->h_r[i].w * ns->h_r[j].w) / sqrt(r2);
         }
@@ -394,5 +394,7 @@ double NbodyUtils::get_energy()
         #pragma omp atomic
         ns->en.potential += epot_tmp;
     }
-    return ns->en.kinetic + ns->en.potential;
+
+    printf("00: K = %.15e | U = %.15e | Ext = %.15e\n", ns->en.kinetic, ns->en.potential, ext);
+    return ns->en.kinetic + ns->en.potential + ext;
 }
