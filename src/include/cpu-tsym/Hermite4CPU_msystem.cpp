@@ -5,15 +5,14 @@ void Hermite4CPU::multiple_systems_integration(std::vector<MultipleSystem> &ms, 
     // P(EC)^3
     for (int i = 0; i < (int)ms.size(); i++)
     {
+
         // ITIME = Final time
         // CTIME = Current time
-        // The time of all the members will be the same
-        double CTIME = ms[i].parts[0].t + 0.5 * D_TIME_MIN;
 
-        double ini_e = ms[i].get_energy();
-        printf("E0 = %.15e\n", ini_e);
+        // The time of all the members will be the same
+        double CTIME = ms[i].parts[0].t + ms[i].parts[0].dt;
+
         //ms[i].get_orbital_elements();
-        double end_e;
 
         long long int iterations = 0;
         while (CTIME < ITIME)
@@ -34,8 +33,8 @@ void Hermite4CPU::multiple_systems_integration(std::vector<MultipleSystem> &ms, 
             iterations++;
         }
 
-        end_e = ms[i].get_energy();
-        printf("End binary evolution: DE = %.15e | Ite: %lld\n", (end_e - ini_e)/ini_e, iterations);
+        //double end_e = ms[i].get_energy();
+        //printf("End binary evolution: DE = %.15e E = %.15e | Ite: %lld\n", (end_e - ms[i].ini_e)/ms[i].ini_e, end_e, iterations);
 
     }
 }
@@ -117,8 +116,6 @@ bool Hermite4CPU::get_close_encounters(double itime, int **nb_list, Forces *f,
                             // Binding energy
                             if (kin - pot < 0)
                             {
-                                printf(">>>> r: %.15e | r_crit: %.15e\n", r, r_crit);
-
                                 std::cout << "Adding a pair "
                                           << i << " " << k
                                           << std::endl;

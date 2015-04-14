@@ -42,7 +42,7 @@ void Hermite4CPU::force_calculation(Predictor pi, Predictor pj, Forces &fi,
     double rv = rx*vx + ry*vy + rz*vz;
 
     // Add velocity
-    if (sqrt(rx*rx + ry*ry + rz*rz) < hi)
+    if (sqrt(r2) < hi)
     {
         nb_list[i][fi.nb] = j;
         fi.nb++;
@@ -62,8 +62,6 @@ void Hermite4CPU::force_calculation(Predictor pi, Predictor pj, Forces &fi,
     fi.a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
     fi.a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
 }
-
-
 
 void Hermite4CPU::init_acc_jrk(Predictor *p, Forces *f, double *r_sphere)
 {

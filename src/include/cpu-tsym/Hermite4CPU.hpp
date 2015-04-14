@@ -9,6 +9,45 @@ typedef struct
     int id_b;
 } binary_id;
 
+inline double4 operator+(const double4 &a, const double4 &b)
+{
+    double4 tmp = {a.x + b.x, a.y + b.y, a.z + b.z,  a.w + b.w};
+    return tmp;
+}
+
+inline void operator+=(double4 &a, double4 &b)
+{
+    a.x += b.x;
+    a.y += b.y;
+    a.z += b.z;
+    a.w += b.w;
+}
+
+inline Forces operator+(Forces &a, Forces &b)
+{
+    Forces tmp;
+    tmp.a[0] = a.a[0] + b.a[0];
+    tmp.a[1] = a.a[1] + b.a[1];
+    tmp.a[2] = a.a[2] + b.a[2];
+
+    tmp.a1[0] = a.a1[0] + b.a1[0];
+    tmp.a1[1] = a.a1[1] + b.a1[1];
+    tmp.a1[2] = a.a1[2] + b.a1[2];
+
+    return tmp;
+}
+
+inline void operator+=(Forces &a, Forces &b)
+{
+    a.a[0] += b.a[0];
+    a.a[1] += b.a[1];
+    a.a[2] += b.a[2];
+
+    a.a1[0] += b.a1[0];
+    a.a1[1] += b.a1[1];
+    a.a1[2] += b.a1[2];
+}
+
 class Hermite4CPU : public Hermite4 {
     public:
         Hermite4CPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu);

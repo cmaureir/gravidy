@@ -10,6 +10,7 @@ typedef struct ShortParticle
     double4 r;
     double4 v;
     Forces f;
+    //Forces old;
 } SParticle;
 
 typedef struct MultipleSystemParticle
@@ -52,6 +53,8 @@ class MultipleSystem
 
         /// Amount of member in the system
         short members;
+
+        double ini_e;
 
         /// Particle members of the multiple system
         MParticle parts[MAX_MEMBERS];

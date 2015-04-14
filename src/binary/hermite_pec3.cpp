@@ -130,8 +130,8 @@ int main(int argc, char *argv[])
     /*****************************************/
 
     // Masses m1 = 100 m2
-    p[0].m  = 0.9900990099009901;
-    p[1].m  = 0.009900990099009901;
+    //p[0].m  = 0.9900990099009901;
+    //p[1].m  = 0.009900990099009901;
 
     //// e = 0.2
     //p[0].rx =  -0.00792079; p[0].prx = -0.00792079;
@@ -141,11 +141,11 @@ int main(int argc, char *argv[])
     //p[1].vy =  -1.21261868; p[1].pvy = -1.21261868;
 
     // e = 0.9
-    p[0].rx =  -0.0009901; p[0].prx = -0.0009901;
-    p[1].rx =  0.0990099; p[1].prx = 0.0990099;
+    //p[0].rx =  -0.0009901; p[0].prx = -0.0009901;
+    //p[1].rx =  0.0990099; p[1].prx = 0.0990099;
 
-    p[0].vy =  0.04315742; p[0].pvy = 0.04315742;
-    p[1].vy =  -4.31574153; p[1].pvy = -4.31574153;
+    //p[0].vy =  0.04315742; p[0].pvy = 0.04315742;
+    //p[1].vy =  -4.31574153; p[1].pvy = -4.31574153;
 
     //// e = 0.99
     //p[0].rx =  -9.90099010e-05; p[0].prx = -9.90099010e-05;
@@ -179,6 +179,37 @@ int main(int argc, char *argv[])
 
     //p[0].vy =  1.41067219e-05; p[0].pvy = 1.41067219e-05;
     //p[1].vy =  -14.10672187; p[1].pvy = -14.10672187;
+    /*****************************************/
+
+    p[0].m = 9.765625000000000e-04;
+    p[1].m = 9.765625000000000e-04;
+
+    p[0].rx = 9.850490359358810e-05;
+    p[0].prx = 9.850490359358810e-05;
+    p[0].ry = -7.263274200450531e-04;
+    p[0].pry = -7.263274200450531e-04;
+    p[0].rz = -1.747488448700651e-03;
+    p[0].prz = -1.747488448700651e-03;
+    p[0].vx = 3.740929334219047e-01;
+    p[0].pvx = 3.740929334219047e-01;
+    p[0].vy = -1.857405959958897e-01;
+    p[0].pvy = -1.857405959958897e-01;
+    p[0].vz = 2.883360826020155e-01;
+    p[0].pvz = 2.883360826020155e-01;
+
+    p[1].rx = -9.850490359358810e-05;
+    p[1].prx = -9.850490359358810e-05;
+    p[1].ry = 7.263274200450809e-04;
+    p[1].pry = 7.263274200450809e-04;
+    p[1].rz = 1.747488448700651e-03;
+    p[1].prz = 1.747488448700651e-03;
+    p[1].vx = -3.740929334219047e-01;
+    p[1].pvx = -3.740929334219047e-01;
+    p[1].vy = 1.857405959958897e-01;
+    p[1].pvy = 1.857405959958897e-01;
+    p[1].vz = -2.883360826020155e-01;
+    p[1].pvz = -2.883360826020155e-01;
+
     /*****************************************/
 
     double m  = p[0].m + p[1].m;
@@ -226,9 +257,18 @@ int main(int argc, char *argv[])
     //std::cout << "espec: " << espec << std::endl;
     //std::cout << "ecc: " << ecc_ini << std::endl;
     //std::cout << "energy: " << ini_e << std::endl;
+    printf("mu_std: %.15e\n", mu_std);
+    printf("rr: %.15e\n", rr);
+    printf("vv: %.15e\n", vv);
+    printf("jj: %.15e\n", jj);
+    printf("a: %.15e\n", semimajor_ini);
+    printf("espec: %.15e\n", espec);
+    printf("ecc: %.15e\n", ecc_ini);
+    printf("energy: %.15e\n", ini_e);
 
     double ini_time = omp_get_wtime();
     //while (c_time < 2002 * 2 * 3.1415)
+    c_time = 1.132813096046448e-01;
     while (c_time < 10 * 2 * 3.1415)
     {
         prediction(c_time);
@@ -350,49 +390,51 @@ int main(int argc, char *argv[])
         if (ite == 0)
             std::cout << "2" << std::endl;
 
-        if(ite%2 == 0)
-        {
-            print_all();
+        //if(ite%2 == 0)
+        //{
             //print_all();
-            //double end_e = get_energy();
+            //print_all();
+            double end_e = get_energy();
 
-            //double mu = p[0].m * p[1].m / (p[0].m + p[1].m);
-            //double rx = p[1].rx - p[0].rx;
-            //double ry = p[1].ry - p[0].ry;
-            //double rz = p[1].rz - p[0].rz;
+            double mu = p[0].m * p[1].m / (p[0].m + p[1].m);
+            double rx = p[1].rx - p[0].rx;
+            double ry = p[1].ry - p[0].ry;
+            double rz = p[1].rz - p[0].rz;
 
-            //double vx = p[1].vx - p[0].vx;
-            //double vy = p[1].vy - p[0].vy;
-            //double vz = p[1].vz - p[0].vz;
+            double vx = p[1].vx - p[0].vx;
+            double vy = p[1].vy - p[0].vy;
+            double vz = p[1].vz - p[0].vz;
 
 
-            //double jx = ry * vz - rz * vy;
-            //double jy = rz * vx - rx * vz;
-            //double jz = rx * vy - ry * vx;
+            double jx = ry * vz - rz * vy;
+            double jy = rz * vx - rx * vz;
+            double jz = rx * vy - ry * vx;
 
-            //double r = sqrt(rx*rx + ry*ry + rz*rz);
-            //double v = sqrt(vx*vx + vy*vy + vz*vz);
-            //double j = sqrt(jx*jx + jy*jy + jz*jz);
+            double r = sqrt(rx*rx + ry*ry + rz*rz);
+            double v = sqrt(vx*vx + vy*vy + vz*vz);
+            double j = sqrt(jx*jx + jy*jy + jz*jz);
 
-            //double j2 = j*j;
-            //double v2 = v*v;
-            //double m1m2 = p[0].m * p[1].m;
+            double j2 = j*j;
+            double v2 = v*v;
+            double m1m2 = p[0].m * p[1].m;
 
-            //double binde = 0.5 * mu * v2 - m1m2/ r;
+            double binde = 0.5 * mu * v2 - m1m2/ r;
 
-            //double semimajor = -0.5 * m1m2 / binde;
+            double semimajor = -0.5 * m1m2 / binde;
 
-            //double jmax2 = semimajor * (p[0].m + p[1].m);
-            //double ecc = sqrt(1. - j2 / jmax2);
+            double jmax2 = semimajor * (p[0].m + p[1].m);
+            double ecc = sqrt(1. - j2 / jmax2);
 
-            //printf("%.15e %.15e %.15e %.15e %.15e %.15e\n",
-            //        c_time/3.1415,
-            //        std::abs((semimajor - semimajor_ini)/semimajor_ini),
-            //        std::abs((ecc - ecc_ini)/ecc_ini),
-            //        r,
-            //        std::abs((end_e - ini_e)/ini_e),
-            //        omp_get_wtime() - ini_time);
-        }
+            printf("%.15e %.15e %.15e %.15e %.15e %.15e %.15e\n",
+                    c_time/3.1415,
+                    std::abs((semimajor - semimajor_ini)/semimajor_ini),
+                    std::abs((ecc - ecc_ini)/ecc_ini),
+                    r,
+                    std::abs((end_e - ini_e)/ini_e),
+                    omp_get_wtime() - ini_time,
+                    end_e);
+            getchar();
+        //}
         next_c_time(c_time);
         ite++;
 

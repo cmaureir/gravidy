@@ -6,8 +6,10 @@
 #include "include/mpigpu/Hermite4MPIGPU.cuh"
 #elif KEPLER
 #include "include/kepler/Hermite4Kepler.hpp"
+#elif TSYM
+#include "include/cpu-tsym/Hermite4Kepler.hpp"
 #else
-#include "include/cpu-tsym/Hermite4CPU.hpp"
+#include "include/cpu/Hermite4CPU.hpp"
 #endif
 
 
@@ -68,6 +70,8 @@ int main(int argc, char *argv[]) {
     Hermite4MPI h4(&ns, &logger, &nu, rank, nprocs);
     #elif MPIGPU
     Hermite4MPIGPU h4(&ns, &logger, &nu, rank, nprocs);
+    #elif MPIGPU
+    Hermite4CPU h4(&ns, &logger, &nu);
     #else
     Hermite4CPU h4(&ns, &logger, &nu);
     #endif

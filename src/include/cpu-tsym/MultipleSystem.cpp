@@ -33,13 +33,13 @@ void MultipleSystem::adjust_particles(SParticle sp)
         parts[i].p.v[1] = parts[i].v.y;
         parts[i].p.v[2] = parts[i].v.z;
 
-        parts[i].f.a[0] -= sp.f.a[0];
-        parts[i].f.a[1] -= sp.f.a[1];
-        parts[i].f.a[2] -= sp.f.a[2];
+        //parts[i].f.a[0] -= sp.f.a[0];
+        //parts[i].f.a[1] -= sp.f.a[1];
+        //parts[i].f.a[2] -= sp.f.a[2];
 
-        parts[i].f.a1[0] -= sp.f.a1[0];
-        parts[i].f.a1[1] -= sp.f.a1[1];
-        parts[i].f.a1[2] -= sp.f.a1[2];
+        //parts[i].f.a1[0] -= sp.f.a1[0];
+        //parts[i].f.a1[1] -= sp.f.a1[1];
+        //parts[i].f.a1[2] -= sp.f.a1[2];
     }
 }
 
@@ -160,6 +160,8 @@ SParticle MultipleSystem::get_center_of_mass(MParticle p1, MParticle p2)
     pcm.f.a1[0] = ((p1.f.a1[0] * p1.r.w) + (p2.f.a1[0] * p2.r.w))*minv;
     pcm.f.a1[1] = ((p1.f.a1[1] * p1.r.w) + (p2.f.a1[1] * p2.r.w))*minv;
     pcm.f.a1[2] = ((p1.f.a1[2] * p1.r.w) + (p2.f.a1[2] * p2.r.w))*minv;
+
+    //pcm.old = pcm.f;
 
     return pcm;
 }
@@ -283,7 +285,6 @@ void MultipleSystem::evaluation(int *nb_list)
     //    }
 
     //    printf("WHOLE %.15e %.15e %.15e\n", ff.a[0], ff.a[1], ff.a[2]);
-    //    getchar();
 
     //    // Write on the Forces array
     //    parts[i].f.a[0] += ff.a[0];
@@ -415,7 +416,6 @@ void MultipleSystem::init_timestep()
 
         // ETA_B for the binary system
         ETA_B = D_TIME_MIN / (2.0 * dt_min);
-        printf("ETA_B: %.15e\n", ETA_B);
     }
 }
 
@@ -496,7 +496,7 @@ double MultipleSystem::get_energy()
         pot += epot_tmp;
     }
 
-    //printf("BB: K = %.15e | U = %.15e\n", kin, pot);
+    //printf("BB: K = %.15e | U = %.15e | Tot = %.15e\n", kin, pot, kin+pot);
     return kin + pot;
 }
 
