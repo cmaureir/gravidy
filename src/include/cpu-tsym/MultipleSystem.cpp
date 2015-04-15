@@ -33,13 +33,21 @@ void MultipleSystem::adjust_particles(SParticle sp)
         parts[i].p.v[1] = parts[i].v.y;
         parts[i].p.v[2] = parts[i].v.z;
 
-        //parts[i].f.a[0] -= sp.f.a[0];
-        //parts[i].f.a[1] -= sp.f.a[1];
-        //parts[i].f.a[2] -= sp.f.a[2];
+        parts[i].f.a[0] -= sp.f.a[0];
+        parts[i].f.a[1] -= sp.f.a[1];
+        parts[i].f.a[2] -= sp.f.a[2];
 
-        //parts[i].f.a1[0] -= sp.f.a1[0];
-        //parts[i].f.a1[1] -= sp.f.a1[1];
-        //parts[i].f.a1[2] -= sp.f.a1[2];
+        parts[i].f.a1[0] -= sp.f.a1[0];
+        parts[i].f.a1[1] -= sp.f.a1[1];
+        parts[i].f.a1[2] -= sp.f.a1[2];
+
+        parts[i].old.a[0] -= sp.old.a[0];
+        parts[i].old.a[1] -= sp.old.a[1];
+        parts[i].old.a[2] -= sp.old.a[2];
+
+        parts[i].old.a1[0] -= sp.old.a1[0];
+        parts[i].old.a1[1] -= sp.old.a1[1];
+        parts[i].old.a1[2] -= sp.old.a1[2];
     }
 }
 
@@ -54,6 +62,7 @@ void MultipleSystem::add_particle(int id)
         new_member.r  = ns->h_r[id];
         new_member.v  = ns->h_v[id];
         new_member.f  = ns->h_f[id];
+        new_member.old  = ns->h_old[id];
         new_member.a2 = ns->h_a2[id];
         new_member.a3 = ns->h_a3[id];
         new_member.t  = ns->h_t[id];
@@ -161,7 +170,15 @@ SParticle MultipleSystem::get_center_of_mass(MParticle p1, MParticle p2)
     pcm.f.a1[1] = ((p1.f.a1[1] * p1.r.w) + (p2.f.a1[1] * p2.r.w))*minv;
     pcm.f.a1[2] = ((p1.f.a1[2] * p1.r.w) + (p2.f.a1[2] * p2.r.w))*minv;
 
-    //pcm.old = pcm.f;
+    // Calculate CoM acceleration
+    pcm.old.a[0] = ((p1.old.a[0] * p1.r.w) + (p2.old.a[0] * p2.r.w))*minv;
+    pcm.old.a[1] = ((p1.old.a[1] * p1.r.w) + (p2.old.a[1] * p2.r.w))*minv;
+    pcm.old.a[2] = ((p1.old.a[2] * p1.r.w) + (p2.old.a[2] * p2.r.w))*minv;
+
+    // Calculate CoM acceleration first derivative
+    pcm.old.a1[0] = ((p1.old.a1[0] * p1.r.w) + (p2.old.a1[0] * p2.r.w))*minv;
+    pcm.old.a1[1] = ((p1.old.a1[1] * p1.r.w) + (p2.old.a1[1] * p2.r.w))*minv;
+    pcm.old.a1[2] = ((p1.old.a1[2] * p1.r.w) + (p2.old.a1[2] * p2.r.w))*minv;
 
     return pcm;
 }
@@ -241,7 +258,7 @@ void MultipleSystem::save_old()
 {
     for (int i = 0; i < members; i++)
     {
-        parts[i].old_f = parts[i].f;
+        parts[i].old = parts[i].f;
     }
 }
 
@@ -320,7 +337,7 @@ void MultipleSystem::correction(double CTIME, bool check)
 
         // Load of the data that we will use only once, and not in every line
         Forces fi   =  part.f;
-        Forces oldi =  part.old_f;
+        Forces oldi =  part.old;
         Predictor p0 = part.p0;
         double3 a2i;
         double3 a3i;

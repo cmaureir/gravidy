@@ -116,9 +116,9 @@ bool Hermite4CPU::get_close_encounters(double itime, int **nb_list, Forces *f,
                             // Binding energy
                             if (kin - pot < 0)
                             {
-                                std::cout << "Adding a pair "
-                                          << i << " " << k
-                                          << std::endl;
+                                //std::cout << "Adding a pair "
+                                //          << i << " " << k
+                                //          << std::endl;
                                 // This particles will dissapear in the next
                                 // step (inside the integration loop), that is why
                                 // they are now ghost.
@@ -159,24 +159,29 @@ SParticle Hermite4CPU::create_ghost_particle(MultipleSystem ms)
     // Getting center of mass of the new multiple system
     SParticle sp = ms.get_center_of_mass(ms.parts[0], ms.parts[1]);
 
-    printf("CoM %.15e %.15e %.15e\n", sp.r.x, sp.r.y, sp.r.z);
+    //printf("CoM %.15e %.15e %.15e\n", sp.r.x, sp.r.y, sp.r.z);
 
     // Replacing first member by a ghost particle
     int id = ms.parts[0].id;
 
-    std::cout << "Creating ghost particle between "
-              << ms.parts[0].id << " and " << ms.parts[1].id
-              << " (using id " << ms.parts[0].id << ")" << std::endl;
+    //std::cout << "Creating ghost particle between "
+    //          << ms.parts[0].id << " and " << ms.parts[1].id
+    //          << " (using id " << ms.parts[0].id << ")" << std::endl;
 
 
     ns->h_r[id]  = sp.r; // The mass is in the .w component
     ns->h_v[id]  = sp.v;
     ns->h_f[id]  = sp.f;
+    ns->h_old[id]  = sp.old;
 
     ns->h_dt[id] = D_TIME_MIN;
 
     // Setting a zero mass to the second member.
     ns->h_r[ms.parts[1].id].w = 0.0;
+
+    // Maybe avoid having only an empty particle active.
+    //ns->h_dt[ms.parts[1].id] = D_TIME_MAX;
+
     // TODO: Maybe add a blacklist to the method "find_particles_to_move"
     // using all the particles that have no mass.
 

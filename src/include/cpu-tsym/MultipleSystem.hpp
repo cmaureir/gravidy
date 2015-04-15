@@ -10,7 +10,7 @@ typedef struct ShortParticle
     double4 r;
     double4 v;
     Forces f;
-    //Forces old;
+    Forces old;
 } SParticle;
 
 typedef struct MultipleSystemParticle
@@ -19,7 +19,7 @@ typedef struct MultipleSystemParticle
     double4 r;
     double4 v;
     Forces f;
-    Forces old_f;
+    Forces old;
     Predictor p;
     Predictor p0;
     double3 a2;
