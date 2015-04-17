@@ -19,6 +19,9 @@ void Hermite4CPU::integration()
     ns->en.ini = nu->get_energy();
     ns->en.tmp = ns->en.ini;
 
+    //double ekin_ini = nu->get_kinetic();
+    //double epot_ini = nu->get_potential();
+
     // Getting system information:
     // * Crossing Time and Half-mass Relaxation Time
     // * Close Encounter Radius and Timestep
@@ -48,7 +51,6 @@ void Hermite4CPU::integration()
     std::vector<binary_id> pairs;
     std::vector<MultipleSystem> ms;
     double ms_energy = 0.0;
-    bool dummy = false;
 
     while (ITIME < ns->integration_time)
     {
@@ -61,10 +63,10 @@ void Hermite4CPU::integration()
 
         // If we have MultipleSystems already created
         // we procede with the time-symmetric integration
-        //if ((int)ms.size() > 0)
-        //{
-        //  multiple_systems_integration(ms, ITIME, nb_list);
-        //}
+        if ((int)ms.size() > 0)
+        {
+            multiple_systems_integration(ms, ITIME, nb_list);
+        }
 
         // Considerar particulas virtuales y con masa cero
         predicted_pos_vel(ITIME, ns->h_t, ns->h_r, ns->h_v, ns->h_f, ns->h_p);
@@ -81,17 +83,7 @@ void Hermite4CPU::integration()
                            ns->h_p, ns->h_f, ns->h_old, ns->h_a2, ns->h_a3,
                            ns->h_r, ns->h_v);
 
-        if (dummy)
-        {
-            logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy_intermediate(0));
-            dummy = false;
-        }
-
-        // TODO: If an encounter in previous step
-        // binary construct (replacing, virtual, etc)
-        // passing the index of the system that it's created.
-        // Consider the case that a new particle enters into the
-        // system
+        // Binary creation
         if(new_binaries)
         {
             for (int b = 0; b < (int)pairs.size(); b++)
@@ -107,9 +99,11 @@ void Hermite4CPU::integration()
 
                 // ghost particle which will be store in the first member
                 // of the new binary.
-                logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy_intermediate(0));
+                //logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy_intermediate(0));
+                printf("BEFORE %.15e\n", nu->get_kinetic() + nu->get_potential());
 
                 SParticle sp = create_ghost_particle(new_ms);
+                printf("INTERM %.15e\n", nu->get_kinetic() + nu->get_potential());
                 new_ms.adjust_particles(sp);
 
                 // Initialization of the binary
@@ -119,6 +113,37 @@ void Hermite4CPU::integration()
 
                 printf("> New MS (%d, %d) | E0 = %.15e\n", pairs[b].id_a, pairs[b].id_b, new_ms.ini_e);
 
+
+                        MParticle part0 = new_ms.parts[0];
+                        MParticle part1 = new_ms.parts[1];
+                        int id0 = part0.id;
+                        int id1 = part1.id;
+
+                        double4 tmp_r0 = ns->h_r[id0];
+                        double4 tmp_v0 = ns->h_v[id0];
+                        double4 tmp_r1 = ns->h_r[id1];
+                        double4 tmp_v1 = ns->h_v[id1];
+
+                        double ee = nu->get_kinetic();
+
+                        ns->h_r[id1] = sp.r + part1.r;
+                        ns->h_v[id1] = sp.v + part1.v;
+                        ns->h_r[id1].w = part1.r.w;;
+
+                        ns->h_r[id0] = sp.r + part0.r;
+                        ns->h_v[id0] = sp.v + part0.v;
+                        ns->h_r[id0].w = part0.r.w;;
+
+                        ee += nu->get_potential();
+
+                        printf("SPLIT %.15e\n", ee);
+                        printf("AFTER %.15e\n", nu->get_potential() + nu->get_kinetic());
+                        ns->h_r[id0] = tmp_r0;
+                        ns->h_v[id0] = tmp_v0;
+                        ns->h_r[id1] = tmp_r1;
+                        ns->h_v[id1] = tmp_v1;
+                        printf("REDO %.15e\n", nu->get_potential() + nu->get_kinetic());
+
                 // The second member of the binary will remain in the system
                 // but its mass will be `0`, so in this way we avoid removing
                 // this particle and moving all the system, which is computationally
@@ -126,7 +151,6 @@ void Hermite4CPU::integration()
                 // This particle will not affect the evolution of the system
                 // since the force he will contribute is zero.
                 //logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy_intermediate(0));
-                dummy = true;
 
 
                 // Adding the new binary to the vector
@@ -145,14 +169,48 @@ void Hermite4CPU::integration()
         {
             //assert(nact == ns->n);
 
+            double ee = 0;
             // Check for MultipleSystems and get the energy.
             for (int i = 0; i < (int)ms.size(); i++)
             {
                 ms_energy += ms[i].get_energy();
-            }
 
-            //logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy(ms_energy));
-            logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy(0));
+                MParticle part0 = ms[i].parts[0];
+                MParticle part1 = ms[i].parts[1];
+
+                int id0 = part0.id;
+                int id1 = part1.id;
+
+                double4 tmp_r0 = ns->h_r[id0];
+                double4 tmp_r1 = ns->h_r[id1];
+                double4 tmp_v0 = ns->h_v[id0];
+                double4 tmp_v1 = ns->h_v[id1];
+
+                ee += nu->get_kinetic();
+
+                ns->h_r[id1] = ns->h_r[id0] + part1.r;
+                ns->h_v[id1] = ns->h_v[id0] + part1.v;
+                ns->h_r[id1].w = part1.r.w;;
+
+                ns->h_r[id0] += part0.r;
+                ns->h_v[id0] += part0.v;
+                ns->h_r[id0].w = part0.r.w;;
+
+                ee += nu->get_potential();
+
+                ns->h_r[id0] = tmp_r0;
+                ns->h_r[id1] = tmp_r1;
+                ns->h_v[id0] = tmp_v0;
+                ns->h_v[id1] = tmp_v1;
+            }
+            if (ee != 0)
+            {
+                std::cout << "ee" << std::endl;
+                logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, ee + ms_energy);
+            }
+            std::cout << "Normal + Binary" << std::endl;
+            logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy(ms_energy));
+
             if (ns->ops.print_all)
             {
                 logger->print_all(ITIME);
@@ -187,8 +245,6 @@ void Hermite4CPU::integration()
                         int id0 = part0.id;
                         int id1 = part1.id;
 
-                        //SParticle sp = ms[i].get_center_of_mass(part0, part1);
-
                         // Part1
                         // Part 1 = CoM particle + Current Part 1 position/velocity
                         ns->h_r[id1] = ns->h_r[id0] + part1.r;
@@ -197,7 +253,8 @@ void Hermite4CPU::integration()
                         ns->h_f[id1] = ns->h_f[id0] + part1.f;
                         ns->h_old[id1] = ns->h_f[id1];
                         ns->h_t[id1] = ns->h_t[id0];
-                        ns->h_dt[id1] = ns->h_dt[id0];
+                        //ns->h_dt[id1] = ns->h_dt[id0];
+                        ns->h_dt[id1] = D_TIME_MIN;
 
                         // Part0
                         ns->h_r[id0] += part0.r;
@@ -206,11 +263,10 @@ void Hermite4CPU::integration()
                         ns->h_f[id0] += part0.f;
                         ns->h_old[id0] = ns->h_f[id0];
                         ns->h_t[id0] = ns->h_t[id0];
-                        ns->h_dt[id0] = ns->h_dt[id0];
+                        //ns->h_dt[id0] = ns->h_dt[id0];
+                        ns->h_dt[id0] = D_TIME_MIN;
 
-                        //ms_energy = ms[i].get_energy();
-                        //logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy(ms_energy));
-                        //logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy_intermediate(0));
+                        logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy(0));
 
                         ms.erase(ms.begin()+i, ms.begin()+i+1);
 

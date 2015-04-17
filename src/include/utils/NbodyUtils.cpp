@@ -368,7 +368,7 @@ double NbodyUtils::get_energy_intermediate(double ext)
     ns->en.potential = 0.0;
     ns->en.kinetic   = 0.0;
 
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = 0; i < ns->n; i++)
     {
         double epot_tmp = 0.0;
@@ -389,9 +389,9 @@ double NbodyUtils::get_energy_intermediate(double ext)
 
         double ekin_tmp = 0.5 * ns->h_p[i].m * v2;
 
-        #pragma omp atomic
+        //#pragma omp atomic
         ns->en.kinetic += ekin_tmp;
-        #pragma omp atomic
+        //#pragma omp atomic
         ns->en.potential += epot_tmp;
     }
 
@@ -404,7 +404,7 @@ double NbodyUtils::get_energy(double ext)
     ns->en.potential = 0.0;
     ns->en.kinetic   = 0.0;
 
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = 0; i < ns->n; i++)
     {
         double epot_tmp = 0.0;
@@ -425,13 +425,13 @@ double NbodyUtils::get_energy(double ext)
 
         double ekin_tmp = 0.5 * ns->h_r[i].w * v2;
 
-        #pragma omp atomic
+        //#pragma omp atomic
         ns->en.kinetic += ekin_tmp;
-        #pragma omp atomic
+        //#pragma omp atomic
         ns->en.potential += epot_tmp;
     }
 
-    //printf("00: K = %.15e | U = %.15e | Ext = %.15e\n", ns->en.kinetic, ns->en.potential, ext);
+    //printf("get_energy: K = %.15e | U = %.15e | Ext = %.15e\n", ns->en.kinetic, ns->en.potential, ext);
     return ns->en.kinetic + ns->en.potential + ext;
 }
 
@@ -439,7 +439,7 @@ double NbodyUtils::get_potential()
 {
     double epot = 0.0;
 
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = 0; i < ns->n; i++)
     {
         double epot_tmp = 0.0;
@@ -453,10 +453,11 @@ double NbodyUtils::get_potential()
             epot_tmp -= (ns->h_r[i].w * ns->h_r[j].w) / sqrt(r2);
         }
 
-        #pragma omp atomic
+        //#pragma omp atomic
         epot += epot_tmp;
     }
 
+    printf("get_potential %.15e\n", epot);
     return epot;
 }
 
@@ -464,7 +465,7 @@ double NbodyUtils::get_kinetic()
 {
     double ekin = 0.0;
 
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = 0; i < ns->n; i++)
     {
         double vx = ns->h_v[i].x * ns->h_v[i].x;
@@ -474,9 +475,10 @@ double NbodyUtils::get_kinetic()
 
         double ekin_tmp = 0.5 * ns->h_r[i].w * v2;
 
-        #pragma omp atomic
+        //#pragma omp atomic
         ekin += ekin_tmp;
     }
 
+    printf("get_kinetic %.15e\n", ekin);
     return ekin;
 }
