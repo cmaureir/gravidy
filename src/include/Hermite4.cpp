@@ -21,6 +21,9 @@ int Hermite4::find_particles_to_move(double ITIME)
     for (int i = FIRST_PARTICLE; i < ns->n; i++)
     {
         ns->h_move[i] = -1;
+        // Getting larger mass of the system
+        if (ns->h_r[i].w > ns->max_mass)
+            ns->max_mass = ns->h_r[i].w;
 
         double tmp_time = ns->h_t[i] + ns->h_dt[i];
         if(std::fabs(ITIME - tmp_time) < 2*std::numeric_limits<double>::epsilon())

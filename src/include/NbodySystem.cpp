@@ -34,6 +34,7 @@ void NbodySystem::read_input_file()
 {
     file_data tmp;
     total_mass = 0;
+    max_mass = 0.0;
     std::string line;
 
     std::ifstream file(input_filename.c_str());
@@ -72,6 +73,8 @@ void NbodySystem::read_input_file()
                 tmp.v[0] = strtod(tokens[4].c_str(), NULL);
                 tmp.v[1] = strtod(tokens[5].c_str(), NULL);
                 tmp.v[2] = strtod(tokens[6].c_str(), NULL);
+                if (tmp.m > max_mass)
+                    max_mass = tmp.m;
             }
             reader.push_back(tmp);
             total_mass += tmp.m;

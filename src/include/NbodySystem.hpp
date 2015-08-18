@@ -40,6 +40,7 @@ class NbodySystem {
         float t_rlx;
         float t_cr;
         float r_virial;
+        float max_mass;
 
         // Close encounter
         double r_cl;
