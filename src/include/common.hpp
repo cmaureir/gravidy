@@ -62,9 +62,18 @@ const float ETA_N = 0.01;
 
 /** Lower boundary for the particles timesteps, \f$2^{-23}\f$ */
 const double D_TIME_MIN = 1.1920928955078125e-07;
+/** Lower boundary for the binary timesteps, \f$2^{-30}\f$ */
+const double D_MTIME_MIN = 9.313225746154785e-10;
 /** Upper boundary for the particles timesteps, \f$2^{-3}\f$ */
 const double D_TIME_MAX = 0.125;
 
+/** Gamma pertuber constant \f$\gamma_{pert}\f$ **/
+const double GAMMA_PERT = 10e-7;
+/** Maximum pertubers **/
+const int MAX_PERT = 200;
+
+/** First particle of the system to consider as a normal particle,
+ * this is for future BH implementations **/
 const int FIRST_PARTICLE = 0;
 
 /** @struct Distance
