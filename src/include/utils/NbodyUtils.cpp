@@ -81,6 +81,7 @@ double NbodyUtils::get_half_mass_relaxation_time()
 
 double NbodyUtils::get_virial_radius(double energy)
 {
+    //std::cout << "Rv new: " << (G * ns->n * ns->total_mass) / std::abs(2 * ns->en.potential) << std::endl;
     return (-G * ns->total_mass * ns->total_mass) / (4 * energy);
 }
 
@@ -363,42 +364,6 @@ double NbodyUtils::get_timestep_central(int i)
 }
 #endif
 
-double NbodyUtils::get_energy_intermediate(double ext)
-{
-    ns->en.potential = 0.0;
-    ns->en.kinetic   = 0.0;
-
-    //#pragma omp parallel for
-    for (int i = 0; i < ns->n; i++)
-    {
-        double epot_tmp = 0.0;
-        for (int j = i+1; j < ns->n; j++)
-        {
-            double rx = ns->h_p[j].r[0] - ns->h_p[i].r[0];
-            double ry = ns->h_p[j].r[1] - ns->h_p[i].r[1];
-            double rz = ns->h_p[j].r[2] - ns->h_p[i].r[2];
-            double r2 = rx*rx + ry*ry + rz*rz;// + ns->e2;
-
-            epot_tmp -= (ns->h_p[i].m * ns->h_p[j].m) / sqrt(r2);
-        }
-
-        double vx = ns->h_p[i].v[0] * ns->h_p[i].v[0];
-        double vy = ns->h_p[i].v[1] * ns->h_p[i].v[1];
-        double vz = ns->h_p[i].v[2] * ns->h_p[i].v[2];
-        double v2 = vx + vy + vz;
-
-        double ekin_tmp = 0.5 * ns->h_p[i].m * v2;
-
-        //#pragma omp atomic
-        ns->en.kinetic += ekin_tmp;
-        //#pragma omp atomic
-        ns->en.potential += epot_tmp;
-    }
-
-    //printf("00: K = %.15e | U = %.15e | Ext = %.15e\n", ns->en.kinetic, ns->en.potential, ext);
-    return ns->en.kinetic + ns->en.potential + ext;
-}
-
 double NbodyUtils::get_energy(double ext)
 {
     ns->en.potential = 0.0;
@@ -457,7 +422,7 @@ double NbodyUtils::get_potential()
         epot += epot_tmp;
     }
 
-    printf("get_potential %.15e\n", epot);
+    //printf("get_potential %.15e\n", epot);
     return epot;
 }
 
@@ -479,6 +444,6 @@ double NbodyUtils::get_kinetic()
         ekin += ekin_tmp;
     }
 
-    printf("get_kinetic %.15e\n", ekin);
+    //printf("get_kinetic %.15e\n", ekin);
     return ekin;
 }

@@ -42,7 +42,6 @@ class NbodyUtils {
         double get_potential();
         double get_kinetic();
         double get_energy(double ext = 0);
-        double get_energy_intermediate(double ext = 0);
 
         double3 get_center_of_density();
 };
