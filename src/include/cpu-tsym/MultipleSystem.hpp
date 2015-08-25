@@ -47,14 +47,21 @@ class MultipleSystem
 
         /// Center of Mass information
         SParticle com;
+        SParticle com_evolving;
 
         /// Accuracy parameter for timestep calculation
         double ETA_B;
+
+        /// Subsystem distance
+        double dist;
+        int *pert;
+        int num_pert;
 
         /// Amount of member in the system
         short members;
 
         double ini_e;
+        double bin_e;
 
         /// Particle members of the multiple system
         MParticle parts[MAX_MEMBERS];
@@ -79,6 +86,7 @@ class MultipleSystem
         void prediction(double ITIME);
         void force_calculation(Predictor pi, Predictor pj, Forces &fi);
         void evaluation(int *nb_list);
+        void perturbers(double CTIME, int ite);
         void correction(double ITIME, bool check);
         void save_old();
         double get_timestep_normal(MParticle p);

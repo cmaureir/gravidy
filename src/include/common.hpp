@@ -41,7 +41,7 @@ const int G = 1;
 const int J = 10;
 
 /** Maximum neighbour number for regularization **/
-const int NBMAX = 70;
+const int NBMAX = 300; // 70
 
 /** Common radius for the core of a globular cluster */
 const float RADIUS_RATIO = 0.05;

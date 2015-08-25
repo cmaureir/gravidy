@@ -48,15 +48,15 @@ CXXFLAGS=   $(BOOSTFLAGS) \
             -pg           \
             -lgomp        \
             -fopenmp      \
-            -pipe         \
-            -fstack-protector -Wl,-z,relro -Wl,-z,now -Wformat-security \
-            -Wpointer-arith \
-            -Wformat-nonliteral \
-            -Werror \
-            -Wl,-O1 \
-            -Wl,--discard-all \
-            -Wl,--no-undefined \
-            -rdynamic
+            #-pipe         \
+            #-fstack-protector -Wl,-z,relro -Wl,-z,now -Wformat-security \
+            #-Wpointer-arith \
+            #-Wformat-nonliteral \
+            #-Werror \
+            #-Wl,-O1 \
+            #-Wl,--discard-all \
+            #-Wl,--no-undefined \
+            #-rdynamic
             #-fno-exceptions \
 
 # MPI FLAGS
@@ -163,6 +163,7 @@ clean:
 
 distclean: clean
 	rm -f include/*.o
+	rm -f include/cpu-tsym/*.o
 	rm -f include/utils/*.o
 	rm -f include/gpu/*.{o,cuo}
 	rm -f include/kepler/*.o

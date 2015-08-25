@@ -6,11 +6,15 @@ MultipleSystem::MultipleSystem(NbodySystem *ns, NbodyUtils *nu)
     this->nu = nu;
     this->members = 0;
     this->ETA_B = 0;
+
+    pert = new int[ns->n]; // TODO: reducir el tamaño
+    num_pert = 0;
+
 }
 
 MultipleSystem::~MultipleSystem()
 {
-    // ...
+    //delete pert;
 }
 
 void MultipleSystem::adjust_particles(SParticle sp)
@@ -221,6 +225,7 @@ void MultipleSystem::prediction(double CTIME)
 
         // Saving initial value
         parts[i].p0 = pp;
+
     }
 }
 
@@ -265,14 +270,12 @@ void MultipleSystem::save_old()
 void MultipleSystem::evaluation(int *nb_list)
 {
     int i, j;
-    //#pragma omp parallel for private(i,j)
     for (i = 0; i < members; i++)
     {
         // Initialization of all the struct to zero
         Forces ff = {0};
         Predictor pi = parts[i].p;
 
-        //#pragma omp parallel for
         for (j = 0; j < members; j++)
         {
             if(i == j) continue;
@@ -281,41 +284,169 @@ void MultipleSystem::evaluation(int *nb_list)
 
         parts[i].f = ff;
     }
+}
+
+void MultipleSystem::perturbers(double CTIME, int ite)
+{
+    //int i, j, k;
+    // Determinate perturbers related to te CoM particle
+    int com_id = parts[0].id;
+
+    // TODO: Using just the mass of one particle, since is equal mass
+    double mean_mass = ns->h_r[com_id].w/2.0;
+
+    // TODO: Testing using just a binary
+    double total_mass = parts[0].r.w + parts[1].r.w;
+
+    double m2 = 0.0;
+
+    double R_b = dist;
+    double R_k = 0.0;
+
+    if (ite == 0)
+    {
+        // Cleanning perturbers
+        std::fill(pert, pert + ns->n, 0);
+        num_pert = 0;
+
+        // Check for perturbers in the whole system
+        for (int j = 0; j < ns->n; j++)
+        {
+            if (com_id == j) continue;
+
+            double rx = ns->h_r[j].x - ns->h_r[com_id].x;
+            double ry = ns->h_r[j].y - ns->h_r[com_id].y;
+            double rz = ns->h_r[j].z - ns->h_r[com_id].z;
+            R_k = sqrt(rx*rx + ry*ry + rz*rz);
+
+            m2 = (2 * mean_mass/total_mass);
+            double rr = R_b/R_k;
+
+            double gamma = m2 * rr * rr * rr;
+            if (gamma >= GAMMA_PERT)
+            {
+                pert[num_pert] = j;
+                num_pert++;
+                //printf("%d ", j);
+            }
+        }
+        //printf("\n");
+        //printf("For particle %d we have %d perturbers\n", com_id, num_pert);
+    }
+
+    // Predicting Center of Mass particle
+    double dt  = CTIME - ns->h_t[com_id];
+    double dt2 = (dt  * dt);
+    double dt3 = (dt2 * dt);
+    double dt2c = dt2/2.0;
+    double dt3c = dt3/6.0;
+
+    Predictor pp;
+
+    Forces ff  = ns->h_f[com_id];
+    double4 vv = ns->h_v[com_id];
+    double4 rr = ns->h_r[com_id];
+
+    pp.r[0] = (dt3c * ff.a1[0]) + (dt2c * ff.a[0]) + (dt * vv.x) + rr.x;
+    pp.r[1] = (dt3c * ff.a1[1]) + (dt2c * ff.a[1]) + (dt * vv.y) + rr.y;
+    pp.r[2] = (dt3c * ff.a1[2]) + (dt2c * ff.a[2]) + (dt * vv.z) + rr.z;
+
+    pp.v[0] = (dt2c * ff.a1[0]) + (dt * ff.a[0]) + vv.x;
+    pp.v[1] = (dt2c * ff.a1[1]) + (dt * ff.a[1]) + vv.y;
+    pp.v[2] = (dt2c * ff.a1[2]) + (dt * ff.a[2]) + vv.z;
+
+    pp.m = rr.w;
+
+    ns->h_p[com_id] = pp;
+    // End prediction Center of Mass particle
+
+    // Predicting all the perturbers
+    for (int k = 0; k < num_pert; k++)
+    {
+        int j = pert[k];
+
+        double dt  = CTIME - ns->h_t[j];
+        double dt2 = (dt  * dt);
+        double dt3 = (dt2 * dt);
+
+        double dt2c = dt2/2.0;
+        double dt3c = dt3/6.0;
+
+        Predictor pp;
+
+        Forces ff  = ns->h_f[j];
+        double4 vv = ns->h_v[j];
+        double4 rr = ns->h_r[j];
+
+        pp.r[0] = (dt3c * ff.a1[0]) + (dt2c * ff.a[0]) + (dt * vv.x) + rr.x;
+        pp.r[1] = (dt3c * ff.a1[1]) + (dt2c * ff.a[1]) + (dt * vv.y) + rr.y;
+        pp.r[2] = (dt3c * ff.a1[2]) + (dt2c * ff.a[2]) + (dt * vv.z) + rr.z;
+
+        pp.v[0] = (dt2c * ff.a1[0]) + (dt * ff.a[0]) + vv.x;
+        pp.v[1] = (dt2c * ff.a1[1]) + (dt * ff.a[1]) + vv.y;
+        pp.v[2] = (dt2c * ff.a1[2]) + (dt * ff.a[2]) + vv.z;
+
+        pp.m = rr.w;
+
+        ns->h_p[j] = pp;
+    }
+    // End Predicting all the perturbers
+
+    //printf("00 a %.8e %.8e %.8e a1 %.8e %.8e %.8e\n",
+    //    parts[0].f.a[0],  parts[0].f.a[1],  parts[0].f.a[2],
+    //    parts[0].f.a1[0], parts[0].f.a1[1], parts[0].f.a1[2]);
+
+
+    // Calculate perturbation on the MultipleSystem
+
     // Perturbers
-    //for (i = 0; i < members; i++)
-    //{
-    //    Forces ff = {0};
-    //    Predictor pi = parts[i].p;
+    for (int i = 0; i < members; i++)
+    {
+        Forces ffp = {0};
+        Predictor pi = parts[i].p;
 
-    //    #pragma omp parallel for
-    //    for (j = 0; j < ns->h_f[parts[0].id].nb; j++)
-    //    {
-    //        if(i == j) continue;
-    //        force_calculation(pi, ns->h_p[nb_list[j]], ff);
-    //    }
+        for (int k = 0; k < num_pert; k++)
+        {
+            int j = pert[k];
+            Predictor pj = ns->h_p[j];
 
-    //    for (j = 0; j < ns->n; j++)
-    //    {
-    //        if(i == j) continue;
-    //        if ( j != parts[0].id)
-    //            force_calculation(pi, ns->h_p[j], ff);
-    //    }
+            pj.r[0] -= ns->h_p[com_id].r[0];
+            pj.r[1] -= ns->h_p[com_id].r[1];
+            pj.r[2] -= ns->h_p[com_id].r[2];
 
-    //    printf("WHOLE %.15e %.15e %.15e\n", ff.a[0], ff.a[1], ff.a[2]);
+            pj.v[0] -= ns->h_p[com_id].v[0];
+            pj.v[1] -= ns->h_p[com_id].v[1];
+            pj.v[2] -= ns->h_p[com_id].v[2];
 
-    //    // Write on the Forces array
-    //    parts[i].f.a[0] += ff.a[0];
-    //    parts[i].f.a[1] += ff.a[1];
-    //    parts[i].f.a[2] += ff.a[2];
+            if(parts[0].id == j) continue;
+            force_calculation(pi, pj, ffp);
+        }
 
-    //    parts[i].f.a1[0] += ff.a1[0];
-    //    parts[i].f.a1[1] += ff.a1[1];
-    //    parts[i].f.a1[2] += ff.a1[2];
-    //}
+        // Write on the Forces array
+        parts[i].f.a[0]  += ffp.a[0];
+        parts[i].f.a[1]  += ffp.a[1];
+        parts[i].f.a[2]  += ffp.a[2];
+        parts[i].f.a1[0] += ffp.a1[0];
+        parts[i].f.a1[1] += ffp.a1[1];
+        parts[i].f.a1[2] += ffp.a1[2];
+    }
+
+    //printf("01 a %.8e %.8e %.8e a1 %.8e %.8e %.8e\n",
+    //    parts[0].f.a[0],  parts[0].f.a[1],  parts[0].f.a[2],
+    //    parts[0].f.a1[0], parts[0].f.a1[1], parts[0].f.a1[2]);
+    //getchar();
 }
 
 void MultipleSystem::correction(double CTIME, bool check)
 {
+
+    com_evolving.r.w = 0.0;
+    com_evolving.r.x = 0.0;
+    com_evolving.r.y = 0.0;
+    com_evolving.r.z = 0.0;
+    com_evolving.v.x = 0.0;
+    com_evolving.v.y = 0.0;
+    com_evolving.v.z = 0.0;
 
     for (int i = 0; i < members; i++)
     {
@@ -363,6 +494,15 @@ void MultipleSystem::correction(double CTIME, bool check)
             parts[i].p.v[0] = p0.v[0] + dt3c * a2i.x + dt4c * a3i.x;
             parts[i].p.v[1] = p0.v[1] + dt3c * a2i.y + dt4c * a3i.y;
             parts[i].p.v[2] = p0.v[2] + dt3c * a2i.z + dt4c * a3i.z;
+
+            // Center of Mass calculation
+            com_evolving.r.w +=  parts[i].r.w;
+            com_evolving.r.x += (parts[i].p.r[0] * parts[i].p.m);
+            com_evolving.r.y += (parts[i].p.r[1] * parts[i].p.m);
+            com_evolving.r.z += (parts[i].p.r[2] * parts[i].p.m);
+            com_evolving.v.x += (parts[i].p.v[0] * parts[i].p.m);
+            com_evolving.v.y += (parts[i].p.v[1] * parts[i].p.m);
+            com_evolving.v.z += (parts[i].p.v[2] * parts[i].p.m);
         }
 
         // Write on the arrays
@@ -371,6 +511,37 @@ void MultipleSystem::correction(double CTIME, bool check)
 
     }
 
+    if (check)
+    {
+        double minv = 1.0/com_evolving.r.w;
+
+        com_evolving.r.x *= minv;
+        com_evolving.r.y *= minv;
+        com_evolving.r.z *= minv;
+
+        com_evolving.v.x *= minv;
+        com_evolving.v.y *= minv;
+        com_evolving.v.z *= minv;
+
+        for (int i = 0; i < members; i++)
+        {
+            parts[i].p.r[0] -= com_evolving.r.x;
+            parts[i].p.r[1] -= com_evolving.r.y;
+            parts[i].p.r[2] -= com_evolving.r.z;
+
+            parts[i].p.v[0] -= com_evolving.v.x;
+            parts[i].p.v[1] -= com_evolving.v.y;
+            parts[i].p.v[2] -= com_evolving.v.z;
+
+            //parts[i].r.x -= com_evolving.r.x;
+            //parts[i].r.y -= com_evolving.r.y;
+            //parts[i].r.z -= com_evolving.r.z;
+
+            //parts[i].v.x -= com_evolving.v.x;
+            //parts[i].v.y -= com_evolving.v.y;
+            //parts[i].v.z -= com_evolving.v.z;
+        }
+    }
 }
 
 double MultipleSystem::get_timestep_normal(MParticle p)
@@ -441,6 +612,7 @@ void MultipleSystem::get_orbital_elements()
     // Calculate orbital elements only for binary systems
     if (members == 2)
     {
+        std::cout << "Calculating orbital elements" << std::endl;
         MParticle p = parts[0];
         MParticle q = parts[1];
 
@@ -464,20 +636,27 @@ void MultipleSystem::get_orbital_elements()
 
         double j2 = jj*jj;
         double v2 = vv*vv;
-        //double m1m2 = q.r.w * p.r.w;
+        double m1m2 = q.r.w * p.r.w;
 
+        double mu = m1m2 / (q.r.w + p.r.w);
         double mu_std = G * (q.r.w + p.r.w);
-        double espec = v2 * 0.5 - mu_std/rr;
-        double semimajor_ini = -mu_std / (2*espec);
-        double ecc_ini = sqrt(1.0+2.0*espec*j2/(mu_std*mu_std));
+        double binde  = 0.5 * mu * v2 - m1m2/rr;
 
-        std::cout << "mu_std: " << mu_std << std::endl;
-        std::cout << "rr: " << rr << std::endl;
-        std::cout << "vv: " << vv << std::endl;
-        std::cout << "jj: " << jj << std::endl;
-        std::cout << "a: " << semimajor_ini << std::endl;
-        std::cout << "espec: " << espec << std::endl;
-        std::cout << "ecc: " << ecc_ini << std::endl;
+        double espec = v2 * 0.5 - mu_std/rr;
+        //double semimajor_ini = -mu_std / (2*espec);
+        double semimajor_ini = -0.5 * m1m2 / binde;
+        //double ecc_ini = sqrt(1.0+2.0*espec*j2/(mu_std*mu_std));
+
+        double jmax2 = semimajor_ini * (p.r.w + q.r.w);
+        double ecc_ini = sqrt(1. - j2 / jmax2);
+
+        printf("mu_std: %.5e\n", mu_std);
+        printf("rr: %.5e\n"    , rr);
+        printf("vv: %.5e\n"    , vv);
+        printf("jj: %.5e\n"    , jj);
+        printf("a: %.5e\n"     , semimajor_ini);
+        printf("espec: %.5e\n" , espec);
+        printf("ecc: %.5e\n"   , ecc_ini);
     }
 }
 
@@ -498,6 +677,8 @@ double MultipleSystem::get_energy()
             double ry = pj.r.y - pi.r.y;
             double rz = pj.r.z - pi.r.z;
             double r2 = rx*rx + ry*ry + rz*rz;
+            dist = sqrt(r2);
+
 
             epot_tmp -= (pj.r.w * pi.r.w) / sqrt(r2);
         }
@@ -513,7 +694,8 @@ double MultipleSystem::get_energy()
         pot += epot_tmp;
     }
 
-    //printf("BB: K = %.15e | U = %.15e | Tot = %.15e\n", kin, pot, kin+pot);
+    bin_e = kin-pot;
+    //printf("BB: K = %.15e | U = %.15e | Tot = %.15e | EBIN = %.15e\n", kin, pot, kin+pot, kin-pot);
     return kin + pot;
 }
 
@@ -608,6 +790,7 @@ void MultipleSystem::update_timestep(double CTIME)
             }
         }
 
+        // D_TIME_MAX
         if (new_dt > D_TIME_MAX)
             new_dt = D_TIME_MAX;
 

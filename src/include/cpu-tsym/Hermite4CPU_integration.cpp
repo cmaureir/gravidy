@@ -26,6 +26,8 @@ void Hermite4CPU::integration()
     // * Crossing Time and Half-mass Relaxation Time
     // * Close Encounter Radius and Timestep
     nu->nbody_attributes();
+    std::cout << "r_virial = " << ns->r_virial << std::endl;
+    std::cout << "r_cl     = " << ns->r_cl     << std::endl;
 
     update_neighbour_radius();
 
@@ -50,7 +52,7 @@ void Hermite4CPU::integration()
     bool new_binaries;
     std::vector<binary_id> pairs;
     std::vector<MultipleSystem> ms;
-    double ms_energy = 0.0;
+    //double ms_energy = 0.0;
 
     while (ITIME < ns->integration_time)
     {
@@ -73,7 +75,6 @@ void Hermite4CPU::integration()
         update_acc_jrk(nact, ns->h_move, ns->h_r_sphere, ns->h_p, ns->h_f);
 
         // TODO: Check for encounters between single stars or binaries
-        //print_nb(ITIME, nb_list, ns->h_f, ns->n, ns->h_p, ns->h_r_sphere);
         new_binaries = false;
         new_binaries = get_close_encounters(ITIME, nb_list, ns->h_f, ns->n, ns->h_p,
                                             ns->h_r_sphere, pairs, nact);
@@ -84,8 +85,11 @@ void Hermite4CPU::integration()
                            ns->h_r, ns->h_v);
 
         // Binary creation
+        //new_binaries = false;
         if(new_binaries)
         {
+            //print_nb(ITIME, nb_list, ns->h_f, ns->n, ns->h_p, ns->h_r_sphere);
+            //getchar();
             for (int b = 0; b < (int)pairs.size(); b++)
             {
                 MultipleSystem new_ms(ns, nu);
@@ -97,61 +101,14 @@ void Hermite4CPU::integration()
                 new_ms.add_particle(id_a);
                 new_ms.add_particle(id_b);
 
-                // ghost particle which will be store in the first member
-                // of the new binary.
-                //logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy_intermediate(0));
-                printf("BEFORE %.15e\n", nu->get_kinetic() + nu->get_potential());
-
                 SParticle sp = create_ghost_particle(new_ms);
-                printf("INTERM %.15e\n", nu->get_kinetic() + nu->get_potential());
                 new_ms.adjust_particles(sp);
 
                 // Initialization of the binary
-                new_ms.evaluation(NULL);
                 new_ms.init_timestep();
-                new_ms.ini_e = new_ms.get_energy();
+                //new_ms.ini_e = new_ms.get_energy();
 
-                printf("> New MS (%d, %d) | E0 = %.15e\n", pairs[b].id_a, pairs[b].id_b, new_ms.ini_e);
-
-
-                        MParticle part0 = new_ms.parts[0];
-                        MParticle part1 = new_ms.parts[1];
-                        int id0 = part0.id;
-                        int id1 = part1.id;
-
-                        double4 tmp_r0 = ns->h_r[id0];
-                        double4 tmp_v0 = ns->h_v[id0];
-                        double4 tmp_r1 = ns->h_r[id1];
-                        double4 tmp_v1 = ns->h_v[id1];
-
-                        double ee = nu->get_kinetic();
-
-                        ns->h_r[id1] = sp.r + part1.r;
-                        ns->h_v[id1] = sp.v + part1.v;
-                        ns->h_r[id1].w = part1.r.w;;
-
-                        ns->h_r[id0] = sp.r + part0.r;
-                        ns->h_v[id0] = sp.v + part0.v;
-                        ns->h_r[id0].w = part0.r.w;;
-
-                        ee += nu->get_potential();
-
-                        printf("SPLIT %.15e\n", ee);
-                        printf("AFTER %.15e\n", nu->get_potential() + nu->get_kinetic());
-                        ns->h_r[id0] = tmp_r0;
-                        ns->h_v[id0] = tmp_v0;
-                        ns->h_r[id1] = tmp_r1;
-                        ns->h_v[id1] = tmp_v1;
-                        printf("REDO %.15e\n", nu->get_potential() + nu->get_kinetic());
-
-                // The second member of the binary will remain in the system
-                // but its mass will be `0`, so in this way we avoid removing
-                // this particle and moving all the system, which is computationally
-                // expensive.
-                // This particle will not affect the evolution of the system
-                // since the force he will contribute is zero.
-                //logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy_intermediate(0));
-
+                printf("> New MS (%d, %d) | E0 = %.6e\n", pairs[b].id_a, pairs[b].id_b, new_ms.ini_e);
 
                 // Adding the new binary to the vector
                 ms.push_back(new_ms);
@@ -169,24 +126,31 @@ void Hermite4CPU::integration()
         {
             //assert(nact == ns->n);
 
-            double ee = 0;
-            // Check for MultipleSystems and get the energy.
+            double4 tmp_r0[100];
+            double4 tmp_r1[100];
+            double4 tmp_v0[100];
+            double4 tmp_v1[100];
+
+            //logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy(ms_energy));
             for (int i = 0; i < (int)ms.size(); i++)
             {
-                ms_energy += ms[i].get_energy();
-
                 MParticle part0 = ms[i].parts[0];
                 MParticle part1 = ms[i].parts[1];
 
                 int id0 = part0.id;
                 int id1 = part1.id;
 
-                double4 tmp_r0 = ns->h_r[id0];
-                double4 tmp_r1 = ns->h_r[id1];
-                double4 tmp_v0 = ns->h_v[id0];
-                double4 tmp_v1 = ns->h_v[id1];
+                printf("[%d] p1 %.5e | %.5e %.5e %.5e (%.5e %.5e %.5e)\n", i, ns->h_r[id0].w, ns->h_r[id0].x, ns->h_r[id0].y, ns->h_r[id0].z, ns->h_v[id0].x, ns->h_v[id0].y, ns->h_v[id0].z);
+                printf("[%d] p2 %.5e | %.5e %.5e %.5e (%.5e %.5e %.5e)\n", i, ns->h_r[id1].w, ns->h_r[id1].x, ns->h_r[id1].y, ns->h_r[id1].z, ns->h_v[id1].x, ns->h_v[id1].y, ns->h_v[id1].z);
 
-                ee += nu->get_kinetic();
+                printf("BB p1 %.9e | %.9e %.9e %.9e (%.9e %.9e %.9e)\n", part0.r.w, part0.r.x, part0.r.y, part0.r.z, part0.v.x, part0.v.y, part0.v.z);
+                printf("BB p2 %.9e | %.9e %.9e %.9e (%.9e %.9e %.9e)\n", part1.r.w, part1.r.x, part1.r.y, part1.r.z, part1.v.x, part1.v.y, part1.v.z);
+
+                tmp_r0[i] = ns->h_r[id0];
+                tmp_v0[i] = ns->h_v[id0];
+
+                tmp_r1[i] = ns->h_r[id1];
+                tmp_v1[i] = ns->h_v[id1];
 
                 ns->h_r[id1] = ns->h_r[id0] + part1.r;
                 ns->h_v[id1] = ns->h_v[id0] + part1.v;
@@ -195,21 +159,28 @@ void Hermite4CPU::integration()
                 ns->h_r[id0] += part0.r;
                 ns->h_v[id0] += part0.v;
                 ns->h_r[id0].w = part0.r.w;;
+                printf("Moving\n");
+                printf("[%d] p1 %.5e | %.5e %.5e %.5e (%.5e %.5e %.5e)\n", i, ns->h_r[id0].w, ns->h_r[id0].x, ns->h_r[id0].y, ns->h_r[id0].z, ns->h_v[id0].x, ns->h_v[id0].y, ns->h_v[id0].z);
+                printf("[%d] p2 %.5e | %.5e %.5e %.5e (%.5e %.5e %.5e)\n", i, ns->h_r[id1].w, ns->h_r[id1].x, ns->h_r[id1].y, ns->h_r[id1].z, ns->h_v[id1].x, ns->h_v[id1].y, ns->h_v[id1].z);
 
-                ee += nu->get_potential();
-
-                ns->h_r[id0] = tmp_r0;
-                ns->h_r[id1] = tmp_r1;
-                ns->h_v[id0] = tmp_v0;
-                ns->h_v[id1] = tmp_v1;
             }
-            if (ee != 0)
+
+            logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy(0));
+
+            for (int i = 0; i < (int)ms.size(); i++)
             {
-                std::cout << "ee" << std::endl;
-                logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, ee + ms_energy);
+                MParticle part0 = ms[i].parts[0];
+                MParticle part1 = ms[i].parts[1];
+                int id0 = part0.id;
+                int id1 = part1.id;
+
+                ns->h_r[id0] = tmp_r0[i];
+                ns->h_v[id0] = tmp_v0[i];
+
+                ns->h_r[id1] = tmp_r1[i];
+                ns->h_v[id1] = tmp_v1[i];
+
             }
-            std::cout << "Normal + Binary" << std::endl;
-            logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy(ms_energy));
 
             if (ns->ops.print_all)
             {
@@ -239,11 +210,15 @@ void Hermite4CPU::integration()
                     double rz = part1.r.z - part0.r.z;
 
                     double r = sqrt(rx * rx + ry * ry + rz * rz);
+
                     if ( r > ns->r_cl)
                     {
-                        std::cout << "Termination!" << std::endl;
+                        // The first particle ID represent the CoM (ghost)
+                        // particle in the system, so we need to treat it different.
                         int id0 = part0.id;
                         int id1 = part1.id;
+                        printf("Termination! (%d, %d) EF: %.6e\n", id0, id1, ms[i].get_energy());
+
 
                         // Part1
                         // Part 1 = CoM particle + Current Part 1 position/velocity
@@ -265,8 +240,7 @@ void Hermite4CPU::integration()
                         ns->h_t[id0] = ns->h_t[id0];
                         //ns->h_dt[id0] = ns->h_dt[id0];
                         ns->h_dt[id0] = D_TIME_MIN;
-
-                        logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy(0));
+                        //logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy(0));
 
                         ms.erase(ms.begin()+i, ms.begin()+i+1);
 
@@ -274,10 +248,11 @@ void Hermite4CPU::integration()
                 }
             }
 
+            update_neighbour_radius();
         }
 
         // Setting binary energy to zero
-        ms_energy = 0.0;
+        //ms_energy = 0.0;
 
         // Update nsteps with nact
         nsteps += nact;

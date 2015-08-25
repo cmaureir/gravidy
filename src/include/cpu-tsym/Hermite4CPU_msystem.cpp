@@ -13,6 +13,8 @@ void Hermite4CPU::multiple_systems_integration(std::vector<MultipleSystem> &ms, 
         double CTIME = ms[i].parts[0].t + ms[i].parts[0].dt;
 
         //ms[i].get_orbital_elements();
+        //getchar();
+        //ms[i].ini_e = ms[i].get_energy();
 
         long long int iterations = 0;
         while (CTIME < ITIME)
@@ -25,17 +27,18 @@ void Hermite4CPU::multiple_systems_integration(std::vector<MultipleSystem> &ms, 
             for (int k = 0; k < 3; k++)
             {
                 ms[i].evaluation(nb_list[ms[i].parts[0].id]);
+                ms[i].perturbers(CTIME, k);
                 ms[i].correction(CTIME, true);
             }
 
             ms[i].update_timestep(CTIME);
             ms[i].next_itime(CTIME);
             iterations++;
+            //printf("33 1 %.5e %.5e %.5e %.5e %.5e %.5e\n", ms[i].parts[0].r.x, ms[i].parts[0].r.y, ms[i].parts[0].r.z, ms[i].parts[0].v.x, ms[i].parts[0].v.y, ms[i].parts[0].v.z);
+            //printf("33 2 %.5e %.5e %.5e %.5e %.5e %.5e\n", ms[i].parts[1].r.x, ms[i].parts[1].r.y, ms[i].parts[1].r.z, ms[i].parts[1].v.x, ms[i].parts[1].v.y, ms[i].parts[1].v.z);
         }
-
         //double end_e = ms[i].get_energy();
         //printf("End binary evolution: DE = %.15e E = %.15e | Ite: %lld\n", (end_e - ms[i].ini_e)/ms[i].ini_e, end_e, iterations);
-
     }
 }
 
@@ -45,8 +48,10 @@ void Hermite4CPU::update_neighbour_radius()
     #pragma omp parallel for
     for (int i = 0; i < ns->n; i++)
     {
+        // MYRIAD
         double mass = ns->h_r[i].w + ns->m_g;
-        ns->h_r_sphere[i] = 5 * sqrt((ns->n * mass) * 0.5) * ns->r_cl;
+        ns->h_r_sphere[i] = 50 * sqrt((ns->n * mass) * 0.5) * ns->r_cl;
+        //ns->h_r_sphere[i] = 50 * sqrt((ns->n * mass) * 0.5) * ns->r_cl;
     }
 }
 
@@ -68,6 +73,7 @@ void Hermite4CPU::print_nb(double itime, int **nb_list, Forces *f, int n,
             std::cout << std::endl;
         }
     }
+    //getchar();
 }
 
 bool Hermite4CPU::get_close_encounters(double itime, int **nb_list, Forces *f,
@@ -88,6 +94,7 @@ bool Hermite4CPU::get_close_encounters(double itime, int **nb_list, Forces *f,
                 {
                     // k, Id of the j-neighbour
                     int k = nb_list[i][j];
+                    if (i == k) continue;
 
                     if (!ghosts[k])
                     {
@@ -114,11 +121,14 @@ bool Hermite4CPU::get_close_encounters(double itime, int **nb_list, Forces *f,
                             double pot = (pk.m + pi.m)/r;
 
                             // Binding energy
+                            //if (kin - pot < -0.01)
                             if (kin - pot < 0)
                             {
-                                //std::cout << "Adding a pair "
-                                //          << i << " " << k
-                                //          << std::endl;
+                                printf("Adding a pair %d %d | Binding energy %.5e\n", i, k, kin-pot);
+                                //printf("Binary: r: %.5e r_crit: %.5e\n",r, r_crit);
+                                //printf("Binary: k: %.5e k_sys: %.5e\n", kin, ns->en.kinetic);
+                                //printf("Binary: dt: %.5e dt: %.5e | dt: %.5e\n", ns->h_dt[i], ns->h_dt[k], ns->dt_cl);
+
                                 // This particles will dissapear in the next
                                 // step (inside the integration loop), that is why
                                 // they are now ghost.
@@ -129,6 +139,17 @@ bool Hermite4CPU::get_close_encounters(double itime, int **nb_list, Forces *f,
                                 // candidate.
                                 binary_id bin = {i, k};
                                 pairs.push_back(bin);
+
+                                // Assigning minimum timestep to all the neighbors
+                                //for (int z = 0; z < f[i].nb; z++)
+                                //{
+                                //    int n_id = nb_list[i][z];
+                                //    if (n_id != k && n_id != i)
+                                //    {
+                                //        printf(">>dt min to %d\n", n_id);
+                                //        ns->h_dt[n_id] = D_TIME_MIN;
+                                //    }
+                                //}
                             }
                         }
                     }
@@ -157,6 +178,7 @@ bool Hermite4CPU::get_close_encounters(double itime, int **nb_list, Forces *f,
 SParticle Hermite4CPU::create_ghost_particle(MultipleSystem ms)
 {
     // Getting center of mass of the new multiple system
+
     SParticle sp = ms.get_center_of_mass(ms.parts[0], ms.parts[1]);
 
     //printf("CoM %.15e %.15e %.15e\n", sp.r.x, sp.r.y, sp.r.z);
@@ -175,12 +197,13 @@ SParticle Hermite4CPU::create_ghost_particle(MultipleSystem ms)
     ns->h_old[id]  = sp.old;
 
     ns->h_dt[id] = D_TIME_MIN;
+//    ns->h_spehere[id]
 
     // Setting a zero mass to the second member.
     ns->h_r[ms.parts[1].id].w = 0.0;
 
     // Maybe avoid having only an empty particle active.
-    //ns->h_dt[ms.parts[1].id] = D_TIME_MAX;
+    ns->h_dt[ms.parts[1].id] = D_TIME_MAX;
 
     // TODO: Maybe add a blacklist to the method "find_particles_to_move"
     // using all the particles that have no mass.
