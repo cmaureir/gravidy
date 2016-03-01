@@ -6,10 +6,10 @@ MultipleSystem::MultipleSystem(NbodySystem *ns, NbodyUtils *nu)
     this->nu = nu;
     this->members = 0;
     this->ETA_B = 0;
+    this->total_mass = 0.0;
 
     pert = new int[ns->n]; // TODO: reducir el tamaño
     num_pert = 0;
-
 }
 
 MultipleSystem::~MultipleSystem()
@@ -17,26 +17,72 @@ MultipleSystem::~MultipleSystem()
     //delete pert;
 }
 
+void MultipleSystem::adjust_to_center_of_mass()
+{
+    com_evolving.r = {0};
+    com_evolving.v = {0};
+
+    for (int i = 0; i < members; i++)
+    {
+        // Center of Mass calculation
+        com_evolving.r.w +=  parts[i].r.w;
+        com_evolving.r.x += (parts[i].p.r[0] * parts[i].p.m);
+        com_evolving.r.y += (parts[i].p.r[1] * parts[i].p.m);
+        com_evolving.r.z += (parts[i].p.r[2] * parts[i].p.m);
+        com_evolving.v.x += (parts[i].p.v[0] * parts[i].p.m);
+        com_evolving.v.y += (parts[i].p.v[1] * parts[i].p.m);
+        com_evolving.v.z += (parts[i].p.v[2] * parts[i].p.m);
+
+    }
+
+    double minv = 1.0/com_evolving.r.w;
+
+    com_evolving.r.x *= minv;
+    com_evolving.r.y *= minv;
+    com_evolving.r.z *= minv;
+
+    com_evolving.v.x *= minv;
+    com_evolving.v.y *= minv;
+    com_evolving.v.z *= minv;
+
+
+    for (int i = 0; i < members; i++)
+    {
+        parts[i].p.r[0] -= com_evolving.r.x;
+        parts[i].p.r[1] -= com_evolving.r.y;
+        parts[i].p.r[2] -= com_evolving.r.z;
+
+        parts[i].p.v[0] -= com_evolving.v.x;
+        parts[i].p.v[1] -= com_evolving.v.y;
+        parts[i].p.v[2] -= com_evolving.v.z;
+    }
+}
+
 void MultipleSystem::adjust_particles(SParticle sp)
 {
     for(int i = 0; i < members; i++)
     {
+        // Moving positions to center of mass of the system.
         parts[i].r.x -= sp.r.x;
         parts[i].r.y -= sp.r.y;
         parts[i].r.z -= sp.r.z;
 
+        // First predicted positions will be the moved position.
         parts[i].p.r[0] = parts[i].r.x;
         parts[i].p.r[1] = parts[i].r.y;
         parts[i].p.r[2] = parts[i].r.z;
 
+        // Moving velocities to center of mass of the system.
         parts[i].v.x -= sp.v.x;
         parts[i].v.y -= sp.v.y;
         parts[i].v.z -= sp.v.z;
 
+        // First predicted velocities will be the moved velocities.
         parts[i].p.v[0] = parts[i].v.x;
         parts[i].p.v[1] = parts[i].v.y;
         parts[i].p.v[2] = parts[i].v.z;
 
+        // Moving acceleration and first derivate to the center of mass of the system.
         parts[i].f.a[0] -= sp.f.a[0];
         parts[i].f.a[1] -= sp.f.a[1];
         parts[i].f.a[2] -= sp.f.a[2];
@@ -62,15 +108,15 @@ void MultipleSystem::add_particle(int id)
         // New particle
         MParticle new_member;
 
-        new_member.id = id;
-        new_member.r  = ns->h_r[id];
-        new_member.v  = ns->h_v[id];
-        new_member.f  = ns->h_f[id];
-        new_member.old  = ns->h_old[id];
-        new_member.a2 = ns->h_a2[id];
-        new_member.a3 = ns->h_a3[id];
-        new_member.t  = ns->h_t[id];
-        new_member.dt = ns->h_dt[id];
+        new_member.id  = id;
+        new_member.r   = ns->h_r[id];
+        new_member.v   = ns->h_v[id];
+        new_member.f   = ns->h_f[id];
+        new_member.old = ns->h_old[id];
+        new_member.a2  = ns->h_a2[id];
+        new_member.a3  = ns->h_a3[id];
+        new_member.t   = ns->h_t[id];
+        new_member.dt  = ns->h_dt[id];
 
         new_member.p.r[0] = new_member.r.x;
         new_member.p.r[1] = new_member.r.y;
@@ -84,6 +130,7 @@ void MultipleSystem::add_particle(int id)
 
         parts[members] = new_member;
         members += 1;
+        total_mass += new_member.r.w;
     }
     else
     {
@@ -148,6 +195,9 @@ void MultipleSystem::next_itime(double &CTIME)
 
 SParticle MultipleSystem::get_center_of_mass(MParticle p1, MParticle p2)
 {
+    // The idea will be to calculate the center of mass between two particles,
+    // then if a third particle want to be part of the system, we calculate a
+    // new center of mass between the old one a the third particle.
 
     SParticle pcm;
 
@@ -281,86 +331,50 @@ void MultipleSystem::evaluation(int *nb_list)
             if(i == j) continue;
             force_calculation(pi, parts[j].p, ff);
         }
-
         parts[i].f = ff;
     }
 }
 
-void MultipleSystem::perturbers(double CTIME, int ite)
+void MultipleSystem::get_perturbers(int com_id)
 {
-    //int i, j, k;
-    // Determinate perturbers related to te CoM particle
-    int com_id = parts[0].id;
 
-    // TODO: Using just the mass of one particle, since is equal mass
-    double mean_mass = ns->h_r[com_id].w/2.0;
-
-    // TODO: Testing using just a binary
-    double total_mass = parts[0].r.w + parts[1].r.w;
-
-    double m2 = 0.0;
-
-    double R_b = dist;
+    double mean_mass = total_mass/members;
+    double m2 = (2.0 * mean_mass/total_mass);
     double R_k = 0.0;
 
-    if (ite == 0)
+    std::fill(pert, pert + ns->n, 0);
+    num_pert = 0;
+
+    // Check for perturbers in the whole system
+    for (int j = 0; j < ns->n; j++)
     {
-        // Cleanning perturbers
-        std::fill(pert, pert + ns->n, 0);
-        num_pert = 0;
+        if (!ns->h_r[j].w) continue;
+        if (com_id == j) continue;
 
-        // Check for perturbers in the whole system
-        for (int j = 0; j < ns->n; j++)
+        double rx = ns->h_r[j].x - ns->h_r[com_id].x;
+        double ry = ns->h_r[j].y - ns->h_r[com_id].y;
+        double rz = ns->h_r[j].z - ns->h_r[com_id].z;
+        R_k = sqrt(rx*rx + ry*ry + rz*rz);
+
+        if (R_k < 2.0/3.0 * ns->r_cl)
         {
-            if (com_id == j) continue;
-
-            double rx = ns->h_r[j].x - ns->h_r[com_id].x;
-            double ry = ns->h_r[j].y - ns->h_r[com_id].y;
-            double rz = ns->h_r[j].z - ns->h_r[com_id].z;
-            R_k = sqrt(rx*rx + ry*ry + rz*rz);
-
-            m2 = (2 * mean_mass/total_mass);
-            double rr = R_b/R_k;
-
-            double gamma = m2 * rr * rr * rr;
-            if (gamma >= GAMMA_PERT)
-            {
-                pert[num_pert] = j;
-                num_pert++;
-                //printf("%d ", j);
-            }
+            printf("THIRD STAR!!!! %d\n",j);
+            getchar();
         }
-        //printf("\n");
-        //printf("For particle %d we have %d perturbers\n", com_id, num_pert);
+
+        double rr = dist/R_k;
+        double gamma = m2 * rr * rr * rr;
+        if (gamma >= GAMMA_PERT)
+        {
+            pert[num_pert] = j;
+            num_pert++;
+        }
     }
+    //printf("For %d we have %d perturbers\n", com_id, num_pert);
+}
 
-    // Predicting Center of Mass particle
-    double dt  = CTIME - ns->h_t[com_id];
-    double dt2 = (dt  * dt);
-    double dt3 = (dt2 * dt);
-    double dt2c = dt2/2.0;
-    double dt3c = dt3/6.0;
-
-    Predictor pp;
-
-    Forces ff  = ns->h_f[com_id];
-    double4 vv = ns->h_v[com_id];
-    double4 rr = ns->h_r[com_id];
-
-    pp.r[0] = (dt3c * ff.a1[0]) + (dt2c * ff.a[0]) + (dt * vv.x) + rr.x;
-    pp.r[1] = (dt3c * ff.a1[1]) + (dt2c * ff.a[1]) + (dt * vv.y) + rr.y;
-    pp.r[2] = (dt3c * ff.a1[2]) + (dt2c * ff.a[2]) + (dt * vv.z) + rr.z;
-
-    pp.v[0] = (dt2c * ff.a1[0]) + (dt * ff.a[0]) + vv.x;
-    pp.v[1] = (dt2c * ff.a1[1]) + (dt * ff.a[1]) + vv.y;
-    pp.v[2] = (dt2c * ff.a1[2]) + (dt * ff.a[2]) + vv.z;
-
-    pp.m = rr.w;
-
-    ns->h_p[com_id] = pp;
-    // End prediction Center of Mass particle
-
-    // Predicting all the perturbers
+void MultipleSystem::predict_perturbers(double CTIME)
+{
     for (int k = 0; k < num_pert; k++)
     {
         int j = pert[k];
@@ -390,16 +404,92 @@ void MultipleSystem::perturbers(double CTIME, int ite)
 
         ns->h_p[j] = pp;
     }
-    // End Predicting all the perturbers
+}
 
-    //printf("00 a %.8e %.8e %.8e a1 %.8e %.8e %.8e\n",
+void MultipleSystem::predict_com(double CTIME, int com_id)
+{
+    // Predicting Center of Mass particle
+    double dt  = CTIME - ns->h_t[com_id];
+    double dt2 = (dt  * dt);
+    double dt3 = (dt2 * dt);
+    double dt2c = dt2/2.0;
+    double dt3c = dt3/6.0;
+
+    Predictor pp;
+
+    Forces ff  = ns->h_f[com_id];
+    double4 vv = ns->h_v[com_id];
+    double4 rr = ns->h_r[com_id];
+
+    pp.r[0] = (dt3c * ff.a1[0]) + (dt2c * ff.a[0]) + (dt * vv.x) + rr.x;
+    pp.r[1] = (dt3c * ff.a1[1]) + (dt2c * ff.a[1]) + (dt * vv.y) + rr.y;
+    pp.r[2] = (dt3c * ff.a1[2]) + (dt2c * ff.a[2]) + (dt * vv.z) + rr.z;
+
+    pp.v[0] = (dt2c * ff.a1[0]) + (dt * ff.a[0]) + vv.x;
+    pp.v[1] = (dt2c * ff.a1[1]) + (dt * ff.a[1]) + vv.y;
+    pp.v[2] = (dt2c * ff.a1[2]) + (dt * ff.a[2]) + vv.z;
+
+    pp.m = rr.w;
+
+    ns->h_p[com_id] = pp;
+    // End prediction Center of Mass particle
+}
+
+void MultipleSystem::perturbers(double CTIME, int ite)
+{
+    //int i, j, k;
+    // Determinate perturbers related to te CoM particle
+    int com_id = parts[0].id;
+
+    if (ite == 0 || ite == -1)
+    {
+        get_perturbers(com_id);
+    }
+
+    // Prediction of the CoM and peturbers
+    if (ite != -1)
+    {
+        predict_com(CTIME, com_id);
+        predict_perturbers(CTIME);
+    }
+    // End Predicting all the perturbers
+    //printf("INTERN 01 a % .8e % .8e % .8e a1 % .8e % .8e % .8e\n",
     //    parts[0].f.a[0],  parts[0].f.a[1],  parts[0].f.a[2],
     //    parts[0].f.a1[0], parts[0].f.a1[1], parts[0].f.a1[2]);
-
+    //printf("INTERN 02 a % .8e % .8e % .8e a1 % .8e % .8e % .8e\n",
+    //    parts[1].f.a[0],  parts[1].f.a[1],  parts[1].f.a[2],
+    //    parts[1].f.a1[0], parts[1].f.a1[1], parts[1].f.a1[2]);
 
     // Calculate perturbation on the MultipleSystem
+    Forces ffp = {0};
+    Predictor pi = ns->h_p[com_id];
 
-    // Perturbers
+    for (int k = 0; k < num_pert; k++)
+    {
+        int j = pert[k];
+        Predictor pj = ns->h_p[j];
+        if(com_id == j) continue;
+        force_calculation(pi, pj, ffp);
+    }
+
+    for (int i = 0; i < members; i++)
+    {
+        parts[i].f.a[0]  += (ns->h_f[com_id].a[0] - ffp.a[0]);
+        parts[i].f.a[1]  += (ns->h_f[com_id].a[1] - ffp.a[1]);
+        parts[i].f.a[2]  += (ns->h_f[com_id].a[2] - ffp.a[2]);
+
+        parts[i].f.a1[0] += (ns->h_f[com_id].a1[0] - ffp.a1[0]);
+        parts[i].f.a1[1] += (ns->h_f[com_id].a1[1] - ffp.a1[1]);
+        parts[i].f.a1[2] += (ns->h_f[com_id].a1[2] - ffp.a1[2]);
+    }
+
+    //printf("COM    01 a % .8e % .8e % .8e a1 % .8e % .8e % .8e\n",
+    //    parts[0].f.a[0],  parts[0].f.a[1],  parts[0].f.a[2],
+    //    parts[0].f.a1[0], parts[0].f.a1[1], parts[0].f.a1[2]);
+    //printf("COM    02 a % .8e % .8e % .8e a1 % .8e % .8e % .8e\n",
+    //    parts[1].f.a[0],  parts[1].f.a[1],  parts[1].f.a[2],
+    //    parts[1].f.a1[0], parts[1].f.a1[1], parts[1].f.a1[2]);
+
     for (int i = 0; i < members; i++)
     {
         Forces ffp = {0};
@@ -423,30 +513,44 @@ void MultipleSystem::perturbers(double CTIME, int ite)
         }
 
         // Write on the Forces array
-        parts[i].f.a[0]  += ffp.a[0];
-        parts[i].f.a[1]  += ffp.a[1];
-        parts[i].f.a[2]  += ffp.a[2];
-        parts[i].f.a1[0] += ffp.a1[0];
-        parts[i].f.a1[1] += ffp.a1[1];
-        parts[i].f.a1[2] += ffp.a1[2];
+        parts[i].pert = ffp;
     }
+    //printf("PERTUR 01 a % .8e % .8e % .8e a1 % .8e % .8e % .8e\n",
+    //    parts[0].pert.a[0],  parts[0].pert.a[1],  parts[0].pert.a[2],
+    //    parts[0].pert.a1[0], parts[0].pert.a1[1], parts[0].pert.a1[2]);
+    //printf("PERTUR 02 a % .8e % .8e % .8e a1 % .8e % .8e % .8e\n",
+    //    parts[1].pert.a[0],  parts[1].pert.a[1],  parts[1].pert.a[2],
+    //    parts[1].pert.a1[0], parts[1].pert.a1[1], parts[1].pert.a1[2]);
 
-    //printf("01 a %.8e %.8e %.8e a1 %.8e %.8e %.8e\n",
+    //parts[0].f.a[0] += (parts[1].pert.a[0] - parts[0].pert.a[0]);
+    //parts[0].f.a[1] += (parts[1].pert.a[1] - parts[0].pert.a[1]);
+    //parts[0].f.a[2] += (parts[1].pert.a[2] - parts[0].pert.a[2]);
+
+    //parts[1].f.a[0] += (parts[0].pert.a[0] - parts[1].pert.a[0]);
+    //parts[1].f.a[1] += (parts[0].pert.a[1] - parts[1].pert.a[1]);
+    //parts[1].f.a[2] += (parts[0].pert.a[2] - parts[1].pert.a[2]);
+
+    //parts[0].f.a1[0] += (parts[1].pert.a1[0] - parts[0].pert.a1[0]);
+    //parts[0].f.a1[1] += (parts[1].pert.a1[1] - parts[0].pert.a1[1]);
+    //parts[0].f.a1[2] += (parts[1].pert.a1[2] - parts[0].pert.a1[2]);
+
+    //parts[1].f.a1[0] += (parts[0].pert.a1[0] - parts[1].pert.a1[0]);
+    //parts[1].f.a1[1] += (parts[0].pert.a1[1] - parts[1].pert.a1[1]);
+    //parts[1].f.a1[2] += (parts[0].pert.a1[2] - parts[1].pert.a1[2]);
+    parts[0].f += parts[0].pert;
+    parts[1].f += parts[1].pert;
+
+
+    //printf("PERTUR 01 a % .8e % .8e % .8e a1 % .8e % .8e % .8e\n",
     //    parts[0].f.a[0],  parts[0].f.a[1],  parts[0].f.a[2],
     //    parts[0].f.a1[0], parts[0].f.a1[1], parts[0].f.a1[2]);
-    //getchar();
+    //printf("PERTUR 02 a % .8e % .8e % .8e a1 % .8e % .8e % .8e\n",
+    //    parts[1].f.a[0],  parts[1].f.a[1],  parts[1].f.a[2],
+    //    parts[1].f.a1[0], parts[1].f.a1[1], parts[1].f.a1[2]);
 }
 
 void MultipleSystem::correction(double CTIME, bool check)
 {
-
-    com_evolving.r.w = 0.0;
-    com_evolving.r.x = 0.0;
-    com_evolving.r.y = 0.0;
-    com_evolving.r.z = 0.0;
-    com_evolving.v.x = 0.0;
-    com_evolving.v.y = 0.0;
-    com_evolving.v.z = 0.0;
 
     for (int i = 0; i < members; i++)
     {
@@ -494,53 +598,11 @@ void MultipleSystem::correction(double CTIME, bool check)
             parts[i].p.v[0] = p0.v[0] + dt3c * a2i.x + dt4c * a3i.x;
             parts[i].p.v[1] = p0.v[1] + dt3c * a2i.y + dt4c * a3i.y;
             parts[i].p.v[2] = p0.v[2] + dt3c * a2i.z + dt4c * a3i.z;
-
-            // Center of Mass calculation
-            com_evolving.r.w +=  parts[i].r.w;
-            com_evolving.r.x += (parts[i].p.r[0] * parts[i].p.m);
-            com_evolving.r.y += (parts[i].p.r[1] * parts[i].p.m);
-            com_evolving.r.z += (parts[i].p.r[2] * parts[i].p.m);
-            com_evolving.v.x += (parts[i].p.v[0] * parts[i].p.m);
-            com_evolving.v.y += (parts[i].p.v[1] * parts[i].p.m);
-            com_evolving.v.z += (parts[i].p.v[2] * parts[i].p.m);
         }
 
         // Write on the arrays
         parts[i].a2 = a2i;
         parts[i].a3 = a3i;
-
-    }
-
-    if (check)
-    {
-        double minv = 1.0/com_evolving.r.w;
-
-        com_evolving.r.x *= minv;
-        com_evolving.r.y *= minv;
-        com_evolving.r.z *= minv;
-
-        com_evolving.v.x *= minv;
-        com_evolving.v.y *= minv;
-        com_evolving.v.z *= minv;
-
-        for (int i = 0; i < members; i++)
-        {
-            parts[i].p.r[0] -= com_evolving.r.x;
-            parts[i].p.r[1] -= com_evolving.r.y;
-            parts[i].p.r[2] -= com_evolving.r.z;
-
-            parts[i].p.v[0] -= com_evolving.v.x;
-            parts[i].p.v[1] -= com_evolving.v.y;
-            parts[i].p.v[2] -= com_evolving.v.z;
-
-            //parts[i].r.x -= com_evolving.r.x;
-            //parts[i].r.y -= com_evolving.r.y;
-            //parts[i].r.z -= com_evolving.r.z;
-
-            //parts[i].v.x -= com_evolving.v.x;
-            //parts[i].v.y -= com_evolving.v.y;
-            //parts[i].v.z -= com_evolving.v.z;
-        }
     }
 }
 
@@ -599,20 +661,19 @@ void MultipleSystem::init_timestep()
             if (dt_0 < dt_min)
                 dt_min = dt_0;
 
-            parts[i].dt = 0.5 * D_TIME_MIN;
+            parts[i].dt = 0.5 * D_MTIME_MIN;
         }
 
         // ETA_B for the binary system
-        ETA_B = D_TIME_MIN / (2.0 * dt_min);
+        ETA_B = D_MTIME_MIN / (2.0 * dt_min);
     }
 }
 
-void MultipleSystem::get_orbital_elements()
+void MultipleSystem::get_orbital_elements(bool t0)
 {
     // Calculate orbital elements only for binary systems
     if (members == 2)
     {
-        std::cout << "Calculating orbital elements" << std::endl;
         MParticle p = parts[0];
         MParticle q = parts[1];
 
@@ -639,24 +700,41 @@ void MultipleSystem::get_orbital_elements()
         double m1m2 = q.r.w * p.r.w;
 
         double mu = m1m2 / (q.r.w + p.r.w);
-        double mu_std = G * (q.r.w + p.r.w);
+        //double mu_std = G * (q.r.w + p.r.w);
         double binde  = 0.5 * mu * v2 - m1m2/rr;
 
-        double espec = v2 * 0.5 - mu_std/rr;
+        //double espec = v2 * 0.5 - mu_std/rr;
         //double semimajor_ini = -mu_std / (2*espec);
-        double semimajor_ini = -0.5 * m1m2 / binde;
+        double a = -0.5 * m1m2 / binde;
         //double ecc_ini = sqrt(1.0+2.0*espec*j2/(mu_std*mu_std));
 
-        double jmax2 = semimajor_ini * (p.r.w + q.r.w);
-        double ecc_ini = sqrt(1. - j2 / jmax2);
+        double jmax2 = a * (p.r.w + q.r.w);
+        double ecc = sqrt(1. - j2 / jmax2);
 
-        printf("mu_std: %.5e\n", mu_std);
-        printf("rr: %.5e\n"    , rr);
-        printf("vv: %.5e\n"    , vv);
-        printf("jj: %.5e\n"    , jj);
-        printf("a: %.5e\n"     , semimajor_ini);
-        printf("espec: %.5e\n" , espec);
-        printf("ecc: %.5e\n"   , ecc_ini);
+        if (t0)
+        {
+            semimajor_ini = a;
+            ecc_ini = ecc;
+        }
+        else
+        {
+            semimajor_end = a;
+            ecc_end = ecc;
+        }
+
+        //printf("# mu_std: % .5e\n", mu_std);
+        //printf("# espec:  % .5e\n", espec);
+        //printf("# rr:     % .5e\n", rr);
+        //printf("# vv:     % .5e\n", vv);
+        //printf("# jj:     % .5e\n", jj);
+        //printf("# a:      % .5e\n", a);
+        //printf("# ecc:    % .5e\n", ecc);
+        //TODO remove
+        if (ecc_ini > 1.0)
+        {
+            printf("Parabolic or Hyperbolic\n");
+            //exit(1);
+        }
     }
 }
 
@@ -677,8 +755,6 @@ double MultipleSystem::get_energy()
             double ry = pj.r.y - pi.r.y;
             double rz = pj.r.z - pi.r.z;
             double r2 = rx*rx + ry*ry + rz*rz;
-            dist = sqrt(r2);
-
 
             epot_tmp -= (pj.r.w * pi.r.w) / sqrt(r2);
         }
@@ -695,7 +771,6 @@ double MultipleSystem::get_energy()
     }
 
     bin_e = kin-pot;
-    //printf("BB: K = %.15e | U = %.15e | Tot = %.15e | EBIN = %.15e\n", kin, pot, kin+pot, kin-pot);
     return kin + pot;
 }
 
@@ -794,9 +869,11 @@ void MultipleSystem::update_timestep(double CTIME)
         if (new_dt > D_TIME_MAX)
             new_dt = D_TIME_MAX;
 
-        if (new_dt < D_TIME_MIN)
-            new_dt = D_TIME_MIN;
+        if (new_dt < D_MTIME_MIN)
+            new_dt = D_MTIME_MIN;
 
+
+        // Setting new data on the particles
         part.dt = new_dt;
         part.t = CTIME;
         part.r.x = part.p.r[0];
@@ -810,5 +887,12 @@ void MultipleSystem::update_timestep(double CTIME)
 
         // Writing information
         parts[i] = part;
+
     }
+
+    double dx = parts[1].r.x - parts[0].r.x;
+    double dy = parts[1].r.y - parts[0].r.y;
+    double dz = parts[1].r.z - parts[0].r.z;
+
+    dist = sqrt(dx*dx + dy*dy + dz*dz);
 }

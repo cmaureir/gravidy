@@ -16,7 +16,8 @@ endif
 ifeq ($(HOST), neXus)
 BOOST_PATH=/usr
 CUDA_PATH=/opt/cuda
-MPI_PATH=/usr/lib/openmpi
+MPI_LIB_PATH=/usr/lib/openmpi
+MPI_INC_PATH=/usr/include/openmpi
 endif
 
 ############################# Paths
@@ -61,8 +62,8 @@ CXXFLAGS=   $(BOOSTFLAGS) \
             #-fno-exceptions \
 
 # MPI FLAGS
-MPIFLAGS=   -L$(MPI_PATH)/lib             \
-            -I$(MPI_PATH)/include         \
+MPIFLAGS=   -L$(MPI_LIB_PATH)             \
+            -I$(MPI_INC_PATH)             \
             -pthread                      \
             -lmpi                         \
             -lmpi_cxx                     \

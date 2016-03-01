@@ -3,25 +3,40 @@
 Hermite4CPU::Hermite4CPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
                          : Hermite4(ns, logger, nu)
 {
+    nb_number = NBMAX;
+
     nb_list  = new int*[ns->n];
     //nb_number = 2 * sqrt(ns->n);
-    nb_number = NBMAX;
 
     ghosts = new int[ns->n];
     std::fill(ghosts, ghosts + ns->n, 0);
 
-    #pragma omp parallel for
-    for(int i = 0; i < ns->n; ++i)
+    virtuals = new int[ns->n];
+    std::fill(virtuals, virtuals + ns->n, 0);
+
+    //#pragma omp parallel for
+    for(int i = 0; i < ns->n; i++)
+    {
         nb_list[i] = new int[nb_number];
+        for(int j = 0; j < nb_number; j++)
+        {
+            nb_list[i][j] = 0;
+        }
+    }
+
 }
 
 Hermite4CPU::~Hermite4CPU()
 {
-    for(int i = 0; i < ns->n; ++i)
-        delete nb_list[i];
+    delete virtuals;
+    delete ghosts;
+
+    for(int i = 0; i < ns->n; i++)
+    {
+        delete [] nb_list[i];
+    }
 
     delete nb_list;
-    delete ghosts;
 }
 
 void Hermite4CPU::force_calculation(Predictor pi, Predictor pj, Forces &fi,
@@ -35,7 +50,6 @@ void Hermite4CPU::force_calculation(Predictor pi, Predictor pj, Forces &fi,
     double vy = pj.v[1] - pi.v[1];
     double vz = pj.v[2] - pi.v[2];
 
-    //double r2   = rx*rx + ry*ry + rz*rz + ns->e2;
     double r2   = rx*rx + ry*ry + rz*rz;
     double rinv = 1.0/sqrt(r2);
 
@@ -44,8 +58,13 @@ void Hermite4CPU::force_calculation(Predictor pi, Predictor pj, Forces &fi,
     // Add velocity
     if (sqrt(r2) < hi)
     {
-        nb_list[i][fi.nb] = j;
-        fi.nb++;
+        if (fi.nb < NBMAX)
+        {
+            nb_list[i][fi.nb] = j;
+            fi.nb++;
+        }
+        else
+            fi.nb = NBMAX;
     }
 
     double r2inv  = rinv  * rinv;
@@ -66,7 +85,7 @@ void Hermite4CPU::force_calculation(Predictor pi, Predictor pj, Forces &fi,
 void Hermite4CPU::init_acc_jrk(Predictor *p, Forces *f, double *r_sphere)
 {
     int i,j;
-    #pragma omp parallel for private(j)
+    //#pragma omp parallel for private(j)
     for (i = 0; i < ns->n; i++)
     {
         Forces ff = {0};
@@ -89,7 +108,7 @@ void Hermite4CPU::update_acc_jrk(int nact, int *move, double *r_sphere,
 {
     ns->gtime.update_ini = omp_get_wtime();
     int i, j, k;
-    #pragma omp parallel for private(i,j)
+    //#pragma omp parallel for private(i,j)
     for (k = 0; k < nact; k++)
     {
         i = move[k];
@@ -98,7 +117,7 @@ void Hermite4CPU::update_acc_jrk(int nact, int *move, double *r_sphere,
         Predictor pi = p[i];
         double r_spherei = r_sphere[i];
 
-        #pragma omp parallel for
+        //#pragma omp parallel for
         for (j = 0; j < ns->n; j++)
         {
             if(i == j) continue;
@@ -210,10 +229,18 @@ void Hermite4CPU::correction_pos_vel(double itime, int nact, double *dt, double 
 
         // Ghost particles never will update its time step
         // and it will remain as the minimum possible
-        //if (!ghosts[i])
-            dt[i] = normal_dt;
-        //else
+        //if (virtuals[i])
+        //{
         //    dt[i] = D_TIME_MIN;
+        //}
+        //else if (ghosts[i])
+        //{
+        //    dt[i] = D_TIME_MAX;
+        //}
+        //else
+        //{
+            dt[i] = normal_dt;
+        //}
 
         // TODO
         // It's required to restart the neighbours always?

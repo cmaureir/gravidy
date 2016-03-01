@@ -9,44 +9,6 @@ typedef struct
     int id_b;
 } binary_id;
 
-inline double4 operator+(const double4 &a, const double4 &b)
-{
-    double4 tmp = {a.x + b.x, a.y + b.y, a.z + b.z,  a.w + b.w};
-    return tmp;
-}
-
-inline void operator+=(double4 &a, double4 &b)
-{
-    a.x += b.x;
-    a.y += b.y;
-    a.z += b.z;
-    a.w += b.w;
-}
-
-inline Forces operator+(Forces &a, Forces &b)
-{
-    Forces tmp;
-    tmp.a[0] = a.a[0] + b.a[0];
-    tmp.a[1] = a.a[1] + b.a[1];
-    tmp.a[2] = a.a[2] + b.a[2];
-
-    tmp.a1[0] = a.a1[0] + b.a1[0];
-    tmp.a1[1] = a.a1[1] + b.a1[1];
-    tmp.a1[2] = a.a1[2] + b.a1[2];
-
-    return tmp;
-}
-
-inline void operator+=(Forces &a, Forces &b)
-{
-    a.a[0] += b.a[0];
-    a.a[1] += b.a[1];
-    a.a[2] += b.a[2];
-
-    a.a1[0] += b.a1[0];
-    a.a1[1] += b.a1[1];
-    a.a1[2] += b.a1[2];
-}
 
 class Hermite4CPU : public Hermite4 {
     public:
@@ -58,7 +20,8 @@ class Hermite4CPU : public Hermite4 {
         double *h_tn;
         int **nb_list;
         int nb_number;
-        int *ghosts;
+        int *ghosts; // ID of the particles that have a mass equal to zero
+        int *virtuals; // ID of the center of mass particles
 
         void force_calculation(Predictor pi, Predictor pj, Forces &fi,
                                int i, int j, double hi);
@@ -86,8 +49,10 @@ class Hermite4CPU : public Hermite4 {
         void integration();
 
 
-        SParticle create_ghost_particle(MultipleSystem ms);
+        SParticle create_virtual_particle(MultipleSystem ms);
 
-        void multiple_systems_integration(std::vector<MultipleSystem> &ms, double ITIME, int **nb_list);
+        void msystem_integration(std::vector<MultipleSystem> &ms, double ITIME, int **nb_list);
+        void msystem_termination(std::vector<MultipleSystem> &ms);
+        void unpack_and_get_energy(std::vector<MultipleSystem> ms, double ITIME, long long int interactions, int nsteps);
 };
 #endif
