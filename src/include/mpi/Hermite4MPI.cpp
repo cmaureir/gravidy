@@ -252,7 +252,7 @@ void Hermite4MPI::integration()
     omp_set_num_threads( max_threads - 1);
 
     init_acc_jrk();
-    init_dt(ATIME, ETA_S);
+    init_dt(ATIME, ETA_S, ITIME);
 
     ns->en.ini = nu->get_energy();   // Initial calculation of the energy of the system
     ns->en.tmp = ns->en.ini;

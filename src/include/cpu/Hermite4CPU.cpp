@@ -55,7 +55,7 @@ void Hermite4CPU::force_calculation(Predictor pi, Predictor pj, Forces &fi)
 void Hermite4CPU::init_acc_jrk()
 {
     int i,j;
-    #pragma omp parallel for private(j)
+    //#pragma omp parallel for private(j)
     for (i = 0; i < ns->n; i++)
     {
         for (j = 0; j < ns->n; j++)
@@ -70,7 +70,7 @@ void Hermite4CPU::update_acc_jrk(int nact)
 {
     ns->gtime.update_ini = omp_get_wtime();
     int i, j, k;
-    #pragma omp parallel for private(i,j)
+    //#pragma omp parallel for private(i,j)
     for (k = 0; k < nact; k++)
     {
         i = ns->h_move[k];
@@ -81,7 +81,7 @@ void Hermite4CPU::update_acc_jrk(int nact)
         ns->h_f[i].a1[1] = 0.0;
         ns->h_f[i].a1[2] = 0.0;
 
-        #pragma omp parallel for
+        //#pragma omp parallel for
         for (j = 0; j < ns->n; j++)
         {
             if(i == j) continue;
@@ -169,17 +169,16 @@ void Hermite4CPU::integration()
     ns->gtime.integration_ini = omp_get_wtime();
 
     double ATIME = 1.0e+10; // Actual integration time
-    double ITIME = 0.0;     // Integration time
+    double ITIME = ns->snapshot_time;     // Integration time
     int nact     = 0;       // Active particles
     int nsteps   = 0;       // Amount of steps per particles on the system
     static long long interactions = 0;
-
 
     int max_threads = omp_get_max_threads();
     omp_set_num_threads( max_threads - 1);
 
     init_acc_jrk();
-    init_dt(ATIME, ETA_S);
+    init_dt(ATIME, ETA_S, ITIME);
 
     ns->en.ini = nu->get_energy();   // Initial calculation of the energy of the system
     ns->en.tmp = ns->en.ini;
@@ -188,7 +187,12 @@ void Hermite4CPU::integration()
     //ns->cr_time  = nu->get_crossing_time();
 
     logger->print_info();
+    logger->write_info();
     logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, ns->en.ini);
+
+    int snap_number = ns->snapshot_number;
+    logger->write_snapshot(snap_number, ITIME);
+    snap_number++;
 
     if (ns->ops.print_all)
     {
@@ -220,7 +224,7 @@ void Hermite4CPU::integration()
         // Find the next integration time
         next_integration_time(ATIME);
 
-        if(std::ceil(ITIME) == ITIME)
+        if(nact == ns->n)
         {
             assert(nact == ns->n);
             logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy());
@@ -233,6 +237,8 @@ void Hermite4CPU::integration()
                 nu->lagrange_radii();
                 logger->print_lagrange_radii(ITIME, nu->layers_radii);
             }
+            logger->write_snapshot(snap_number, ITIME);
+            snap_number++;
         }
 
         // Update nsteps with nact
@@ -242,4 +248,6 @@ void Hermite4CPU::integration()
         ns->iterations++;
     }
     ns->gtime.integration_end =  omp_get_wtime() - ns->gtime.integration_ini;
+    logger->write_snapshot(snap_number, ITIME);
+    logger->add_info(std::string("SnapshotNumber:"), std::to_string(snap_number));
 }

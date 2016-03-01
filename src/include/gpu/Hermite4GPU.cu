@@ -186,8 +186,8 @@ void Hermite4GPU::update_acc_jrk(int nact)
     int  nact_blocks = 1 + (nact-1)/BSIZE;
     dim3 nblocks(nact_blocks,NJBLOCK, 1);
     dim3 nthreads(BSIZE, 1, 1);
-    std::cout << "nblocks " << nact_blocks << ", " << NJBLOCK << ", 1" << std::endl;
-    std::cout << "nthreads " << BSIZE << ", 1, 1" << std::endl;
+    //std::cout << "nblocks " << nact_blocks << ", " << NJBLOCK << ", 1" << std::endl;
+    //std::cout << "nthreads " << BSIZE << ", 1, 1" << std::endl;
 
     // Kernel to update the forces for the particles in d_i
     ns->gtime.grav_ini = omp_get_wtime();
@@ -532,7 +532,7 @@ void Hermite4GPU::integration()
     omp_set_num_threads( max_threads - 1);
 
     init_acc_jrk();
-    init_dt(ATIME, ETA_S);
+    init_dt(ATIME, ETA_S, ITIME);
 
     ns->en.ini = get_energy_gpu();   // Initial calculation of the energy of the system
     ns->en.tmp = ns->en.ini;
@@ -574,8 +574,8 @@ void Hermite4GPU::integration()
         next_integration_time(ATIME);
 
 
-        //if(std::ceil(ITIME) == ITIME)
-        //{
+        if(nact == ns->n)
+        {
             //assert(nact == ns->n);
             logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, get_energy_gpu());
             if (ns->ops.print_all)
@@ -587,7 +587,7 @@ void Hermite4GPU::integration()
                 nu->lagrange_radii();
                 logger->print_lagrange_radii(ITIME, nu->layers_radii);
             }
-        //}
+        }
 
         // Update nsteps with nact
         nsteps += nact;

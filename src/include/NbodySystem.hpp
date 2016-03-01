@@ -34,6 +34,9 @@ class NbodySystem {
         float  integration_time;
         double e2;
         long long int iterations;
+        double snapshot_time;
+        int snapshot_number;
+        bool resume;
 
         // General variables
         Energy en;
@@ -55,9 +58,12 @@ class NbodySystem {
         // Files
         std::string   input_filename;
         std::string   output_filename;
+        std::string   resume_filename;
+        std::string   snapshot_filename;
 
         /******************************** Host Particles arrays */
 
+        int       *h_id;   // Array with index of the particles
         int       *h_move; // Array with index of the active particles
         double    *h_t;    // Particle's time
         double    *h_dt;   // Particle's timestep
@@ -76,6 +82,7 @@ class NbodySystem {
 
         /******************************** Device Particles arrays */
 
+        int       *d_id;
         int       *d_move;
         double    *d_t;
         double    *d_dt;
@@ -89,13 +96,6 @@ class NbodySystem {
         Forces    *d_fout;
         Forces    *d_fout_tmp;
         Forces    *d_old;
-
-        /******************************** Keplerian correction */
-        double  *h_tlast;
-        double  *h_dtlast;
-        double3 *h_a2bh;
-        double3 *h_a3bh;
-        Forces  *h_fbh;
 
         /******************************** General functions of the system */
         void read_input_file();

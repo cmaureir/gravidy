@@ -51,7 +51,7 @@ void Hermite4::next_integration_time(double &CTIME)
     }
 }
 
-void Hermite4::init_dt(double &CTIME, float ETA)
+void Hermite4::init_dt(double &CTIME, float ETA, double ITIME)
 {
     // Aarseth initial timestep
     // dt_{i} = ETA_S * sqrt( (|a|) / (|j|) )
@@ -79,7 +79,8 @@ void Hermite4::init_dt(double &CTIME, float ETA)
 
         ns->h_dt[i] = tmp_dt;
         //ns->h_dt[i] = D_TIME_MIN;
-        ns->h_t[i] = 0.0;
+        //ns->h_t[i] = 0.0;
+        ns->h_t[i] = ITIME;
 
         // Obtaining the first integration time
         if(tmp_dt < CTIME)
@@ -168,6 +169,8 @@ void Hermite4::init_data()
         ns->h_f[i].a1[0] = 0.0;
         ns->h_f[i].a1[1] = 0.0;
         ns->h_f[i].a1[2] = 0.0;
+
+        ns->h_f[i].nb = 0;
 
         ns->h_a2[i]      = empty;
         ns->h_a3[i]      = empty;

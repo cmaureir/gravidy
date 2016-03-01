@@ -4,16 +4,11 @@
 #include "include/mpi/Hermite4MPI.hpp"
 #elif MPIGPU
 #include "include/mpigpu/Hermite4MPIGPU.cuh"
-#elif KEPLER
-#include "include/kepler/Hermite4Kepler.hpp"
 #elif TSYM
-#include "include/cpu-tsym/Hermite4Kepler.hpp"
-#else
+#include "include/cpu-tsym/Hermite4CPU.hpp"
+#else // CPU
 #include "include/cpu/Hermite4CPU.hpp"
 #endif
-
-
-
 
 /*
  * Main routing of the initialization and exeucutio of GraviDy
@@ -64,13 +59,11 @@ int main(int argc, char *argv[]) {
     // Creating an Hermite object depending on the compiling rules
     #ifdef GPU
     Hermite4GPU h4(&ns, &logger, &nu);
-    #elif KEPLER
-    Hermite4Kepler h4(&ns, &logger, &nu);
     #elif _MPI
     Hermite4MPI h4(&ns, &logger, &nu, rank, nprocs);
     #elif MPIGPU
     Hermite4MPIGPU h4(&ns, &logger, &nu, rank, nprocs);
-    #elif MPIGPU
+    #elif TSYM
     Hermite4CPU h4(&ns, &logger, &nu);
     #else
     Hermite4CPU h4(&ns, &logger, &nu);

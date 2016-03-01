@@ -4,7 +4,16 @@ Logger::Logger(NbodySystem *ns)
 {
     this->ns = ns;
     this->print_screen = this->ns->ops.print_screen;
-    this->ofname = this->get_timestamp() +"_"+ ns->output_filename;
+    //this->ofname = this->get_timestamp() +"_"+ ns->output_filename;
+    this->ofname = ns->output_filename;
+    if (ns->resume)
+    {
+        this->ofname_info = ns->resume_filename;
+    }
+    else
+    {
+      this->ofname_info = ofname + ".info";
+    }
 }
 
 Logger::~Logger()
@@ -28,6 +37,148 @@ std::string Logger::get_timestamp()
     return s.str();
 }
 
+void Logger::write_snapshot(int snapshot_number, double ITIME)
+{
+    std::ostringstream s;
+    s << std::setw(4) << std::setfill('0') << snapshot_number;
+    std::string ofname_all = ofname + ".snapshot_" + s.str();
+    out_file.open(ofname_all.c_str(), std::ios::out);
+
+    out_file << std::fixed;
+    out_file.precision(4);
+    out_file << "# Time:" <<std::setw(6) << ITIME;
+    out_file << std::endl;
+
+    for (int i = 0; i < ns->n; i++)
+    {
+        gstream->precision(2);
+        out_file << std::setw(6)  << std::right << ns->h_id[i];
+
+        // Scientific notation
+        out_file << std::scientific;
+        gstream->precision(6);
+        out_file << std::setw(15) << std::right << ns->h_r[i].w;
+
+        out_file << std::setw(15) << std::right << ns->h_r[i].x;
+        out_file << std::setw(15) << std::right << ns->h_r[i].y;
+        out_file << std::setw(15) << std::right << ns->h_r[i].z;
+
+        out_file << std::setw(15) << std::right << ns->h_v[i].x;
+        out_file << std::setw(15) << std::right << ns->h_v[i].y;
+        out_file << std::setw(15) << std::right << ns->h_v[i].z;
+
+        out_file << std::endl;
+    }
+
+    out_file.close();
+}
+
+void Logger::add_info(std::string key, std::string value)
+{
+    info_file.open(ofname_info.c_str(), std::ios_base::app);
+
+    info_file << std::setw(2) << std::left  << "#";
+    info_file << std::setw(20) << std::left  << key;
+    info_file << std::setw(20) << std::right << value;
+    info_file << std::endl;
+
+    info_file.close();
+
+}
+
+bool file_exists(std::string filename)
+{
+    struct stat buffer;
+    if (stat(filename.c_str(), &buffer) != -1)
+    {
+        return true;
+    }
+    return false;
+}
+
+void Logger::write_info()
+{
+
+    if(file_exists(ofname_info))
+    {
+        size_t fsize = ofname_info.size();
+        std::string last = ofname_info.substr(fsize-1, fsize);
+        bool is_number;
+        int ext = 0;
+
+        std::string newname = ofname_info + ".old";
+
+        while(file_exists(newname))
+        {
+            // Check
+            try
+            {
+                is_number = isdigit(last[0]);
+            }
+            catch(int e)
+            {
+                is_number = false;
+            }
+
+            if (is_number)
+            {
+                ext = (int)std::atoi(last.c_str()) + 1;
+            }
+            newname =  ofname_info + ".old" + std::to_string(ext);
+            ext++;
+        }
+
+        int result = std::rename(ofname_info.c_str(), newname.c_str());
+        if (result)
+        {
+            std::cerr << "gravidy: Failed to rename info file from "
+                      << ofname_info
+                      << " to "
+                      << newname
+                      << std::endl;
+        }
+    }
+    info_file.open(ofname_info.c_str(), std::ios::out);
+
+
+    info_file << std::setw(2) << std::left  << "#";
+    info_file << std::setw(20) << std::left  << "NumberParticles:";
+    info_file << std::setw(20) << std::right << ns->n;
+    info_file << std::endl;
+
+    info_file << std::setw(2) << std::left  << "#";
+    info_file << std::setw(20) << std::left  << "Softening:";
+    info_file << std::setw(20) << std::right << sqrt(ns->e2);
+    info_file << std::endl;
+
+    info_file << std::setw(2) << std::left  << "#";
+    info_file << std::setw(20) << std::left  << "EtaTimestep:";
+    info_file << std::setw(20) << std::right << ns->eta;
+    info_file << std::endl;
+
+    info_file << std::setw(2) << std::left  << "#";
+    info_file << std::setw(20) << std::left  << "IntegrationTime:";
+    info_file << std::setw(20) << std::right << ns->integration_time;
+    info_file << std::endl;
+
+    info_file << std::setw(2) << std::left  << std::left  << "#";
+    info_file << std::setw(20) << std::left  << "PrintScreen:";
+    info_file << std::setw(20) << std::right << print_screen;
+    info_file << std::endl;
+
+    info_file << std::setw(2) << std::left  << std::left  << "#";
+    info_file << std::setw(20) << std::left  << "InputFilename:";
+    info_file << std::setw(20) << std::right << ns->input_filename;
+    info_file << std::endl;
+
+    info_file << std::setw(2) << std::left  << std::left  << "#";
+    info_file << std::setw(20) << std::left  << "OutputFilename:";
+    info_file << std::setw(20) << std::left << ns->output_filename;
+    info_file << std::endl;
+
+    info_file.close();
+}
+
 void Logger::print_info()
 {
 
@@ -37,7 +188,8 @@ void Logger::print_info()
     }
     else
     {
-        std::string ofname_info = ofname + ".info";
+        //std::string ofname_info = ofname + ".info";
+        std::string ofname_info = ofname + ".log";
         out_file.open(ofname_info.c_str(), std::ios::out);
         gstream = &out_file;
     }

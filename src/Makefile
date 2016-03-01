@@ -48,15 +48,16 @@ CXXFLAGS=   $(BOOSTFLAGS) \
             -pg           \
             -lgomp        \
             -fopenmp      \
-            #-pipe         \
-            #-fstack-protector -Wl,-z,relro -Wl,-z,now -Wformat-security \
-            #-Wpointer-arith \
-            #-Wformat-nonliteral \
-            #-Werror \
-            #-Wl,-O1 \
-            #-Wl,--discard-all \
-            #-Wl,--no-undefined \
-            #-rdynamic
+            -std=c++11    \
+            -pipe         \
+            -fstack-protector -Wl,-z,relro -Wl,-z,now -Wformat-security \
+            -Wpointer-arith \
+            -Wformat-nonliteral \
+            -Werror \
+            -Wl,-O1 \
+            -Wl,--discard-all \
+            -Wl,--no-undefined \
+            -rdynamic \
             #-fno-exceptions \
 
 # MPI FLAGS
@@ -105,9 +106,10 @@ OBJS_KEPLER=$(OBJS)                         \
 
 ############################# Main rules
 
-all: gravidy-tsym
+all: cpu
 
 cpu: gravidy-cpu
+tsym: CXXFLAGS+=-DTSYM
 tsym: gravidy-tsym
 mpigpu: CXXFLAGS+=-DMPIGPU
 mpigpu: NVFLAGS+=-DMPIGPU
@@ -126,6 +128,7 @@ gpu: gravidy-gpu
 
 kepler: CXXFLAGS+=-DKEPLER
 kepler: gravidy-kepler
+
 
 ############################# Rules to generate cuda object
 %.cuo : %.cu
@@ -164,6 +167,7 @@ clean:
 distclean: clean
 	rm -f include/*.o
 	rm -f include/cpu-tsym/*.o
+	rm -f include/cpu/*.o
 	rm -f include/utils/*.o
 	rm -f include/gpu/*.{o,cuo}
 	rm -f include/kepler/*.o

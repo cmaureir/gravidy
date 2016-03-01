@@ -245,7 +245,6 @@ void Hermite4MPIGPU::update_acc_jrk(int nact)
         for (int i = 0; i < nprocs; i++)
             std::printf("%d ", slave_nact[i]);
         std::printf("\n");
-        getchar();
 
         if (slave_nact > 0)
         {

@@ -4,6 +4,7 @@
 #include <boost/program_options.hpp>
 #include <sys/stat.h>
 #include <string>
+#include <fstream>
 
 namespace po = boost::program_options;
 
@@ -14,9 +15,14 @@ class OptionsParser {
 
         std::string input_filename;
         std::string output_filename;
+        std::string resume_filename;
+        std::string snapshot_filename;
         float integration_time;
+        float snapshot_time;
         float softening;
         float eta;
+        int snapshot_number;
+        bool resume;
         options ops;
         po::variables_map vm;
         po::options_description desc;

@@ -22,7 +22,7 @@ double NbodyUtils::get_core_radius()
     double radius = 0.0;
     int i;
 
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (i = 0; i < ns->n; i++)
     {
         double rx  = ns->h_r[i].x - cod.x;
@@ -199,7 +199,7 @@ double NbodyUtils::get_halfmass_radius()
 
 void NbodyUtils::get_radii()
 {
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for(int i = 0; i < ns->n; i++)
     {
         double rx = ns->h_r[i].x - cod.x;
@@ -343,27 +343,6 @@ double NbodyUtils::normalize_dt(double new_dt, double old_dt, double t, int i)
     return new_dt;
 }
 
-#ifdef KEPLER
-double NbodyUtils::get_timestep_central(int i)
-{
-    double r = get_magnitude(ns->h_r[i].x - ns->h_r[0].x,
-                             ns->h_r[i].y - ns->h_r[0].y,
-                             ns->h_r[i].z - ns->h_r[0].z);
-    double r3 = r*r*r;
-    double central_dt = (((2.0 * M_PI )/OSTEPS) * sqrt(r3/(G * ns->h_r[0].w)));
-    //printf("r(x,y,z) = %.20f %.20f %.20f\n", ns->h_r[i].x, ns->h_r[i].y, ns->h_r[i].z);
-    //printf("r0(x,y,z) = %.20f %.20f %.20f\n", ns->h_r[0].x, ns->h_r[0].y, ns->h_r[0].z);
-    //printf("r = %.20f\n", r);
-    //printf("r3 = %.20f\n", r3);
-    //printf("OSTEPS = %.20f\n", OSTEPS);
-    //printf("G = %.20f\n", G);
-    //printf("M = %.20f\n", ns->h_r[0].w);
-    //printf("central_dt = %.20f\n", central_dt);
-
-    return central_dt;
-}
-#endif
-
 double NbodyUtils::get_energy(double ext)
 {
     ns->en.potential = 0.0;
@@ -378,7 +357,7 @@ double NbodyUtils::get_energy(double ext)
             double rx = ns->h_r[j].x - ns->h_r[i].x;
             double ry = ns->h_r[j].y - ns->h_r[i].y;
             double rz = ns->h_r[j].z - ns->h_r[i].z;
-            double r2 = rx*rx + ry*ry + rz*rz;// + ns->e2;
+            double r2 = rx*rx + ry*ry + rz*rz;
 
             epot_tmp -= (ns->h_r[i].w * ns->h_r[j].w) / sqrt(r2);
         }
