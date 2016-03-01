@@ -73,7 +73,8 @@ MPIFLAGS=   -L$(MPI_LIB_PATH)             \
             -DOMPI_SKIP_MPICXX
 
 # CUDA FLAGS
-NVFLAGS=   -DGPU -pg -O3 -arch=sm_20 # -DBOOST_NOINLINE='__attribute__ ((noinline))'
+#NVFLAGS=   -DGPU -pg -O3 -std=c++11 -arch=sm_20 # -DBOOST_NOINLINE='__attribute__ ((noinline))'
+NVFLAGS=   -DGPU -pg -O3 -std=c++11 -arch=sm_20 -D_MWAITXINTRIN_H_INCLUDED # For gcc > 5.2.1
 
 ############################# Objects
 

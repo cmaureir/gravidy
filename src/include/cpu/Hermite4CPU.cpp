@@ -55,7 +55,7 @@ void Hermite4CPU::force_calculation(Predictor pi, Predictor pj, Forces &fi)
 void Hermite4CPU::init_acc_jrk()
 {
     int i,j;
-    //#pragma omp parallel for private(j)
+    #pragma omp parallel for private(j)
     for (i = 0; i < ns->n; i++)
     {
         for (j = 0; j < ns->n; j++)
@@ -70,7 +70,7 @@ void Hermite4CPU::update_acc_jrk(int nact)
 {
     ns->gtime.update_ini = omp_get_wtime();
     int i, j, k;
-    //#pragma omp parallel for private(i,j)
+    #pragma omp parallel for private(i,j)
     for (k = 0; k < nact; k++)
     {
         i = ns->h_move[k];
@@ -81,7 +81,7 @@ void Hermite4CPU::update_acc_jrk(int nact)
         ns->h_f[i].a1[1] = 0.0;
         ns->h_f[i].a1[2] = 0.0;
 
-        //#pragma omp parallel for
+        #pragma omp parallel for
         for (j = 0; j < ns->n; j++)
         {
             if(i == j) continue;

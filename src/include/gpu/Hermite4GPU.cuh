@@ -66,6 +66,10 @@ class Hermite4GPU : public Hermite4 {
             alloc_arrays_device();
         }
         ~Hermite4GPU();
+        using Hermite4::init_acc_jrk;
+        using Hermite4::update_acc_jrk;
+        using Hermite4::predicted_pos_vel;
+        using Hermite4::correction_pos_vel;
 
         size_t nthreads;
         size_t nblocks;
