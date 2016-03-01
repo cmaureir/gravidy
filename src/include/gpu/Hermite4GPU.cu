@@ -522,7 +522,7 @@ void Hermite4GPU::integration()
     ns->gtime.integration_ini = omp_get_wtime();
 
     double ATIME = 1.0e+10; // Actual integration time
-    double ITIME = 0.0;     // Integration time
+    double ITIME = ns->snapshot_time;     // Integration time
     int nact     = 0;       // Active particles
     int nsteps   = 0;       // Amount of steps per particles on the system
     static long long interactions = 0;
@@ -541,7 +541,12 @@ void Hermite4GPU::integration()
     //ns->cr_time  = nu->get_crossing_time();
 
     logger->print_info();
+    logger->write_info();
     logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, ns->en.ini);
+
+    int snap_number = ns->snapshot_number;
+    logger->write_snapshot(snap_number, ITIME);
+    snap_number++;
 
     if (ns->ops.print_all)
     {
@@ -587,6 +592,8 @@ void Hermite4GPU::integration()
                 nu->lagrange_radii();
                 logger->print_lagrange_radii(ITIME, nu->layers_radii);
             }
+            logger->write_snapshot(snap_number, ITIME);
+            snap_number++;
         }
 
         // Update nsteps with nact
@@ -597,5 +604,6 @@ void Hermite4GPU::integration()
 
     }
     ns->gtime.integration_end =  omp_get_wtime() - ns->gtime.integration_ini;
-
+    logger->write_snapshot(snap_number, ITIME);
+    logger->add_info(std::string("SnapshotNumber:"), std::to_string(snap_number));
 }

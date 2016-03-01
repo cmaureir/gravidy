@@ -147,7 +147,6 @@ void Hermite4MPI::update_acc_jrk(int nact)
 
         // All the nodes will reduce the forces, having the same results for the
         // new forces.
-        //MPI_Allreduce(tmp_f, ns->h_fout_tmp, nact, f_type, f_op, MPI_COMM_WORLD);
         MPI_Allreduce(tmp_f, ns->h_fout_tmp, nact, f_type, f_op, MPI_COMM_WORLD);
 
         for (int i = 0; i < nact; i++)
@@ -242,7 +241,7 @@ void Hermite4MPI::integration()
     ns->gtime.integration_ini = omp_get_wtime();
 
     double ATIME = 1.0e+10; // Actual integration time
-    double ITIME = 0.0;     // Integration time
+    double ITIME = ns->snapshot_time;     // Integration time
     int nact     = 0;       // Active particles
     int nsteps   = 0;       // Amount of steps per particles on the system
     static long long interactions = 0;
@@ -259,10 +258,12 @@ void Hermite4MPI::integration()
 
     //ns->t_rlx = nu->get_half_mass_relaxation_time();
     //ns->t_cr  = nu->get_crossing_time();
+    int snap_number = 0;
 
     if (rank == 0)
     {
         logger->print_info();
+        logger->write_info();
         logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, ns->en.ini);
         if (ns->ops.print_all)
         {
@@ -273,6 +274,10 @@ void Hermite4MPI::integration()
             nu->lagrange_radii();
             logger->print_lagrange_radii(ITIME, nu->layers_radii);
         }
+
+        snap_number = ns->snapshot_number;
+        logger->write_snapshot(snap_number, ITIME);
+        snap_number++;
     }
 
     while (ITIME < ns->integration_time)
@@ -297,7 +302,7 @@ void Hermite4MPI::integration()
 
         if (rank == 0)
         {
-            if(std::ceil(ITIME) == ITIME)
+            if(nact == ns->n)
             {
                 assert(nact == ns->n);
                 logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy());
@@ -310,6 +315,8 @@ void Hermite4MPI::integration()
                     nu->lagrange_radii();
                     logger->print_lagrange_radii(ITIME, nu->layers_radii);
                 }
+                logger->write_snapshot(snap_number, ITIME);
+                snap_number++;
             }
         }
 
@@ -321,5 +328,10 @@ void Hermite4MPI::integration()
     }
 
     ns->gtime.integration_end =  omp_get_wtime() - ns->gtime.integration_ini;
+    if (rank == 0)
+    {
+        logger->write_snapshot(snap_number, ITIME);
+        logger->add_info(std::string("SnapshotNumber:"), std::to_string(snap_number));
+    }
 
 }
