@@ -5,7 +5,8 @@ HOST:=$(shell hostname | cut -d . -f 1)
 ifeq ($(HOST), gpu-01)
 BOOST_PATH=/cluster/boost/1.52.0
 CUDA_PATH=/cluster/gpu/nvidia/5.5
-MPI_PATH=/cluster/openmpi/SL6/1.5.4/gcc
+MPI_LIB_PATH=/cluster/openmpi/SL6/1.5.4/gcc/lib
+MPI_INC_PATH=/cluster/openmpi/SL6/1.5.4/gcc/include
 endif
 # Cluster at AEI
 ifeq ($(HOST), pinatubo)
