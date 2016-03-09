@@ -3,6 +3,10 @@
 #include "../common.hpp"
 #include "../NbodySystem.hpp"
 #include <cctype>
+#include <sstream>
+
+#define SSTR( x ) static_cast< std::ostringstream & >( \
+        ( std::ostringstream() << std::dec << x ) ).str()
 
 class Logger {
     public:

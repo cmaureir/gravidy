@@ -50,7 +50,6 @@ CXXFLAGS=   $(BOOSTFLAGS) \
             -pg           \
             -lgomp        \
             -fopenmp      \
-            -std=c++11    \
             -pipe         \
             -fstack-protector -Wl,-z,relro -Wl,-z,now -Wformat-security \
             -Wpointer-arith \
@@ -74,7 +73,8 @@ MPIFLAGS=   -L$(MPI_LIB_PATH)             \
 
 # CUDA FLAGS
 #NVFLAGS=   -DGPU -pg -O3 -std=c++11 -arch=sm_20 # -DBOOST_NOINLINE='__attribute__ ((noinline))'
-NVFLAGS=   -DGPU -pg -O3 -std=c++11 -arch=sm_20 -D_MWAITXINTRIN_H_INCLUDED # For gcc > 5.2.1
+#NVFLAGS=   -DGPU -pg -O3 -std=c++11 -arch=sm_20 -D_MWAITXINTRIN_H_INCLUDED # For gcc > 5.2.1
+NVFLAGS=   -DGPU -pg -O3 -arch=sm_20 -D_MWAITXINTRIN_H_INCLUDED # For gcc > 5.2.1
 
 ############################# Objects
 

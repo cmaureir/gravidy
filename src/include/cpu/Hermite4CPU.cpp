@@ -249,5 +249,6 @@ void Hermite4CPU::integration()
     }
     ns->gtime.integration_end =  omp_get_wtime() - ns->gtime.integration_ini;
     logger->write_snapshot(snap_number, ITIME);
-    logger->add_info(std::string("SnapshotNumber:"), std::to_string(snap_number));
+    //logger->add_info(std::string("SnapshotNumber:"), std::to_string(snap_number));
+    logger->add_info(std::string("SnapshotNumber:"), std::string(SSTR(snap_number)));
 }

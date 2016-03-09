@@ -71,6 +71,8 @@ bool OptionsParser::check_options()
         return false;
     }
 
+    double config_time = 0.0;
+    snapshot_time = 0.0;
     if (vm.count("resume"))
     {
 
@@ -170,7 +172,7 @@ bool OptionsParser::check_options()
             if (vm.count("time"))
             {
                 integration_time = vm["time"].as<float>();
-                double config_time = strtod(config_param["IntegrationTime"].c_str(), NULL);
+                config_time = strtod(config_param["IntegrationTime"].c_str(), NULL);
                 if (config_time >= integration_time)
                 {
                     std::cerr << "gravidy: option requires an argument -- 'time'"
@@ -209,7 +211,8 @@ bool OptionsParser::check_options()
             }
 
             // Checking PrintScreen
-            ops.print_screen = std::stoi(config_param["PrintScreen"].c_str());
+            //ops.print_screen = std::stoi(config_param["PrintScreen"].c_str()); //C++11
+            ops.print_screen = std::atoi(config_param["PrintScreen"].c_str());
             if (vm.count("PrintScreen"))
             {
                 ops.print_screen=1;
@@ -232,7 +235,8 @@ bool OptionsParser::check_options()
             std::string OutputFilename = config_param["OutputFilename"];
 
             // Checking snapshot number
-            snapshot_number = std::stoi(config_param["SnapshotNumber"].c_str());
+            //snapshot_number = std::stoi(config_param["SnapshotNumber"].c_str()); // C++11
+            snapshot_number = std::atoi(config_param["SnapshotNumber"].c_str());
 
             std::ostringstream s;
             s << std::setw(4) << std::setfill('0') << snapshot_number;
