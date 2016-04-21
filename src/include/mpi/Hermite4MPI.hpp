@@ -2,7 +2,7 @@
 #define HERMITE4MPI_HPP
 #include "../Hermite4.hpp"
 
-#define MPI_NUM_SLAVES 32
+#define MPI_NUM_SLAVES 600
 
 class Hermite4MPI : public Hermite4 {
     public:

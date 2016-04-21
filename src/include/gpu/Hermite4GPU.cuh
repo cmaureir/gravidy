@@ -5,14 +5,14 @@
 #include <cassert>
 #include <string>
 
-#define CUDA_SAFE_CALL_NO_SYNC( call) do {                          \
+#define CSC_NO_SYNC( call) do {                          \
     cudaError err = call;                                             \
     if( cudaSuccess != err) {                                         \
         fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", \
                 __FILE__, __LINE__, cudaGetErrorString( err) );       \
         exit(EXIT_FAILURE);                                           \
     } } while (0)
-#define CUDA_SAFE_CALL( call)     CUDA_SAFE_CALL_NO_SYNC(call);
+#define CSC( call)     CSC_NO_SYNC(call);
 
 inline __host__ __device__ double4 operator+(const double4 &a, const double4 &b)
 {
@@ -58,10 +58,39 @@ class Hermite4GPU : public Hermite4 {
         Hermite4GPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
             : Hermite4(ns, logger, nu)
         {
-            nthreads = BSIZE;
-            nblocks = std::ceil(ns->n/(float)nthreads);
             smem = sizeof(Predictor) * BSIZE;
             smem_reduce = sizeof(Forces) * NJBLOCK + 1;
+            gpus = 0;
+
+            CSC(cudaGetDeviceCount(&gpus));
+            std::cout << "GPUs: " << gpus << std::endl;
+            // cudaSetDevice(ID); // set the active gpu
+            // cudaGetDevice(&ID) // get the current gpu
+
+            std::cout << "Spliting " << ns->n << " particles in " << gpus << " GPUs" << std::endl;
+
+            if (ns->n % gpus == 0)
+            {
+                int size = ns->n/gpus;
+                for ( int g = 0; g < gpus; g++)
+                    n_part[g] = size;
+            }
+            else
+            {
+                int size = std::ceil(ns->n/(float)gpus);
+                for ( int g = 0; g < gpus; g++)
+                {
+                    if (ns->n - size*(g+1) > 0)
+                        n_part[g] = size;
+                    else
+                        n_part[g] = ns->n - size*g;
+                }
+            }
+
+            for(int g = 0; g < gpus; g++)
+            {
+                std::cout << "GPU " << g << " particles: " << n_part[g] << std::endl;
+            }
 
             alloc_arrays_device();
         }
@@ -75,6 +104,9 @@ class Hermite4GPU : public Hermite4 {
         size_t nblocks;
         size_t smem;
         size_t smem_reduce;
+
+        int gpus;
+        int n_part[MAXGPUS];
 
         cudaEvent_t start;
         cudaEvent_t stop;
@@ -100,7 +132,9 @@ class Hermite4GPU : public Hermite4 {
 __global__ void k_init_acc_jrk(Predictor *p,
                                Forces *f,
                                int n,
-                               double e2);
+                               double e2,
+                               int dev,
+                               int dev_size);
 
 __device__ void k_force_calculation(Predictor i_p,
                                     Predictor j_p,

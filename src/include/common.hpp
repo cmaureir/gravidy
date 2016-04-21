@@ -16,7 +16,7 @@
 /** If we are compiling the CUDA version, we add the definition of the
  * vector types and structs from the CUDA library */
 #include <cuda_runtime.h>
-#define MPI_NUM_SLAVES 32
+#define MPI_NUM_SLAVES 600
 
 #else
 /** Defining the «double4» structure based on the CUDA definition for the
@@ -257,6 +257,7 @@ typedef struct file_data
 #if defined(GPU) || defined(MPIGPU)
 const int BSIZE   = 32;
 const int NJBLOCK = 16;
+//#define KERNEL_ERROR_DEBUG 1
 #endif
 
 #endif

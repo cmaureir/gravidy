@@ -12,6 +12,7 @@
 
 #include "common.hpp"
 #include "utils/OptionsParser.hpp"
+#define MAXGPUS 4
 
 /*
  * @class NbodySystem
@@ -82,20 +83,20 @@ class NbodySystem {
 
         /******************************** Device Particles arrays */
 
-        int       *d_id;
-        int       *d_move;
-        double    *d_t;
-        double    *d_dt;
-        double    *d_ekin;
-        double    *d_epot;
-        double4   *d_r;
-        double4   *d_v;
-        Predictor *d_p;
-        Predictor *d_i;
-        Forces    *d_f;
-        Forces    *d_fout;
-        Forces    *d_fout_tmp;
-        Forces    *d_old;
+        int       *d_id[MAXGPUS];
+        int       *d_move[MAXGPUS];
+        double    *d_t[MAXGPUS];
+        double    *d_dt[MAXGPUS];
+        double    *d_ekin[MAXGPUS];
+        double    *d_epot[MAXGPUS];
+        double4   *d_r[MAXGPUS];
+        double4   *d_v[MAXGPUS];
+        Predictor *d_p[MAXGPUS];
+        Predictor *d_i[MAXGPUS];
+        Forces    *d_f[MAXGPUS];
+        Forces    *d_fout[MAXGPUS];
+        Forces    *d_fout_tmp[MAXGPUS];
+        Forces    *d_old[MAXGPUS];
 
         /******************************** General functions of the system */
         void read_input_file();
