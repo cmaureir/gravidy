@@ -109,7 +109,7 @@ OBJS_KEPLER=$(OBJS)                         \
 
 ############################# Main rules
 
-all: cpu
+all: gpu
 
 cpu: gravidy-cpu
 tsym: CXXFLAGS+=-DTSYM
