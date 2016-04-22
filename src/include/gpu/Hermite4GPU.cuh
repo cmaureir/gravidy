@@ -64,6 +64,7 @@ class Hermite4GPU : public Hermite4 {
 
             CSC(cudaGetDeviceCount(&gpus));
             std::cout << "GPUs: " << gpus << std::endl;
+            gpus = 1;
             // cudaSetDevice(ID); // set the active gpu
             // cudaGetDevice(&ID) // get the current gpu
 
