@@ -80,6 +80,7 @@ class NbodySystem {
         Forces    *h_f;    // Struct with the acceleration and jerk
         Forces    *h_old;  // Old forces (from previous step)
         Forces    *h_fout_tmp; // Temporary array for partial forces
+        Forces    *h_fout_gpu[MAXGPUS]; // Temporary array for partial forces
 
         /******************************** Device Particles arrays */
 

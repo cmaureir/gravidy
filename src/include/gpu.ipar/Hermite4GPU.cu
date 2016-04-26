@@ -47,8 +47,7 @@ void Hermite4GPU::alloc_arrays_device()
     }
 
     // Extra CPU array
-    ns->h_fout_gpu = new Forces[ns->n*NJBLOCK*MAXGPUS];
-    ns->h_fout_tmp = new Forces[ns->n*NJBLOCK];
+    ns->h_fout_tmp= new Forces[ff_size*NJBLOCK];
 
 }
 
@@ -74,7 +73,6 @@ void Hermite4GPU::free_arrays_device()
         CSC(cudaFree(ns->d_fout_tmp[g]));
     }
 
-    delete ns->h_fout_gpu;
     delete ns->h_fout_tmp;
 }
 
@@ -221,17 +219,42 @@ void Hermite4GPU::update_acc_jrk(int nact)
     // Timer begin
     ns->gtime.update_ini = omp_get_wtime();
 
+    /*************************************************************************/
+    // Split nact into the amount of GPUs
+    int g_nact[gpus];
+
+    if (nact % gpus == 0)
+    {
+        int size = nact/gpus;
+        for ( int g = 0; g < gpus; g++)
+            g_nact[g] = size;
+    }
+    else
+    {
+        int size = std::ceil(nact/(float)gpus);
+        for ( int g = 0; g < gpus; g++)
+        {
+            if (nact - size*(g+1) > 0)
+                g_nact[g] = size;
+            else
+                g_nact[g] = nact - size*g;
+
+            //std::cout << "GPU " << g << " : " << g_nact[g] << std::endl;
+        }
+    }
+    /*************************************************************************/
+
+    size_t pp_size = ns->n * sizeof(Predictor);
+    size_t i1_size = ns->n * sizeof(int);
+
     for(int g = 0; g < gpus; g++)
     {
-
-        size_t pp_size = n_part[g] * sizeof(Predictor);
-        int shift = g*n_part[g-1];
-
-        if (n_part[g] > 0)
+        if (g_nact[g] > 0)
         {
             CSC(cudaSetDevice(g));
             // Copying to the device the predicted r and v
-            CSC(cudaMemcpy(ns->d_p[g], ns->h_p + shift, pp_size, cudaMemcpyHostToDevice));
+            CSC(cudaMemcpy(ns->d_p[g], ns->h_p, pp_size, cudaMemcpyHostToDevice));
+            CSC(cudaMemcpy(ns->d_move[g], ns->h_move, i1_size, cudaMemcpyHostToDevice));
         }
     }
 
@@ -244,30 +267,37 @@ void Hermite4GPU::update_acc_jrk(int nact)
 
     for(int g = 0; g < gpus; g++)
     {
-        if (n_part[g] > 0)
+        if (g_nact[g] > 0)
         {
             CSC(cudaSetDevice(g));
             // Copy to the GPU (d_i) the preddictor host array (h_i)
-            size_t chunk = nact * sizeof(Predictor);
-            CSC(cudaMemcpy(ns->d_i[g], ns->h_i, chunk, cudaMemcpyHostToDevice));
+            size_t chunk = g_nact[g] * sizeof(Predictor);
+            int shift = g*g_nact[g-1];
+
+            CSC(cudaMemcpy(ns->d_i[g], ns->h_i + shift, chunk, cudaMemcpyHostToDevice));
+        }
+        else
+        {
+            //std::cout << "GPU " << g << " is not being used, due to a lack of nact" << std::endl;
         }
     }
 
     ns->gtime.grav_ini = omp_get_wtime();
     for(int g = 0; g < gpus; g++)
     {
-        if (n_part[g] > 0)
+        if (g_nact[g] > 0)
         {
             CSC(cudaSetDevice(g));
             // Blocks, threads and shared memory configuration
-            int  nact_blocks = 1 + (nact-1)/BSIZE;
+            int  nact_blocks = 1 + (g_nact[g]-1)/BSIZE;
             dim3 nblocks(nact_blocks, NJBLOCK, 1);
             dim3 nthreads(BSIZE, 1, 1);
 
             // Kernel to update the forces for the particles in d_i
             k_update <<< nblocks, nthreads, smem >>> (ns->d_i[g],
-                                                      ns->d_p[g], // partial
+                                                      ns->d_p[g],
                                                       ns->d_fout[g],
+                                                      ns->d_move[g],
                                                       ns->n,
                                                       nact,
                                                       ns->e2);
@@ -281,19 +311,16 @@ void Hermite4GPU::update_acc_jrk(int nact)
     ns->gtime.reduce_ini = omp_get_wtime();
     for(int g = 0; g < gpus; g++)
     {
-        if (n_part[g] > 0)
+        if (g_nact[g] > 0)
         {
             CSC(cudaSetDevice(g));
             // Blocks, threads and shared memory configuration for the reduction.
-            dim3 rgrid   (nact,   1, 1);
+            dim3 rgrid   (g_nact[g],   1, 1);
             dim3 rthreads(NJBLOCK, 1, 1);
 
             // Kernel to reduce que temp array with the forces
             reduce <<< rgrid, rthreads, smem_reduce >>>(ns->d_fout[g],
                                                         ns->d_fout_tmp[g]);
-            //cudaThreadSynchronize();
-            //reduce <<< rgrid, rthreads, smem_reduce >>>(ns->d_fout_gpu[g],
-            //                                            ns->d_fout_tmp[g]);
         }
     }
 
@@ -302,43 +329,26 @@ void Hermite4GPU::update_acc_jrk(int nact)
 
     for(int g = 0; g < gpus; g++)
     {
-        if (n_part[g] > 0)
+        if (g_nact[g] > 0)
         {
             CSC(cudaSetDevice(g));
-            size_t chunk = nact*sizeof(Forces);
+            size_t chunk = g_nact[g]*sizeof(Forces);
+            size_t slice = g*g_nact[g-1];
+            //std::cout << "GPU " << g << " : slice=" << slice << ", chunk=" << chunk << std::endl;
 
             // Copy from the GPU the new forces for the d_i particles.
-            CSC(cudaMemcpy(ns->h_fout_gpu[g*nact], ns->d_fout_tmp[g], chunk,
+            CSC(cudaMemcpy(&ns->h_fout_tmp[slice], ns->d_fout_tmp[g], chunk,
                               cudaMemcpyDeviceToHost));
         }
     }
-
-
 
     // Update forces in the host
     //#pragma omp parallel for
     for (int i = 0; i < nact; i++)
     {
-        int id = ns->h_move[i];
-        ns->h_f[id] = {0};
-
-        std::cout << "Part " << id << std::endl;
-
-        for(int g = 0; g < gpus; g++)
-        {
-            std::cout << "Forces on GPU " << g << " : ";
-            if (n_part[g] > 0)
-            {
-                std::cout << ns->h_fout_tmp[i+g*nact].a[0] << " ";
-                ns->h_f[id] += ns->h_fout_tmp[i+g*nact];
-            }
-        }
-        std::cout << std::endl;
-        //ns->h_f[ns->h_move[i]] = ns->h_fout_tmp[i];
-        std::cout << "Total: " << ns->h_f[id].a[0] << std::endl;
+        ns->h_f[ns->h_move[i]] = ns->h_fout_tmp[i];
     }
 
-    getchar();
     // Timer end
     ns->gtime.update_end += (omp_get_wtime() - ns->gtime.update_ini);
     CSC(cudaSetDevice(0));

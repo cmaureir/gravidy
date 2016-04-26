@@ -145,6 +145,7 @@ __device__ void k_force_calculation(Predictor i_p,
 __global__ void k_update(Predictor *i_p,
                          Predictor *j_p,
                          Forces *fout,
+                         int *move,
                          int n,
                          int total,
                          double e2);
