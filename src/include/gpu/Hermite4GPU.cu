@@ -44,10 +44,11 @@ void Hermite4GPU::alloc_arrays_device()
         CSC(cudaMemset(ns->d_move[g], 0, i1_size));
         CSC(cudaMemset(ns->d_fout[g], 0, ff_size * NJBLOCK));
         CSC(cudaMemset(ns->d_fout_tmp[g], 0, ff_size * NJBLOCK));
+
+        ns->h_fout_gpu[g] = new Forces[ns->n*NJBLOCK];
     }
 
     // Extra CPU array
-    ns->h_fout_gpu = new Forces[ns->n*NJBLOCK*MAXGPUS];
     ns->h_fout_tmp = new Forces[ns->n*NJBLOCK];
 
 }
@@ -72,10 +73,11 @@ void Hermite4GPU::free_arrays_device()
         CSC(cudaFree(ns->d_move[g]));
         CSC(cudaFree(ns->d_fout[g]));
         CSC(cudaFree(ns->d_fout_tmp[g]));
+        delete ns->h_fout_gpu[g];
     }
 
-    delete ns->h_fout_gpu;
     delete ns->h_fout_tmp;
+    //delete ns->h_fout_gpu;
 }
 
 /** Not implemented using GPU */
@@ -308,7 +310,9 @@ void Hermite4GPU::update_acc_jrk(int nact)
             size_t chunk = nact*sizeof(Forces);
 
             // Copy from the GPU the new forces for the d_i particles.
-            CSC(cudaMemcpy(ns->h_fout_gpu[g*nact], ns->d_fout_tmp[g], chunk,
+            //CSC(cudaMemcpy(ns->h_fout_gpu[g*nact], ns->d_fout_tmp[g], chunk,
+            //                  cudaMemcpyDeviceToHost));
+            CSC(cudaMemcpy(ns->h_fout_gpu[g], ns->d_fout_tmp[g], chunk,
                               cudaMemcpyDeviceToHost));
         }
     }
@@ -320,7 +324,12 @@ void Hermite4GPU::update_acc_jrk(int nact)
     for (int i = 0; i < nact; i++)
     {
         int id = ns->h_move[i];
-        ns->h_f[id] = {0};
+        ns->h_f[id].a[0] = 0.0;
+        ns->h_f[id].a[1] = 0.0;
+        ns->h_f[id].a[2] = 0.0;
+        ns->h_f[id].a1[0] = 0.0;
+        ns->h_f[id].a1[1] = 0.0;
+        ns->h_f[id].a1[2] = 0.0;
 
         std::cout << "Part " << id << std::endl;
 
@@ -329,8 +338,10 @@ void Hermite4GPU::update_acc_jrk(int nact)
             std::cout << "Forces on GPU " << g << " : ";
             if (n_part[g] > 0)
             {
-                std::cout << ns->h_fout_tmp[i+g*nact].a[0] << " ";
-                ns->h_f[id] += ns->h_fout_tmp[i+g*nact];
+                //std::cout << ns->h_fout_tmp[i+g*nact].a[0] << " ";
+                //ns->h_f[id] += ns->h_fout_tmp[i+g*nact];
+                std::cout << ns->h_fout_gpu[g][i].a[0] << " ";
+                ns->h_f[id] += ns->h_fout_gpu[g][i];
             }
         }
         std::cout << std::endl;
@@ -473,7 +484,6 @@ __device__ void k_force_calculation(Predictor i_p,
 __global__ void k_update(Predictor *i_p,
                          Predictor *j_p,
                          Forces *fout,
-                         int *move,
                          int n,
                          int total,
                          double e2)
