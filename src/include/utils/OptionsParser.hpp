@@ -18,6 +18,7 @@ class OptionsParser {
         std::string resume_filename;
         std::string snapshot_filename;
         float integration_time;
+        int gpus;
         float snapshot_time;
         float softening;
         float eta;

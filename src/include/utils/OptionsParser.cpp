@@ -36,6 +36,8 @@ OptionsParser::OptionsParser(int argc, char *argv[])
             "Print information of the Lagrange Radii in every integration time")
         ("all,a",
             "Print all the information of N-particles in every integration time")
+        ("gpu,g", po::value<int>()->value_name("<value>")->default_value(0),
+            "GPUs to use, by default is the maximum available devices (use even numbers)")
     ;
 
     desc.add(help);
@@ -295,6 +297,9 @@ bool OptionsParser::check_options()
             ops.print_all = 1;
         if(vm.count("lagrange"))
             ops.print_lagrange = 1;
+
+        if(vm.count("gpu"))
+            gpus = vm["gpu"].as<int>();
 
         if (vm.count("time"))
             integration_time = vm["time"].as<float>();

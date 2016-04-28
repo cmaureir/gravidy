@@ -39,6 +39,8 @@ class NbodySystem {
         int snapshot_number;
         bool resume;
 
+        int  gpus;
+
         // General variables
         Energy en;
         float t_rlx;

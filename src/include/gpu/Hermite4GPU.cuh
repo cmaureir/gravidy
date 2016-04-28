@@ -60,9 +60,25 @@ class Hermite4GPU : public Hermite4 {
         {
             smem = sizeof(Predictor) * BSIZE;
             smem_reduce = sizeof(Forces) * NJBLOCK + 1;
-            gpus = 0;
 
-            CSC(cudaGetDeviceCount(&gpus));
+            int detected_gpus;
+            CSC(cudaGetDeviceCount(&detected_gpus));
+
+            if (ns->gpus > 0)
+            {
+                gpus = ns->gpus;
+            }
+            else
+            {
+                gpus = detected_gpus;
+            }
+
+            if (detected_gpus > gpus)
+            {
+                std::cout << "[Warning] Not using all the available GPUs: "
+                          << gpus << " of " << detected_gpus << std::endl;
+            }
+
             std::cout << "GPUs: " << gpus << std::endl;
             //gpus = 1;
             // cudaSetDevice(ID); // set the active gpu
@@ -157,5 +173,6 @@ __global__ void k_energy(double4 *r,
                          double *ekin,
                          double *epot,
                          int n,
-                         double e2);
+                         int dev_size,
+                         int dev);
 #endif

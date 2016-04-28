@@ -198,14 +198,6 @@ void Hermite4GPU::init_acc_jrk()
         get_kernel_error();
     }
 
-
-    for(int g = 0; g < gpus; g++)
-    {
-        CSC(cudaSetDevice(g));
-        cudaThreadSynchronize();
-        std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
-    }
-
     for(int g = 0; g < gpus; g++)
     {
         CSC(cudaSetDevice(g));
@@ -215,7 +207,6 @@ void Hermite4GPU::init_acc_jrk()
 
         CSC(cudaMemcpy(&ns->h_f[slice], ns->d_f[g], chunk, cudaMemcpyDeviceToHost));
     }
-    CSC(cudaSetDevice(0));
 }
 
 void Hermite4GPU::update_acc_jrk(int nact)
@@ -225,12 +216,11 @@ void Hermite4GPU::update_acc_jrk(int nact)
 
     for(int g = 0; g < gpus; g++)
     {
-
-        size_t pp_size = n_part[g] * sizeof(Predictor);
-        int shift = g*n_part[g-1];
-
         if (n_part[g] > 0)
         {
+            size_t pp_size = n_part[g] * sizeof(Predictor);
+            int shift = g*n_part[g-1];
+
             CSC(cudaSetDevice(g));
             // Copying to the device the predicted r and v
             CSC(cudaMemcpy(ns->d_p[g], ns->h_p + shift, pp_size, cudaMemcpyHostToDevice));
@@ -270,10 +260,9 @@ void Hermite4GPU::update_acc_jrk(int nact)
             k_update <<< nblocks, nthreads, smem >>> (ns->d_i[g],
                                                       ns->d_p[g], // partial
                                                       ns->d_fout[g],
-                                                      ns->n,
+                                                      n_part[g], // former N
                                                       nact,
                                                       ns->e2);
-            cudaThreadSynchronize();
         }
     }
 
@@ -293,9 +282,6 @@ void Hermite4GPU::update_acc_jrk(int nact)
             // Kernel to reduce que temp array with the forces
             reduce <<< rgrid, rthreads, smem_reduce >>>(ns->d_fout[g],
                                                         ns->d_fout_tmp[g]);
-            //cudaThreadSynchronize();
-            //reduce <<< rgrid, rthreads, smem_reduce >>>(ns->d_fout_gpu[g],
-            //                                            ns->d_fout_tmp[g]);
         }
     }
 
@@ -310,8 +296,6 @@ void Hermite4GPU::update_acc_jrk(int nact)
             size_t chunk = nact*sizeof(Forces);
 
             // Copy from the GPU the new forces for the d_i particles.
-            //CSC(cudaMemcpy(ns->h_fout_gpu[g*nact], ns->d_fout_tmp[g], chunk,
-            //                  cudaMemcpyDeviceToHost));
             CSC(cudaMemcpy(ns->h_fout_gpu[g], ns->d_fout_tmp[g], chunk,
                               cudaMemcpyDeviceToHost));
         }
@@ -320,7 +304,8 @@ void Hermite4GPU::update_acc_jrk(int nact)
 
 
     // Update forces in the host
-    //#pragma omp parallel for
+    ns->gtime.reduce_forces_ini = omp_get_wtime();
+    #pragma omp parallel for
     for (int i = 0; i < nact; i++)
     {
         int id = ns->h_move[i];
@@ -331,55 +316,60 @@ void Hermite4GPU::update_acc_jrk(int nact)
         ns->h_f[id].a1[1] = 0.0;
         ns->h_f[id].a1[2] = 0.0;
 
-        std::cout << "Part " << id << std::endl;
-
         for(int g = 0; g < gpus; g++)
         {
-            std::cout << "Forces on GPU " << g << " : ";
             if (n_part[g] > 0)
             {
-                //std::cout << ns->h_fout_tmp[i+g*nact].a[0] << " ";
-                //ns->h_f[id] += ns->h_fout_tmp[i+g*nact];
-                std::cout << ns->h_fout_gpu[g][i].a[0] << " ";
                 ns->h_f[id] += ns->h_fout_gpu[g][i];
             }
         }
-        std::cout << std::endl;
-        //ns->h_f[ns->h_move[i]] = ns->h_fout_tmp[i];
-        std::cout << "Total: " << ns->h_f[id].a[0] << std::endl;
     }
+    ns->gtime.reduce_forces_end += omp_get_wtime() - ns->gtime.reduce_forces_ini;
 
-    getchar();
     // Timer end
     ns->gtime.update_end += (omp_get_wtime() - ns->gtime.update_ini);
-    CSC(cudaSetDevice(0));
 }
 
 double Hermite4GPU::get_energy_gpu()
 {
 
-    //for(int g = 0; g < gpus; g++)
-    //{
-    //    CSC(cudaSetDevice(g));
+    double time_energy_ini = omp_get_wtime();
 
-    CSC(cudaMemcpy(ns->d_r[0], ns->h_r,  sizeof(double4) * ns->n,cudaMemcpyHostToDevice));
-    CSC(cudaMemcpy(ns->d_v[0], ns->h_v,  sizeof(double4) * ns->n,cudaMemcpyHostToDevice));
+    for(int g = 0; g < gpus; g++)
+    {
+        CSC(cudaSetDevice(g));
 
-    //gpu_timer_start();
-    int nthreads = BSIZE;
-    int nblocks = std::ceil(ns->n/(float)nthreads);
-    k_energy <<< nblocks, nthreads >>> (ns->d_r[0],
-                                        ns->d_v[0],
-                                        ns->d_ekin[0],
-                                        ns->d_epot[0],
-                                        ns->n,
-                                        ns->e2);
-    cudaThreadSynchronize();
-    //float msec = gpu_timer_stop("k_energy");
-    get_kernel_error();
+        size_t d4_size = ns->n * sizeof(double4);
 
-    CSC(cudaMemcpy(ns->h_ekin, ns->d_ekin[0], sizeof(double) * ns->n,cudaMemcpyDeviceToHost));
-    CSC(cudaMemcpy(ns->h_epot, ns->d_epot[0], sizeof(double) * ns->n,cudaMemcpyDeviceToHost));
+        CSC(cudaMemcpy(ns->d_r[g], ns->h_r, d4_size, cudaMemcpyHostToDevice));
+        CSC(cudaMemcpy(ns->d_v[g], ns->h_v, d4_size, cudaMemcpyHostToDevice));
+    }
+
+    for(int g = 0; g < gpus; g++)
+    {
+        CSC(cudaSetDevice(g));
+
+        int nthreads = BSIZE;
+        int nblocks = std::ceil(n_part[g]/(float)nthreads);
+        k_energy <<< nblocks, nthreads >>> (ns->d_r[g],
+                                            ns->d_v[g],
+                                            ns->d_ekin[g],
+                                            ns->d_epot[g],
+                                            ns->n,
+                                            n_part[g],
+                                            g);
+    }
+
+    for(int g = 0; g < gpus; g++)
+    {
+        CSC(cudaSetDevice(g));
+
+        size_t chunk = n_part[g]*sizeof(double);
+        size_t slice = g*n_part[g-1];
+
+        CSC(cudaMemcpy(&ns->h_ekin[slice], ns->d_ekin[g], chunk, cudaMemcpyDeviceToHost));
+        CSC(cudaMemcpy(&ns->h_epot[slice], ns->d_epot[g], chunk, cudaMemcpyDeviceToHost));
+    }
 
     // Reduction on CPU
     ns->en.kinetic = 0.0;
@@ -390,11 +380,13 @@ double Hermite4GPU::get_energy_gpu()
         ns->en.kinetic   += ns->h_ekin[i];
         ns->en.potential += ns->h_epot[i];
     }
+    double time_energy_end = omp_get_wtime() - time_energy_ini;
     return ns->en.kinetic + ns->en.potential;
 }
 
 /*
- * @fn k_init_acc_jrk
+ * @fn k_init_acc_jr
+ *
  *
  * @desc GPU Kernel which calculates the initial acceleration and jerk
  * of all the particles of the system.
@@ -421,7 +413,6 @@ __global__ void k_init_acc_jrk (Predictor *p,
     int id = threadIdx.x + blockDim.x * blockIdx.x;
     int tx = threadIdx.x;
 
-    //if (id < n)
     if (id < dev_size)
     {
       Predictor pred = p[id+(dev*dev_size)];
@@ -439,7 +430,6 @@ __global__ void k_init_acc_jrk (Predictor *p,
           __syncthreads();
           tile++;
       }
-      //f[id+(dev*dev_size)] = ff;
       f[id] = ff;
     }
 }
@@ -569,31 +559,35 @@ __global__ void k_energy(double4 *r,
                          double *ekin,
                          double *epot,
                          int n,
-                         double e2)
+                         int dev_size,
+                         int dev)
 {
     int i = threadIdx.x + blockDim.x * blockIdx.x;
     int j;
     double ekin_tmp = 0.0;
+    int id = i+dev*dev_size;
 
-    if (i < n)
+    if (i < dev_size)
     {
         double epot_tmp = 0.0;
-        for (j = i+1; j < n; j++)
+        double4 ri = r[id];
+        double4 vi = v[id];
+        for (j = id+1; j < n; j++)
         {
-            double rx = r[j].x - r[i].x;
-            double ry = r[j].y - r[i].y;
-            double rz = r[j].z - r[i].z;
-            double r2 = rx*rx + ry*ry + rz*rz + e2;
+            double rx = r[j].x - ri.x;
+            double ry = r[j].y - ri.y;
+            double rz = r[j].z - ri.z;
+            double r2 = rx*rx + ry*ry + rz*rz;
 
-            epot_tmp -= (r[i].w * r[j].w) * rsqrt(r2);
+            epot_tmp -= (ri.w * r[j].w) * rsqrt(r2);
         }
 
-        double vx = v[i].x * v[i].x;
-        double vy = v[i].y * v[i].y;
-        double vz = v[i].z * v[i].z;
+        double vx = vi.x * vi.x;
+        double vy = vi.y * vi.y;
+        double vz = vi.z * vi.z;
         double v2 = vx + vy + vz;
 
-        ekin_tmp = 0.5 * r[i].w * v2;
+        ekin_tmp = 0.5 * ri.w * v2;
 
         ekin[i] = ekin_tmp;
         epot[i] = epot_tmp;
@@ -670,9 +664,7 @@ void Hermite4GPU::integration()
     init_dt(ATIME, ETA_S, ITIME);
 
     ns->en.ini = get_energy_gpu();   // Initial calculation of the energy of the system
-    //ns->en.ini = nu->get_energy(0);   // Initial calculation of the energy of the system
     ns->en.tmp = ns->en.ini;
-    std::cout << ns->en.ini << std::endl;
 
     //ns->hmr_time = nu->get_half_mass_relaxation_time();
     //ns->cr_time  = nu->get_crossing_time();

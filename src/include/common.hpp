@@ -205,6 +205,10 @@ typedef struct Forces {
  *  Member 'reduce_ini' contains the starting time of the forces reduction.
  *  @var Gtime::reduce_end
  *  Member 'reduce_end' contains the final time of the forces reduction.
+ *  @var Gtime::reduce_forces_ini
+ *  Member 'reduce_ini' contains the starting time of the forces reduction on CPU.
+ *  @var Gtime::reduce_forces_end
+ *  Member 'reduce_end' contains the final time of the forces reduction on CPU.
  *  @var Gtime::gflops
  *  Member 'gflops' contains the amount of Giga FLOPs of the force update method.
     This is calculated with the following formula:
@@ -231,6 +235,9 @@ typedef struct Gtime {
 
     double reduce_ini;
     double reduce_end;
+
+    double reduce_forces_ini;
+    double reduce_forces_end;
 
     float gflops;
 } Gtime;

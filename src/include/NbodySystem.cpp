@@ -14,6 +14,7 @@ NbodySystem::NbodySystem(OptionsParser op)
     eta              = op.eta;
     ops              = op.ops;
     iterations       = 0;
+    gpus             = op.gpus;
     resume           = op.resume;
 
     en.ini = 0.0;
