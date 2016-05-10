@@ -20,7 +20,7 @@ double NbodyUtils::get_core_radius()
     std::vector<Distance> d(ns->n);
     double core_mass = 0.0;
     double radius = 0.0;
-    int i;
+    unsigned int i;
 
     //#pragma omp parallel for
     for (i = 0; i < ns->n; i++)
@@ -120,10 +120,10 @@ double3 NbodyUtils::get_center_of_density()
     empty.index = 0;
     empty.value = 0.0;
 
-    for (int i = 0; i < ns->n; i++)
+    for (unsigned int i = 0; i < ns->n; i++)
     {
         std::fill(d.begin(), d.end(), empty);
-        for (int j = 0; j < ns->n; j++)
+        for (unsigned int j = 0; j < ns->n; j++)
         {
             if (i != j)
             {
@@ -145,7 +145,7 @@ double3 NbodyUtils::get_center_of_density()
     double3 density_center = {0.0, 0.0, 0.0};
     dsum = 0.0;
 
-    for (int i = 0; i < ns->n; i++)
+    for (unsigned int i = 0; i < ns->n; i++)
     {
         dsum += p[i];
         density_center.x += ns->h_r[i].x * p[i];
@@ -164,7 +164,7 @@ double NbodyUtils::get_halfmass_radius()
 {
     float half_mass;
     double tmp, r_h;
-    int i, j;
+    unsigned int i, j;
 
     std::vector<Distance> distances(ns->n);
 
@@ -200,7 +200,7 @@ double NbodyUtils::get_halfmass_radius()
 void NbodyUtils::get_radii()
 {
     //#pragma omp parallel for
-    for(int i = 0; i < ns->n; i++)
+    for(unsigned int i = 0; i < ns->n; i++)
     {
         double rx = ns->h_r[i].x - cod.x;
         double ry = ns->h_r[i].y - cod.y;
@@ -214,10 +214,10 @@ void NbodyUtils::get_radii()
 void NbodyUtils::get_layers()
 {
     float tmp_mass = 0.0;
-    int layer_id = 1;
+    unsigned int layer_id = 1;
     float m_ratio = ratio * layer_id;
 
-    for (int i = 0; i < ns->n; i++)
+    for (unsigned int i = 0; i < ns->n; i++)
     {
         if (tmp_mass > m_ratio)
         {
@@ -258,7 +258,7 @@ double NbodyUtils::get_magnitude(double x, double y, double z)
     return sqrt(x*x + y*y + z*z);
 }
 
-double NbodyUtils::get_timestep_normal(int i, float ETA)
+double NbodyUtils::get_timestep_normal(unsigned int i, float ETA)
 {
     // Calculating a_{1,i}^{(2)} = a_{0,i}^{(2)} + dt * a_{0,i}^{(3)}
     double ax1_2 = ns->h_a2[i].x + ns->h_dt[i] * ns->h_a3[i].x;
@@ -288,7 +288,7 @@ double NbodyUtils::get_timestep_normal(int i, float ETA)
     return normal_dt;
 }
 
-double NbodyUtils::normalize_dt(double new_dt, double old_dt, double t, int i)
+double NbodyUtils::normalize_dt(double new_dt, double old_dt, double t, unsigned int i)
 {
     if (new_dt <= old_dt/8)
     {
@@ -349,10 +349,10 @@ double NbodyUtils::get_energy(double ext)
     ns->en.kinetic   = 0.0;
 
     //#pragma omp parallel for
-    for (int i = 0; i < ns->n; i++)
+    for (unsigned int i = 0; i < ns->n; i++)
     {
         double epot_tmp = 0.0;
-        for (int j = i+1; j < ns->n; j++)
+        for (unsigned int j = i+1; j < ns->n; j++)
         {
             double rx = ns->h_r[j].x - ns->h_r[i].x;
             double ry = ns->h_r[j].y - ns->h_r[i].y;
@@ -384,10 +384,10 @@ double NbodyUtils::get_potential()
     double epot = 0.0;
 
     //#pragma omp parallel for
-    for (int i = 0; i < ns->n; i++)
+    for (unsigned int i = 0; i < ns->n; i++)
     {
         double epot_tmp = 0.0;
-        for (int j = i+1; j < ns->n; j++)
+        for (unsigned int j = i+1; j < ns->n; j++)
         {
             double rx = ns->h_r[j].x - ns->h_r[i].x;
             double ry = ns->h_r[j].y - ns->h_r[i].y;
@@ -410,7 +410,7 @@ double NbodyUtils::get_kinetic()
     double ekin = 0.0;
 
     //#pragma omp parallel for
-    for (int i = 0; i < ns->n; i++)
+    for (unsigned int i = 0; i < ns->n; i++)
     {
         double vx = ns->h_v[i].x * ns->h_v[i].x;
         double vy = ns->h_v[i].y * ns->h_v[i].y;

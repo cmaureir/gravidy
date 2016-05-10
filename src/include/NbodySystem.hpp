@@ -29,14 +29,14 @@ class NbodySystem {
         options ops;
 
         // Configuration parameters
-        int    n;
+        unsigned int    n;
         float  eta;
         float  total_mass;
         float  integration_time;
         double e2;
         long long int iterations;
         double snapshot_time;
-        int snapshot_number;
+        unsigned int snapshot_number;
         bool resume;
 
         int  gpus;
@@ -66,8 +66,8 @@ class NbodySystem {
 
         /******************************** Host Particles arrays */
 
-        int       *h_id;   // Array with index of the particles
-        int       *h_move; // Array with index of the active particles
+        unsigned int       *h_id;   // Array with index of the particles
+        unsigned int       *h_move; // Array with index of the active particles
         double    *h_t;    // Particle's time
         double    *h_dt;   // Particle's timestep
         double    *h_ekin; // Kinetic energy
@@ -86,8 +86,8 @@ class NbodySystem {
 
         /******************************** Device Particles arrays */
 
-        int       *d_id[MAXGPUS];
-        int       *d_move[MAXGPUS];
+        unsigned int       *d_id[MAXGPUS];
+        unsigned int       *d_move[MAXGPUS];
         double    *d_t[MAXGPUS];
         double    *d_dt[MAXGPUS];
         double    *d_ekin[MAXGPUS];

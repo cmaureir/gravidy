@@ -76,10 +76,6 @@ const int MAX_PERT = 200;
 /** Maximum size of a MultipleSystem **/
 const int MAX_MSYSTEM = 5;
 
-/** First particle of the system to consider as a normal particle,
- * this is for future BH implementations **/
-const int FIRST_PARTICLE = 0;
-
 /** @struct Distance
  *  @brief ...
  *  @var Distance::index

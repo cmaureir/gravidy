@@ -1,4 +1,65 @@
+#undef _GLIBCXX_ATOMIC_BUILTINS
 #include "Hermite4GPU.cuh"
+
+Hermite4GPU::Hermite4GPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
+            : Hermite4(ns, logger, nu)
+{
+    smem = sizeof(Predictor) * BSIZE;
+    smem_reduce = sizeof(Forces) * NJBLOCK + 1;
+
+    int detected_gpus;
+    CSC(cudaGetDeviceCount(&detected_gpus));
+
+    if (ns->gpus > 0)
+    {
+        gpus = ns->gpus;
+    }
+    else
+    {
+        gpus = detected_gpus;
+    }
+
+    if (detected_gpus > gpus)
+    {
+        std::cout << "[Warning] Not using all the available GPUs: "
+                  << gpus << " of " << detected_gpus << std::endl;
+    }
+
+    std::cout << "[Info] GPUs: " << gpus << std::endl;
+
+    std::cout << "[Info] Spliting " << ns->n << " particles in " << gpus << " GPUs" << std::endl;
+
+    if (ns->n % gpus == 0)
+    {
+        size_t size = ns->n/gpus;
+        for ( int g = 0; g < gpus; g++)
+            n_part[g] = size;
+    }
+    else
+    {
+        size_t size = std::ceil(ns->n/(float)gpus);
+        for ( int g = 0; g < gpus; g++)
+        {
+            if (ns->n - size*(g+1) > 0)
+                n_part[g] = size;
+            else
+                n_part[g] = ns->n - size*g;
+        }
+    }
+
+    for(int g = 0; g < gpus; g++)
+    {
+        std::cout << "[Info] GPU " << g << " particles: " << n_part[g] << std::endl;
+    }
+
+    i1_size = ns->n * sizeof(int);
+    d1_size = ns->n * sizeof(double);
+    d4_size = ns->n * sizeof(double4);
+    ff_size = ns->n * sizeof(Forces);
+    pp_size = ns->n * sizeof(Predictor);
+
+    alloc_arrays_device();
+}
 
 Hermite4GPU::~Hermite4GPU()
 {
@@ -7,13 +68,6 @@ Hermite4GPU::~Hermite4GPU()
 
 void Hermite4GPU::alloc_arrays_device()
 {
-
-    size_t i1_size = ns->n * sizeof(int);
-    size_t d1_size = ns->n * sizeof(double);
-    size_t d4_size = ns->n * sizeof(double4);
-    size_t ff_size = ns->n * sizeof(Forces);
-    size_t pp_size = ns->n * sizeof(Predictor);
-
     for(int g = 0; g < gpus; g++)
     {
         // Setting GPU
@@ -50,7 +104,6 @@ void Hermite4GPU::alloc_arrays_device()
 
     // Extra CPU array
     ns->h_fout_tmp = new Forces[ns->n*NJBLOCK];
-
 }
 
 void Hermite4GPU::free_arrays_device()
@@ -83,30 +136,70 @@ void Hermite4GPU::free_arrays_device()
 /** Not implemented using GPU */
 void Hermite4GPU::predicted_pos_vel(double ITIME)
 {
-
     ns->gtime.prediction_ini = omp_get_wtime();
-    #pragma omp parallel for
-    for (int i = 0; i < ns->n; i++)
+    //#pragma omp parallel for
+    //for (int i = 0; i < ns->n; i++)
+    //{
+    //    double dt  = ITIME - ns->h_t[i];
+    //    double dt2 = 0.5*(dt  * dt);
+    //    double dt3 = 0.166666666666666*(dt * dt * dt);
+
+    //    Forces ff = ns->h_f[i];
+    //    double4 rr = ns->h_r[i];
+    //    double4 vv = ns->h_v[i];
+
+    //    ns->h_p[i].r[0] = (dt3 * ff.a1[0]) + (dt2 * ff.a[0]) + (dt * vv.x) + rr.x;
+    //    ns->h_p[i].r[1] = (dt3 * ff.a1[1]) + (dt2 * ff.a[1]) + (dt * vv.y) + rr.y;
+    //    ns->h_p[i].r[2] = (dt3 * ff.a1[2]) + (dt2 * ff.a[2]) + (dt * vv.z) + rr.z;
+
+    //    ns->h_p[i].v[0] = (dt2 * ff.a1[0]) + (dt * ff.a[0]) + vv.x;
+    //    ns->h_p[i].v[1] = (dt2 * ff.a1[1]) + (dt * ff.a[1]) + vv.y;
+    //    ns->h_p[i].v[2] = (dt2 * ff.a1[2]) + (dt * ff.a[2]) + vv.z;
+
+    //    ns->h_p[i].m = rr.w;
+    //}
+
+    for(int g = 0; g < gpus; g++)
     {
-        double dt  = ITIME - ns->h_t[i];
-        double dt2 = 0.5*(dt  * dt);
-        double dt3 = 0.166666666666666*(dt * dt * dt);
+        CSC(cudaSetDevice(g));
+        int shift = g*n_part[g-1];
+        size_t ff_size = n_part[g] * sizeof(Forces);
+        size_t d4_size = n_part[g] * sizeof(double4);
+        size_t d1_size = n_part[g] * sizeof(double);
 
-        Forces ff = ns->h_f[i];
-        double4 rr = ns->h_r[i];
-        double4 vv = ns->h_v[i];
-
-        ns->h_p[i].r[0] = (dt3 * ff.a1[0]) + (dt2 * ff.a[0]) + (dt * vv.x) + rr.x;
-        ns->h_p[i].r[1] = (dt3 * ff.a1[1]) + (dt2 * ff.a[1]) + (dt * vv.y) + rr.y;
-        ns->h_p[i].r[2] = (dt3 * ff.a1[2]) + (dt2 * ff.a[2]) + (dt * vv.z) + rr.z;
-
-        ns->h_p[i].v[0] = (dt2 * ff.a1[0]) + (dt * ff.a[0]) + vv.x;
-        ns->h_p[i].v[1] = (dt2 * ff.a1[1]) + (dt * ff.a[1]) + vv.y;
-        ns->h_p[i].v[2] = (dt2 * ff.a1[2]) + (dt * ff.a[2]) + vv.z;
-
-        ns->h_p[i].m = rr.w;
-
+        CSC(cudaMemcpyAsync(ns->d_f[g], ns->h_f + shift, ff_size, cudaMemcpyHostToDevice, 0));
+        CSC(cudaMemcpyAsync(ns->d_r[g], ns->h_r + shift, d4_size, cudaMemcpyHostToDevice, 0));
+        CSC(cudaMemcpyAsync(ns->d_v[g], ns->h_v + shift, d4_size, cudaMemcpyHostToDevice, 0));
+        CSC(cudaMemcpyAsync(ns->d_t[g], ns->h_t + shift, d1_size, cudaMemcpyHostToDevice, 0));
     }
+
+    // Executing kernels
+    for(int g = 0; g < gpus; g++)
+    {
+        CSC(cudaSetDevice(g));
+
+        nthreads = BSIZE;
+        nblocks = std::ceil(n_part[g]/(float)nthreads);
+
+        k_prediction <<< nblocks, nthreads >>> (ns->d_f[g],
+                                                ns->d_r[g],
+                                                ns->d_v[g],
+                                                ns->d_t[g],
+                                                ns->d_p[g],
+                                                n_part[g],
+                                                ITIME);
+        get_kernel_error();
+    }
+
+    for(int g = 0; g < gpus; g++)
+    {
+        CSC(cudaSetDevice(g));
+        size_t slice = g*n_part[g-1];
+        size_t pp_size = n_part[g] * sizeof(Predictor);
+
+        CSC(cudaMemcpyAsync(&ns->h_p[slice], ns->d_p[g], pp_size, cudaMemcpyDeviceToHost, 0));
+    }
+
     ns->gtime.prediction_end += omp_get_wtime() - ns->gtime.prediction_ini;
 }
 
@@ -169,16 +262,17 @@ void Hermite4GPU::correction_pos_vel(double ITIME, int nact)
 
 void Hermite4GPU::init_acc_jrk()
 {
-
     size_t pp_size = ns->n * sizeof(Predictor);
 
     // Copying arrays to device
+    //#pragma omp parallel for num_threads(gpus)
     for(int g = 0; g < gpus; g++)
     {
         CSC(cudaSetDevice(g));
 
         // All this information from the predictors is needed by each device
         CSC(cudaMemcpy(ns->d_p[g], ns->h_p, pp_size, cudaMemcpyHostToDevice));
+        //CSC(cudaMemcpyAsync(ns->d_p[g], ns->h_p, pp_size, cudaMemcpyHostToDevice, 0));
     }
 
     // Executing kernels
@@ -206,6 +300,7 @@ void Hermite4GPU::init_acc_jrk()
         size_t slice = g*n_part[g-1];
 
         CSC(cudaMemcpy(&ns->h_f[slice], ns->d_f[g], chunk, cudaMemcpyDeviceToHost));
+        //CSC(cudaMemcpyAsync(&ns->h_f[slice], ns->d_f[g], chunk, cudaMemcpyDeviceToHost, 0));
     }
 }
 
@@ -214,18 +309,19 @@ void Hermite4GPU::update_acc_jrk(int nact)
     // Timer begin
     ns->gtime.update_ini = omp_get_wtime();
 
-    for(int g = 0; g < gpus; g++)
-    {
-        if (n_part[g] > 0)
-        {
-            size_t pp_size = n_part[g] * sizeof(Predictor);
-            int shift = g*n_part[g-1];
+    //for(int g = 0; g < gpus; g++)
+    //{
+    //    if (n_part[g] > 0)
+    //    {
+    //        size_t pp_size = n_part[g] * sizeof(Predictor);
+    //        int shift = g*n_part[g-1];
 
-            CSC(cudaSetDevice(g));
-            // Copying to the device the predicted r and v
-            CSC(cudaMemcpy(ns->d_p[g], ns->h_p + shift, pp_size, cudaMemcpyHostToDevice));
-        }
-    }
+    //        CSC(cudaSetDevice(g));
+    //        // Copying to the device the predicted r and v
+    //        //CSC(cudaMemcpy(ns->d_p[g], ns->h_p + shift, pp_size, cudaMemcpyHostToDevice));
+    //        CSC(cudaMemcpyAsync(ns->d_p[g], ns->h_p + shift, pp_size, cudaMemcpyHostToDevice, 0));
+    //    }
+    //}
 
     // Fill the h_i Predictor array with the particles that we need to move
     #pragma omp parallel for
@@ -241,7 +337,8 @@ void Hermite4GPU::update_acc_jrk(int nact)
             CSC(cudaSetDevice(g));
             // Copy to the GPU (d_i) the preddictor host array (h_i)
             size_t chunk = nact * sizeof(Predictor);
-            CSC(cudaMemcpy(ns->d_i[g], ns->h_i, chunk, cudaMemcpyHostToDevice));
+            //CSC(cudaMemcpy(ns->d_i[g], ns->h_i, chunk, cudaMemcpyHostToDevice));
+            CSC(cudaMemcpyAsync(ns->d_i[g], ns->h_i, chunk, cudaMemcpyHostToDevice, 0));
         }
     }
 
@@ -267,26 +364,58 @@ void Hermite4GPU::update_acc_jrk(int nact)
     }
 
     ns->gtime.grav_end += omp_get_wtime() - ns->gtime.grav_ini;
-    get_kernel_error();
 
     ns->gtime.reduce_ini = omp_get_wtime();
     for(int g = 0; g < gpus; g++)
     {
+        size_t chunk = 2<<14;
         if (n_part[g] > 0)
         {
             CSC(cudaSetDevice(g));
             // Blocks, threads and shared memory configuration for the reduction.
-            dim3 rgrid   (nact,   1, 1);
-            dim3 rthreads(NJBLOCK, 1, 1);
+            if (nact <= chunk) // limit 32768
+            {
+                dim3 rgrid   (nact,   1, 1);
+                dim3 rthreads(NJBLOCK, 1, 1);
 
-            // Kernel to reduce que temp array with the forces
-            reduce <<< rgrid, rthreads, smem_reduce >>>(ns->d_fout[g],
-                                                        ns->d_fout_tmp[g]);
+                // Kernel to reduce que temp array with the forces
+                k_reduce <<< rgrid, rthreads, smem_reduce >>>(ns->d_fout[g],
+                                                            ns->d_fout_tmp[g],
+                                                            0,
+                                                            0);
+            }
+            else
+            {
+
+                int smax = std::ceil(nact/(float)chunk);
+                unsigned int shift = 0;
+                size_t size_launch = 0;
+
+                for(unsigned int s = 0; shift < nact; s++)
+                {
+                    // shift_id : s
+                    // shift: moving pointer
+                    // size_launch: chunk to multipy by Forces size
+                    if (nact < shift + chunk)
+                        size_launch = nact-shift;
+                    else
+                        size_launch = chunk;
+
+                    dim3 rgrid   (size_launch,   1, 1);
+                    dim3 rthreads(NJBLOCK, 1, 1);
+                    //std::cout << "Calculating starting from " << shift << std::endl;
+                    k_reduce <<< rgrid, rthreads, smem_reduce >>>(ns->d_fout[g],
+                                                                  ns->d_fout_tmp[g]+shift,
+                                                                  s,
+                                                                  shift);
+
+
+                    shift += chunk;
+                }
+            }
         }
     }
-
     ns->gtime.reduce_end += omp_get_wtime() - ns->gtime.reduce_ini;
-    get_kernel_error();
 
     for(int g = 0; g < gpus; g++)
     {
@@ -296,12 +425,10 @@ void Hermite4GPU::update_acc_jrk(int nact)
             size_t chunk = nact*sizeof(Forces);
 
             // Copy from the GPU the new forces for the d_i particles.
-            CSC(cudaMemcpy(ns->h_fout_gpu[g], ns->d_fout_tmp[g], chunk,
-                              cudaMemcpyDeviceToHost));
+            //CSC(cudaMemcpy(ns->h_fout_gpu[g], ns->d_fout_tmp[g], chunk, cudaMemcpyDeviceToHost));
+            CSC(cudaMemcpyAsync(ns->h_fout_gpu[g], ns->d_fout_tmp[g], chunk, cudaMemcpyDeviceToHost, 0));
         }
     }
-
-
 
     // Update forces in the host
     ns->gtime.reduce_forces_ini = omp_get_wtime();
@@ -332,24 +459,23 @@ void Hermite4GPU::update_acc_jrk(int nact)
 
 double Hermite4GPU::get_energy_gpu()
 {
-
     double time_energy_ini = omp_get_wtime();
 
+    size_t d4_size = ns->n * sizeof(double4);
+
     for(int g = 0; g < gpus; g++)
     {
         CSC(cudaSetDevice(g));
 
-        size_t d4_size = ns->n * sizeof(double4);
-
-        CSC(cudaMemcpy(ns->d_r[g], ns->h_r, d4_size, cudaMemcpyHostToDevice));
-        CSC(cudaMemcpy(ns->d_v[g], ns->h_v, d4_size, cudaMemcpyHostToDevice));
+        CSC(cudaMemcpyAsync(ns->d_r[g], ns->h_r, d4_size, cudaMemcpyHostToDevice, 0));
+        CSC(cudaMemcpyAsync(ns->d_v[g], ns->h_v, d4_size, cudaMemcpyHostToDevice, 0));
     }
 
+    int nthreads = BSIZE;
     for(int g = 0; g < gpus; g++)
     {
         CSC(cudaSetDevice(g));
 
-        int nthreads = BSIZE;
         int nblocks = std::ceil(n_part[g]/(float)nthreads);
         k_energy <<< nblocks, nthreads >>> (ns->d_r[g],
                                             ns->d_v[g],
@@ -367,231 +493,22 @@ double Hermite4GPU::get_energy_gpu()
         size_t chunk = n_part[g]*sizeof(double);
         size_t slice = g*n_part[g-1];
 
-        CSC(cudaMemcpy(&ns->h_ekin[slice], ns->d_ekin[g], chunk, cudaMemcpyDeviceToHost));
-        CSC(cudaMemcpy(&ns->h_epot[slice], ns->d_epot[g], chunk, cudaMemcpyDeviceToHost));
+        CSC(cudaMemcpyAsync(&ns->h_ekin[slice], ns->d_ekin[g], chunk, cudaMemcpyDeviceToHost, 0));
+        CSC(cudaMemcpyAsync(&ns->h_epot[slice], ns->d_epot[g], chunk, cudaMemcpyDeviceToHost, 0));
     }
 
     // Reduction on CPU
     ns->en.kinetic = 0.0;
     ns->en.potential = 0.0;
-
     for (int i = 0; i < ns->n; i++)
     {
         ns->en.kinetic   += ns->h_ekin[i];
         ns->en.potential += ns->h_epot[i];
     }
+
     double time_energy_end = omp_get_wtime() - time_energy_ini;
+
     return ns->en.kinetic + ns->en.potential;
-}
-
-/*
- * @fn k_init_acc_jr
- *
- *
- * @desc GPU Kernel which calculates the initial acceleration and jerk
- * of all the particles of the system.
- *
- */
-__global__ void k_init_acc_jrk (Predictor *p,
-                                Forces *f,
-                                int n,
-                                double e2,
-                                int dev,
-                                int dev_size)
-{
-
-    extern __shared__ Predictor sh[];
-
-    Forces ff;
-    ff.a[0]  = 0.0;
-    ff.a[1]  = 0.0;
-    ff.a[2]  = 0.0;
-    ff.a1[0] = 0.0;
-    ff.a1[1] = 0.0;
-    ff.a1[2] = 0.0;
-
-    int id = threadIdx.x + blockDim.x * blockIdx.x;
-    int tx = threadIdx.x;
-
-    if (id < dev_size)
-    {
-      Predictor pred = p[id+(dev*dev_size)];
-      //Predictor pred = p[id];
-      int tile = 0;
-      for (int i = 0; i < n; i += BSIZE)
-      {
-          int idx = tile * BSIZE + tx;
-          sh[tx]   = p[idx];
-          __syncthreads();
-          for (int k = 0; k < BSIZE; k++)
-          {
-              k_force_calculation(pred, sh[k], ff, e2);
-          }
-          __syncthreads();
-          tile++;
-      }
-      f[id] = ff;
-    }
-}
-
-__device__ void k_force_calculation(Predictor i_p,
-                                    Predictor j_p,
-                                    Forces &f,
-                                    double e2)
-{
-    double rx = j_p.r[0] - i_p.r[0];
-    double ry = j_p.r[1] - i_p.r[1];
-    double rz = j_p.r[2] - i_p.r[2];
-
-    double vx = j_p.v[0] - i_p.v[0];
-    double vy = j_p.v[1] - i_p.v[1];
-    double vz = j_p.v[2] - i_p.v[2];
-
-    double r2     = rx*rx + ry*ry + rz*rz + e2;
-    double rinv   = rsqrt(r2);
-    double r2inv  = rinv  * rinv;
-    double r3inv  = r2inv * rinv;
-    double r5inv  = r2inv * r3inv;
-    double mr3inv = r3inv * j_p.m;
-    double mr5inv = r5inv * j_p.m;
-
-    double rv = rx*vx + ry*vy + rz*vz;
-
-    f.a[0] += (rx * mr3inv);
-    f.a[1] += (ry * mr3inv);
-    f.a[2] += (rz * mr3inv);
-
-    f.a1[0] += (vx * mr3inv - (3 * rv) * rx * mr5inv);
-    f.a1[1] += (vy * mr3inv - (3 * rv) * ry * mr5inv);
-    f.a1[2] += (vz * mr3inv - (3 * rv) * rz * mr5inv);
-}
-
-/*
- * @fn k_update()
- *
- * @brief Gravitational interaction kernel.
- */
-__global__ void k_update(Predictor *i_p,
-                         Predictor *j_p,
-                         Forces *fout,
-                         int n,
-                         int total,
-                         double e2)
-{
-    int ibid = blockIdx.x;
-    int jbid = blockIdx.y;
-    int tid  = threadIdx.x;
-    int iaddr  = tid + blockDim.x * ibid;
-    int jstart = (n * (jbid  )) / NJBLOCK;
-    int jend   = (n * (jbid+1)) / NJBLOCK;
-
-    Predictor ip = i_p[iaddr];
-    Forces fo;
-    fo.a[0] = 0.0;
-    fo.a[1] = 0.0;
-    fo.a[2] = 0.0;
-    fo.a1[0] = 0.0;
-    fo.a1[1] = 0.0;
-    fo.a1[2] = 0.0;
-
-        for(int j=jstart; j<jend; j+=BSIZE)
-        {
-            __shared__ Predictor jpshare[BSIZE];
-            __syncthreads();
-            Predictor *src = (Predictor *)&j_p[j];
-            Predictor *dst = (Predictor *)jpshare;
-            dst[      tid] = src[      tid];
-            dst[BSIZE+tid] = src[BSIZE+tid];
-            __syncthreads();
-
-            // If the total amount of particles is not a multiple of BSIZE
-            if(jend-j < BSIZE)
-            {
-                #pragma unroll 4
-                for(int jj=0; jj<jend-j; jj++)
-                {
-                    Predictor jp = jpshare[jj];
-                    k_force_calculation(ip, jp, fo, e2);
-                }
-            }
-            else
-            {
-                #pragma unroll 4
-                for(int jj=0; jj<BSIZE; jj++)
-                {
-                    Predictor jp = jpshare[jj];
-                    k_force_calculation(ip, jp, fo, e2);
-                }
-            }
-        }
-        fout[iaddr*NJBLOCK + jbid] = fo;
-}
-
-/*
- * @fn reduce()
- *
- * @brief Forces reduction kernel
- */
-__global__ void reduce(Forces *in,
-                       Forces *out)
-{
-    extern __shared__ Forces sdata[];
-
-    const int xid   = threadIdx.x;
-    const int bid   = blockIdx.x;
-    const int iaddr = xid + blockDim.x * bid;
-
-    sdata[xid] = in[iaddr];
-    __syncthreads();
-
-    if(xid < 8) sdata[xid] += sdata[xid + 8];
-    if(xid < 4) sdata[xid] += sdata[xid + 4];
-    if(xid < 2) sdata[xid] += sdata[xid + 2];
-    if(xid < 1) sdata[xid] += sdata[xid + 1];
-
-    if(xid == 0){
-        out[bid] = sdata[0];
-    }
-}
-
-__global__ void k_energy(double4 *r,
-                         double4 *v,
-                         double *ekin,
-                         double *epot,
-                         int n,
-                         int dev_size,
-                         int dev)
-{
-    int i = threadIdx.x + blockDim.x * blockIdx.x;
-    int j;
-    double ekin_tmp = 0.0;
-    int id = i+dev*dev_size;
-
-    if (i < dev_size)
-    {
-        double epot_tmp = 0.0;
-        double4 ri = r[id];
-        double4 vi = v[id];
-        for (j = id+1; j < n; j++)
-        {
-            double rx = r[j].x - ri.x;
-            double ry = r[j].y - ri.y;
-            double rz = r[j].z - ri.z;
-            double r2 = rx*rx + ry*ry + rz*rz;
-
-            epot_tmp -= (ri.w * r[j].w) * rsqrt(r2);
-        }
-
-        double vx = vi.x * vi.x;
-        double vy = vi.y * vi.y;
-        double vz = vi.z * vi.z;
-        double v2 = vx + vy + vz;
-
-        ekin_tmp = 0.5 * ri.w * v2;
-
-        ekin[i] = ekin_tmp;
-        epot[i] = epot_tmp;
-    }
 }
 
 void Hermite4GPU::get_kernel_error(){
@@ -617,123 +534,5 @@ float Hermite4GPU::gpu_timer_stop(std::string f){
     return msec;
 }
 
-void Hermite4GPU::force_calculation(Predictor pi, Predictor pj, Forces &fi)
-{
-    double rx = pj.r[0] - pi.r[0];
-    double ry = pj.r[1] - pi.r[1];
-    double rz = pj.r[2] - pi.r[2];
-
-    double vx = pj.v[0] - pi.v[0];
-    double vy = pj.v[1] - pi.v[1];
-    double vz = pj.v[2] - pi.v[2];
-
-    double r2     = rx*rx + ry*ry + rz*rz + ns->e2;
-    double rinv   = 1.0/sqrt(r2);
-    double r2inv  = rinv  * rinv;
-    double r3inv  = r2inv * rinv;
-    double r5inv  = r2inv * r3inv;
-    double mr3inv = r3inv * pj.m;
-    double mr5inv = r5inv * pj.m;
-
-    double rv = rx*vx + ry*vy + rz*vz;
-
-    fi.a[0] += (rx * mr3inv);
-    fi.a[1] += (ry * mr3inv);
-    fi.a[2] += (rz * mr3inv);
-
-    fi.a1[0] += (vx * mr3inv - (3 * rv ) * rx * mr5inv);
-    fi.a1[1] += (vy * mr3inv - (3 * rv ) * ry * mr5inv);
-    fi.a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
-}
-
-void Hermite4GPU::integration()
-{
-    ns->gtime.integration_ini = omp_get_wtime();
-
-    double ATIME = 1.0e+10; // Actual integration time
-    double ITIME = ns->snapshot_time;     // Integration time
-    int nact     = 0;       // Active particles
-    int nsteps   = 0;       // Amount of steps per particles on the system
-    static long long interactions = 0;
-
-
-    int max_threads = omp_get_max_threads();
-    omp_set_num_threads( max_threads - 1);
-
-    init_acc_jrk();
-    init_dt(ATIME, ETA_S, ITIME);
-
-    ns->en.ini = get_energy_gpu();   // Initial calculation of the energy of the system
-    ns->en.tmp = ns->en.ini;
-
-    //ns->hmr_time = nu->get_half_mass_relaxation_time();
-    //ns->cr_time  = nu->get_crossing_time();
-
-    logger->print_info();
-    logger->write_info();
-    logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, ns->en.ini);
-
-    int snap_number = ns->snapshot_number;
-    logger->write_snapshot(snap_number, ITIME);
-    snap_number++;
-
-    if (ns->ops.print_all)
-    {
-        logger->print_all(ITIME);
-    }
-    if (ns->ops.print_lagrange)
-    {
-        nu->lagrange_radii();
-        logger->print_lagrange_radii(ITIME, nu->layers_radii);
-    }
-
-    while (ITIME < ns->integration_time)
-    {
-        ITIME = ATIME;
-
-        nact = find_particles_to_move(ITIME);
-
-        save_old_acc_jrk(nact);
-
-        predicted_pos_vel(ITIME);
-
-        update_acc_jrk(nact);
-
-        correction_pos_vel(ITIME, nact);
-
-        // Update the amount of interactions counter
-        interactions += nact * ns->n;
-
-        // Find the next integration time
-        next_integration_time(ATIME);
-
-
-        if(nact == ns->n)
-        {
-            //assert(nact == ns->n);
-            logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, get_energy_gpu());
-            if (ns->ops.print_all)
-            {
-                logger->print_all(ITIME);
-            }
-            if (ns->ops.print_lagrange)
-            {
-                nu->lagrange_radii();
-                logger->print_lagrange_radii(ITIME, nu->layers_radii);
-            }
-            logger->write_snapshot(snap_number, ITIME);
-            snap_number++;
-        }
-
-        // Update nsteps with nact
-        nsteps += nact;
-
-        // Increase iteration counter
-        ns->iterations++;
-
-    }
-    ns->gtime.integration_end =  omp_get_wtime() - ns->gtime.integration_ini;
-    logger->write_snapshot(snap_number, ITIME);
-    //logger->add_info(std::string("SnapshotNumber:"), std::to_string(snap_number));
-    logger->add_info(std::string("SnapshotNumber:"), std::string(SSTR(snap_number)));
-}
+// Not being use: to satisfy virtual implementation
+void Hermite4GPU::force_calculation(Predictor pi, Predictor pj, Forces &fi) {}

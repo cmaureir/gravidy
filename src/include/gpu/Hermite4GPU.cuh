@@ -55,72 +55,25 @@ inline __host__ __device__ void operator+=(Forces &a, Forces &b)
 
 class Hermite4GPU : public Hermite4 {
     public:
-        Hermite4GPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
-            : Hermite4(ns, logger, nu)
-        {
-            smem = sizeof(Predictor) * BSIZE;
-            smem_reduce = sizeof(Forces) * NJBLOCK + 1;
-
-            int detected_gpus;
-            CSC(cudaGetDeviceCount(&detected_gpus));
-
-            if (ns->gpus > 0)
-            {
-                gpus = ns->gpus;
-            }
-            else
-            {
-                gpus = detected_gpus;
-            }
-
-            if (detected_gpus > gpus)
-            {
-                std::cout << "[Warning] Not using all the available GPUs: "
-                          << gpus << " of " << detected_gpus << std::endl;
-            }
-
-            std::cout << "GPUs: " << gpus << std::endl;
-            //gpus = 1;
-            // cudaSetDevice(ID); // set the active gpu
-            // cudaGetDevice(&ID) // get the current gpu
-
-            std::cout << "Spliting " << ns->n << " particles in " << gpus << " GPUs" << std::endl;
-
-            if (ns->n % gpus == 0)
-            {
-                int size = ns->n/gpus;
-                for ( int g = 0; g < gpus; g++)
-                    n_part[g] = size;
-            }
-            else
-            {
-                int size = std::ceil(ns->n/(float)gpus);
-                for ( int g = 0; g < gpus; g++)
-                {
-                    if (ns->n - size*(g+1) > 0)
-                        n_part[g] = size;
-                    else
-                        n_part[g] = ns->n - size*g;
-                }
-            }
-
-            for(int g = 0; g < gpus; g++)
-            {
-                std::cout << "GPU " << g << " particles: " << n_part[g] << std::endl;
-            }
-
-            alloc_arrays_device();
-        }
+        Hermite4GPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu);
         ~Hermite4GPU();
+
         using Hermite4::init_acc_jrk;
         using Hermite4::update_acc_jrk;
         using Hermite4::predicted_pos_vel;
         using Hermite4::correction_pos_vel;
+        using Hermite4::force_calculation;
 
         size_t nthreads;
         size_t nblocks;
         size_t smem;
         size_t smem_reduce;
+
+        size_t i1_size;
+        size_t d1_size;
+        size_t d4_size;
+        size_t ff_size;
+        size_t pp_size;
 
         int gpus;
         int n_part[MAXGPUS];
@@ -153,6 +106,14 @@ __global__ void k_init_acc_jrk(Predictor *p,
                                int dev,
                                int dev_size);
 
+__global__ void k_prediction(Forces *f,
+                             double4 *r,
+                             double4 *v,
+                             double *t,
+                             Predictor *p,
+                             int dev_size,
+                             double ITIME);
+
 __device__ void k_force_calculation(Predictor i_p,
                                     Predictor j_p,
                                     Forces &f,
@@ -165,8 +126,10 @@ __global__ void k_update(Predictor *i_p,
                          int total,
                          double e2);
 
-__global__ void reduce(Forces *in,
-                       Forces *out);
+__global__ void k_reduce(Forces *in,
+                       Forces *out,
+                       int shift_id,
+                       int shift);
 
 __global__ void k_energy(double4 *r,
                          double4 *v,

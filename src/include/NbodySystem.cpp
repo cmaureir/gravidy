@@ -130,7 +130,7 @@ void NbodySystem::read_input_file()
                 }
                 else
                 {
-                    tmp.id   = (int)std::atoi(tokens[0].c_str());
+                    tmp.id   = (unsigned int)std::atoi(tokens[0].c_str());
                     tmp.m    = (float)strtod(tokens[1].c_str(), NULL);
                     tmp.r[0] = strtod(tokens[2].c_str(), NULL);
                     tmp.r[1] = strtod(tokens[3].c_str(), NULL);
@@ -149,7 +149,7 @@ void NbodySystem::read_input_file()
         }
         file.close();
     }
-    n = (int)reader.size();
+    n = (unsigned int)reader.size();
 }
 
 void NbodySystem::alloc_base_attributes(int rank)
@@ -157,7 +157,7 @@ void NbodySystem::alloc_base_attributes(int rank)
 
     #if defined(_MPI) || defined(MPIGPU)
     // Sending the amount of particles
-    MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&n, 1, MPI_UNSIGNED_INT, 0, MPI_COMM_WORLD);
 
     // Resizing input data vector, to be able to Bcast it
     if (rank > 0)
@@ -166,7 +166,7 @@ void NbodySystem::alloc_base_attributes(int rank)
     MPI_Bcast(&reader[0], sizeof(file_data) * n, MPI_BYTE, 0, MPI_COMM_WORLD);
     #endif
 
-    h_id = new int[n];
+    h_id = new unsigned int[n];
     h_r = new double4[n];
     h_v = new double4[n];
 }
@@ -180,7 +180,7 @@ void NbodySystem::free_base_attributes()
 
 void NbodySystem::copy_input_data()
 {
-    for (int i = 0; i < (int)reader.size(); i++)
+    for (unsigned int i = 0; i < (unsigned int)reader.size(); i++)
     {
         h_id[i]     = reader[i].id;
         h_r[i].w    = reader[i].m;
@@ -192,5 +192,3 @@ void NbodySystem::copy_input_data()
         h_v[i].z    = reader[i].v[2];
     }
 }
-
-

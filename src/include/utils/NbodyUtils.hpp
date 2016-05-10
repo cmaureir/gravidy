@@ -35,9 +35,9 @@ class NbodyUtils {
         double get_crossing_time(double r_virial);
         double get_halfmass_radius();
         double get_magnitude(double x, double y, double z);
-        double get_timestep_normal(int i, float ETA);
-        double normalize_dt(double new_dt, double old_dt, double t, int i);
-        double get_timestep_central(int i);
+        double get_timestep_normal(unsigned int i, float ETA);
+        double normalize_dt(double new_dt, double old_dt, double t, unsigned int i);
+        double get_timestep_central(unsigned int i);
 
         double get_potential();
         double get_kinetic();

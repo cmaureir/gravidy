@@ -101,7 +101,9 @@ OBJS_MPIGPU=   $(OBJS)                        \
             include/mpigpu/Hermite4MPIGPU.cuo \
             include/mpigpu/MPIUtils.o
 
-OBJS_GPU=   $(OBJS)                         \
+OBJS_GPU=   $(OBJS)                               \
+            include/gpu/Hermite4GPU_kernels.cuo   \
+            include/gpu/Hermite4GPU_integration.o \
             include/gpu/Hermite4GPU.cuo
 
 OBJS_KEPLER=$(OBJS)                         \

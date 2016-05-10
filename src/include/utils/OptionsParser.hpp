@@ -22,7 +22,7 @@ class OptionsParser {
         float snapshot_time;
         float softening;
         float eta;
-        int snapshot_number;
+        unsigned int snapshot_number;
         bool resume;
         options ops;
         po::variables_map vm;
