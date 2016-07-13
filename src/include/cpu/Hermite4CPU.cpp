@@ -12,7 +12,7 @@ Hermite4CPU::Hermite4CPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
     nb_list  = new int*[ns->n];
     nb_number = 2 * sqrt(ns->n);
 
-    for(int i = 0; i < ns->n; ++i)
+    for(unsigned int i = 0; i < ns->n; ++i)
         nb_list[i] = new int[nb_number];
 
 }
@@ -54,7 +54,7 @@ void Hermite4CPU::force_calculation(Predictor pi, Predictor pj, Forces &fi)
 
 void Hermite4CPU::init_acc_jrk()
 {
-    int i,j;
+    unsigned int i,j;
     #pragma omp parallel for private(j)
     for (i = 0; i < ns->n; i++)
     {
@@ -66,10 +66,10 @@ void Hermite4CPU::init_acc_jrk()
     }
 }
 
-void Hermite4CPU::update_acc_jrk(int nact)
+void Hermite4CPU::update_acc_jrk(unsigned int nact)
 {
     ns->gtime.update_ini = omp_get_wtime();
-    int i, j, k;
+    unsigned int i, j, k;
     #pragma omp parallel for private(i,j)
     for (k = 0; k < nact; k++)
     {
@@ -95,7 +95,7 @@ void Hermite4CPU::predicted_pos_vel(double ITIME)
 {
 
     ns->gtime.prediction_ini = omp_get_wtime();
-    for (int i = 0; i < ns->n; i++)
+    for (unsigned int i = 0; i < ns->n; i++)
     {
         double dt  = ITIME - ns->h_t[i];
         double dt2 = (dt  * dt);
@@ -118,10 +118,10 @@ void Hermite4CPU::predicted_pos_vel(double ITIME)
     ns->gtime.prediction_end += omp_get_wtime() - ns->gtime.prediction_ini;
 }
 
-void Hermite4CPU::correction_pos_vel(double ITIME, int nact)
+void Hermite4CPU::correction_pos_vel(double ITIME, unsigned int nact)
 {
     ns->gtime.correction_ini = omp_get_wtime();
-    for (int k = 0; k < nact; k++)
+    for (unsigned int k = 0; k < nact; k++)
     {
         int i = ns->h_move[k];
 
@@ -170,7 +170,7 @@ void Hermite4CPU::integration()
 
     double ATIME = 1.0e+10; // Actual integration time
     double ITIME = ns->snapshot_time;     // Integration time
-    int nact     = 0;       // Active particles
+    unsigned int nact     = 0;       // Active particles
     int nsteps   = 0;       // Amount of steps per particles on the system
     static long long interactions = 0;
 
