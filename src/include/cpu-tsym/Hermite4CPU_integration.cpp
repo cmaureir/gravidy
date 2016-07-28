@@ -6,14 +6,19 @@ void Hermite4CPU::integration()
     ns->gtime.integration_ini = omp_get_wtime();
 
     double ATIME = 1.0e+10; // Actual integration time
-    double ITIME = 0.0;     // Integration time
-    int nact     = 0;       // Active particles
+    double ITIME = ns->snapshot_time;     // Integration time
+    unsigned int nact     = 0;       // Active particles
     int nsteps   = 0;       // Amount of steps per particles on the system
     static long long interactions = 0;
 
     // Setting maximum number of threads for OpenMP sections
     int max_threads = omp_get_max_threads();
     omp_set_num_threads( max_threads - 1);
+
+    update_neighbour_radius();
+
+    init_acc_jrk(ns->h_p, ns->h_f, ns->h_r_sphere);
+    init_dt(ATIME, ETA_S, ITIME);
 
     // Initial energy calculation
     ns->en.ini = nu->get_energy();
@@ -22,17 +27,19 @@ void Hermite4CPU::integration()
     // Getting system information:
     nu->nbody_attributes();
 
-    update_neighbour_radius();
+    //update_neighbour_radius();
 
-    init_acc_jrk(ns->h_p, ns->h_f, ns->h_r_sphere);
-    init_dt(ATIME, ETA_S, ITIME);
 
     logger->print_info();
     logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, ns->en.ini);
 
+    int snap_number = ns->snapshot_number;
+    logger->write_snapshot(snap_number, ITIME);
+    snap_number++;
+
     if (ns->ops.print_all)
     {
-        logger->print_all(ITIME);
+        logger->print_all(ITIME, snap_number);
     }
     if (ns->ops.print_lagrange)
     {
@@ -126,7 +133,7 @@ void Hermite4CPU::integration()
 
             if (ns->ops.print_all)
             {
-                logger->print_all(ITIME);
+                logger->print_all(ITIME, snap_number);
             }
             if (ns->ops.print_lagrange)
             {

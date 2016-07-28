@@ -33,7 +33,7 @@ void Hermite4GPU::integration()
 
     if (ns->ops.print_all)
     {
-        logger->print_all(ITIME);
+        logger->print_all(ITIME, snap_number);
     }
     if (ns->ops.print_lagrange)
     {
@@ -68,7 +68,7 @@ void Hermite4GPU::integration()
             logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, get_energy_gpu());
             if (ns->ops.print_all)
             {
-                logger->print_all(ITIME);
+                logger->print_all(ITIME, snap_number);
             }
             if (ns->ops.print_lagrange)
             {

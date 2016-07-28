@@ -27,7 +27,7 @@ class Logger {
         void add_info(std::string key, std::string value);
         void write_info();
         void write_snapshot(unsigned int snapshot_number, double ITIME);
-        void print_all(double ITIME);
+        void print_all(double ITIME, unsigned int snapshot_number);
         void print_energy_log(double ITIME, unsigned int iterations, long long interactions,
                               unsigned int nsteps, double new_energy);
         void print_lagrange_radii(double ITIME, std::vector<double> lagrange_radii);

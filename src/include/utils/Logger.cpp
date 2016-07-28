@@ -261,7 +261,7 @@ void Logger::print_lagrange_radii(double ITIME, std::vector<double> lagrange_rad
     }
 }
 
-void Logger::print_all(double ITIME)
+void Logger::print_all(double ITIME, unsigned int snapshot_number)
 {
     if(print_screen)
     {
@@ -270,8 +270,8 @@ void Logger::print_all(double ITIME)
     else
     {
         std::ostringstream s;
-        s << std::setw(4) << std::setfill('0') << ITIME;
-        std::string ofname_all = ofname + ".all.t" + s.str();
+        s << std::setw(4) << std::setfill('0') << snapshot_number;
+        std::string ofname_all = ofname + ".all.snap_" + s.str();
         out_file.open(ofname_all.c_str(), std::ios::out);
         gstream = &out_file;
     }
@@ -320,11 +320,13 @@ void Logger::print_energy_log(double ITIME, unsigned int iterations, long long i
     ns->en.end = new_energy;
     double rel_error     = std::abs((ns->en.end - ns->en.tmp)/ns->en.tmp);
     double cum_error     = std::abs((ns->en.end - ns->en.ini)/ns->en.ini);
+    float grav_gflops = 0.0;
     ns->en.tmp = ns->en.end;
 
     float time = omp_get_wtime() - ns->gtime.integration_ini;
     if (ITIME != 0.0){
         ns->gtime.gflops =  60.10e-9 * (interactions / ns->gtime.update_end);
+        grav_gflops =  60e-9 * (interactions / ns->gtime.grav_end);
     }
 
     if(print_screen)
@@ -351,6 +353,7 @@ void Logger::print_energy_log(double ITIME, unsigned int iterations, long long i
             *gstream << std::setw(16) << std::right << "ElapsedTime";
 
             *gstream << std::setw(12)  << std::right << "GFLOPS";
+            *gstream << std::setw(12)  << std::right << "GFLOPS(g)";
             *gstream << std::endl;
     }
 
@@ -372,6 +375,7 @@ void Logger::print_energy_log(double ITIME, unsigned int iterations, long long i
     *gstream << std::fixed;
     gstream->precision(3);
     *gstream << std::setw(12) << std::right << ns->gtime.gflops;
+    *gstream << std::setw(12) << std::right << grav_gflops;
     *gstream << std::endl;
 
     if(!print_screen)

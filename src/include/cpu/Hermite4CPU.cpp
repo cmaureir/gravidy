@@ -174,17 +174,25 @@ void Hermite4CPU::integration()
     int nsteps   = 0;       // Amount of steps per particles on the system
     static long long interactions = 0;
 
+    // Setting maximum number of threads for OpenMP sections
     int max_threads = omp_get_max_threads();
     omp_set_num_threads( max_threads - 1);
 
-    init_acc_jrk();
+    update_neighbour_radius();
+
+    //init_acc_jrk();
+    init_acc_jrk(ns->h_p, ns->h_f, ns->h_r_sphere);
     init_dt(ATIME, ETA_S, ITIME);
 
+    // Initial energy calculation
     ns->en.ini = nu->get_energy();   // Initial calculation of the energy of the system
     ns->en.tmp = ns->en.ini;
 
-    //ns->hmr_time = nu->get_half_mass_relaxation_time();
-    //ns->cr_time  = nu->get_crossing_time();
+    // Getting system information:
+    nu->nbody_attributes();
+
+
+    //update_neighbour_radius();
 
     logger->print_info();
     logger->write_info();
@@ -196,7 +204,7 @@ void Hermite4CPU::integration()
 
     if (ns->ops.print_all)
     {
-        logger->print_all(ITIME);
+        logger->print_all(ITIME, snap_number);
     }
     if (ns->ops.print_lagrange)
     {
@@ -228,9 +236,9 @@ void Hermite4CPU::integration()
         {
             assert(nact == ns->n);
             logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy());
-            if (ns->ops.print_all)
+            if (ns->snapshot_number)
             {
-                logger->print_all(ITIME);
+                logger->print_all(ITIME, snap_number);
             }
             if (ns->ops.print_lagrange)
             {
