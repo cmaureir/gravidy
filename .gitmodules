@@ -1,0 +1,3 @@
+[submodule "input"]
+	path = input
+	url = git@gitlab.com:cmaureir/gravidy-input

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+git submodule init || echo "Failed to init submodules"
+git submodule update || echo "Failed to update submodules"
+git submodule foreach git pull origin master || echo "Failed to update each repo"
