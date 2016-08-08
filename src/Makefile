@@ -114,26 +114,12 @@ OBJS_KEPLER=$(OBJS)                         \
 all: gpu
 
 cpu: gravidy-cpu
-tsym: CXXFLAGS+=-DTSYM
-tsym: gravidy-tsym
-mpigpu: CXXFLAGS+=-DMPIGPU
-mpigpu: NVFLAGS+=-DMPIGPU
-mpigpu: NVFLAGS+=-L$(MPI_PATH)/lib -I$(MPI_PATH)/include
-mpigpu: CXXFLAGS+=$(MPIFLAGS)
-mpigpu: CXXFLAGS+=$(LINKFLAGS)
-mpigpu: CXXFLAGS:=$(filter-out -D_MPI,$(CXXFLAGS))
-mpigpu: CXXFLAGS:=$(filter-out -DGPU,$(CXXFLAGS))
-mpigpu: gravidy
 
 mpi: CXXFLAGS+=$(MPIFLAGS)
 mpi: gravidy-mpi
 
 gpu: CXXFLAGS+=$(LINKFLAGS)
 gpu: gravidy-gpu
-
-kepler: CXXFLAGS+=-DKEPLER
-kepler: gravidy-kepler
-
 
 ############################# Rules to generate cuda object
 %.cuo : %.cu
@@ -153,29 +139,16 @@ gravidy-mpi: gravidy.cpp $(OBJS_MPI)
 gravidy-gpu: gravidy.cpp $(OBJS_GPU)
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
-gravidy-kepler: gravidy.cpp $(OBJS_KEPLER)
-	$(CXX) $(CXXFLAGS) $^ -o $@
-
-gravidy-tsym: gravidy.cpp $(OBJS_TCPU)
-	$(CXX) $(CXXFLAGS) $^ -o $@
-
-
-
 clean:
 	rm -f gravidy
 	rm -f gravidy-gpu
 	rm -f gravidy-cpu
-	rm -f gravidy-tsym
-	rm -f gravidy-kepler
 	rm -f gravidy-mpi
 
 distclean: clean
 	rm -f include/*.o
-	rm -f include/cpu-tsym/*.o
 	rm -f include/cpu/*.o
 	rm -f include/utils/*.o
 	rm -f include/gpu/*.{o,cuo}
-	rm -f include/kepler/*.o
 	rm -f include/mpi/*.o
-	rm -f include/mpigpu/*.{o,cuo}
 	rm -f gmon.out

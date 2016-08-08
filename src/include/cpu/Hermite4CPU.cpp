@@ -178,10 +178,7 @@ void Hermite4CPU::integration()
     int max_threads = omp_get_max_threads();
     omp_set_num_threads( max_threads - 1);
 
-    update_neighbour_radius();
-
-    //init_acc_jrk();
-    init_acc_jrk(ns->h_p, ns->h_f, ns->h_r_sphere);
+    init_acc_jrk();
     init_dt(ATIME, ETA_S, ITIME);
 
     // Initial energy calculation
@@ -190,9 +187,6 @@ void Hermite4CPU::integration()
 
     // Getting system information:
     nu->nbody_attributes();
-
-
-    //update_neighbour_radius();
 
     logger->print_info();
     logger->write_info();
