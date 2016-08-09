@@ -20,7 +20,6 @@ NbodySystem::NbodySystem(OptionsParser op)
     en.ini = 0.0;
     en.end = 0.0;
     en.tmp = 0.0;
-    gtime.gflops = 0.0;
 
     r_cl = 0.0;
     dt_cl = 0.0;

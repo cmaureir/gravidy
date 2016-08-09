@@ -29,7 +29,7 @@ class NbodySystem {
         options ops;
 
         // Configuration parameters
-        unsigned int    n;
+        unsigned int n;
         float  eta;
         float  total_mass;
         float  integration_time;

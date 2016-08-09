@@ -403,7 +403,6 @@ void Hermite4GPU::update_acc_jrk(int nact)
 
                     dim3 rgrid   (size_launch,   1, 1);
                     dim3 rthreads(NJBLOCK, 1, 1);
-                    //std::cout << "Calculating starting from " << shift << std::endl;
                     k_reduce <<< rgrid, rthreads, smem_reduce >>>(ns->d_fout[g],
                                                                   ns->d_fout_tmp[g]+shift,
                                                                   s,

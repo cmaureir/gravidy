@@ -236,6 +236,24 @@ typedef struct Gtime {
     double reduce_forces_end;
 
     float gflops;
+    Gtime()
+    {
+        integration_ini = 0.0;
+        integration_end = 0.0;
+        prediction_ini = 0.0;
+        prediction_end = 0.0;
+        update_ini = 0.0;
+        update_end = 0.0;
+        correction_ini = 0.0;
+        correction_end = 0.0;
+        grav_ini = 0.0;
+        grav_end = 0.0;
+        reduce_ini = 0.0;
+        reduce_end = 0.0;
+        reduce_forces_ini = 0.0;
+        reduce_forces_end = 0.0;
+        gflops = 0.0;
+    }
 } Gtime;
 
 /** @struct file_data
@@ -257,6 +275,7 @@ typedef struct file_data
     double v[3];
 } file_data;
 
+const double KERNEL_GFLOP = 48e-9; // 60e-9
 #if defined(GPU) || defined(MPIGPU)
 const int BSIZE   = 32;
 const int NJBLOCK = 16;

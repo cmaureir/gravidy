@@ -85,9 +85,6 @@ void Hermite4::init_dt(double &CTIME, float ETA, double ITIME)
         if(tmp_dt < CTIME)
             CTIME = tmp_dt;
     }
-    std::cout << "CTIME: " << CTIME << std::endl;
-    std::cout << "D_TIME_MIN: " << D_TIME_MIN << std::endl;
-    getchar();
 }
 
 void Hermite4::save_old_acc_jrk(unsigned int nact)

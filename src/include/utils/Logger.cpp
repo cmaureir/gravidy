@@ -325,8 +325,8 @@ void Logger::print_energy_log(double ITIME, unsigned int iterations, long long i
 
     float time = omp_get_wtime() - ns->gtime.integration_ini;
     if (ITIME != 0.0){
-        ns->gtime.gflops =  60.10e-9 * (interactions / ns->gtime.update_end);
-        grav_gflops =  60e-9 * (interactions / ns->gtime.grav_end);
+        ns->gtime.gflops =  KERNEL_GFLOP * (interactions / ns->gtime.update_end);
+        grav_gflops =  KERNEL_GFLOP * (interactions / ns->gtime.grav_end);
     }
 
     if(print_screen)
