@@ -1,9 +1,6 @@
 GraviDy
 =======
 
-A quasi-keplerian n-body gravitational system integrator.
-----------------------------------------------------------
-
 The astrophysics "N-body problem" consist in a dynamical
 N celestial bodies model which interact gravitationally.
 
@@ -17,9 +14,14 @@ the problem do not have an analytic solution,
 and it is necessary to use computational methods,
 which are progresively more expensives to largest values of N.
 
+GraviDy is a new GPU,
+direct-summation N-body integrator written from scratch and based on the
+Hermite scheme. The most important features of the code are:
 
-This projects pretends to use the GPU technology to solve
-the N-body problem of a "quasi-keplerian" system,
-in other words, a system in which their dynamics is dominated
-by a massive central object, but the interactions between
-the others bodies are no totally negligible.
+ * Written in C/C++,
+ * Using parallel computing techniques and libraries like OpenMP, MPI and CUDA,
+ * full double-precision resolution,
+ * its high modularity, which allows users to readily introduce new physics into it,
+ * the exploitation of all high-performance computing resources available,
+ * its maintenance and improvement cycle,
+ * the fact that the code is publicly released under a BSD license and will be maintained via planned, public, regular updates.
