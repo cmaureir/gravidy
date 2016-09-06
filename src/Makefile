@@ -85,21 +85,13 @@ OBJS=       include/utils/OptionsParser.o   \
             include/Hermite4.o              \
 
 OBJS_CPU=   $(OBJS)                         \
+            include/cpu/Hermite4CPU_integration.o \
             include/cpu/Hermite4CPU.o
 
-OBJS_TCPU=  $(OBJS)                          \
-            include/cpu-tsym/Hermite4CPU.o   \
-            include/cpu-tsym/Hermite4CPU_integration.o   \
-            include/cpu-tsym/Hermite4CPU_msystem.o   \
-            include/cpu-tsym/MultipleSystem.o
-
 OBJS_MPI=   $(OBJS)                         \
+            include/mpi/Hermite4MPI_integration.o       \
             include/mpi/Hermite4MPI.o       \
             include/mpi/MPIUtils.o
-
-OBJS_MPIGPU=   $(OBJS)                        \
-            include/mpigpu/Hermite4MPIGPU.cuo \
-            include/mpigpu/MPIUtils.o
 
 OBJS_GPU=   $(OBJS)                               \
             include/gpu/Hermite4GPU_kernels.cuo   \
@@ -127,7 +119,7 @@ gpu: gravidy-gpu
 
 ############################# Rules to generate binaries
 
-gravidy: gravidy.cpp $(OBJS_MPIGPU)
+gravidy: gravidy.cpp
 	$(CXX) $(CXXFLAGS) $^ -o $@
 
 gravidy-cpu: gravidy.cpp $(OBJS_CPU)
