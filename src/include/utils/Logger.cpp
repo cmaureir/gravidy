@@ -1,3 +1,38 @@
+/*
+ * Copyright (c) 2016
+ *
+ * Cristián Maureira-Fredes <cmaureirafredes@gmail.com>
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. The name of the author may not be used to endorse or promote
+ * products derived from this software without specific prior written
+ * permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
 #include "Logger.hpp"
 
 Logger::Logger(NbodySystem *ns)
@@ -320,13 +355,13 @@ void Logger::print_energy_log(double ITIME, unsigned int iterations, long long i
     ns->en.end = new_energy;
     double rel_error     = std::abs((ns->en.end - ns->en.tmp)/ns->en.tmp);
     double cum_error     = std::abs((ns->en.end - ns->en.ini)/ns->en.ini);
-    float grav_gflops = 0.0;
+    //float grav_gflops = 0.0;
     ns->en.tmp = ns->en.end;
 
     float time = omp_get_wtime() - ns->gtime.integration_ini;
     if (ITIME != 0.0){
         ns->gtime.gflops =  KERNEL_GFLOP * (interactions / ns->gtime.update_end);
-        grav_gflops =  KERNEL_GFLOP * (interactions / ns->gtime.grav_end);
+        //grav_gflops =  KERNEL_GFLOP * (interactions / ns->gtime.grav_end);
     }
 
     if(print_screen)
@@ -353,7 +388,7 @@ void Logger::print_energy_log(double ITIME, unsigned int iterations, long long i
             *gstream << std::setw(16) << std::right << "ElapsedTime";
 
             *gstream << std::setw(12)  << std::right << "GFLOPS";
-            *gstream << std::setw(12)  << std::right << "GFLOPS(g)";
+            //*gstream << std::setw(12)  << std::right << "GFLOPS(g)";
             *gstream << std::endl;
     }
 
@@ -375,7 +410,7 @@ void Logger::print_energy_log(double ITIME, unsigned int iterations, long long i
     *gstream << std::fixed;
     gstream->precision(3);
     *gstream << std::setw(12) << std::right << ns->gtime.gflops;
-    *gstream << std::setw(12) << std::right << grav_gflops;
+    //*gstream << std::setw(12) << std::right << grav_gflops;
     *gstream << std::endl;
 
     if(!print_screen)

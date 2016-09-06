@@ -2,7 +2,6 @@
  * Copyright (c) 2012
  *
  * Cristian Maureira <cmaurei@aei.mpg.de>
- * Pau Amaro Seoane <pau@aei.mpg.de>
  *
  * All rights reserved.
  *
@@ -32,16 +31,6 @@
  * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * Or, putting it bluntly in Theo de Raadt style:
- *
- * "This software is free to all (be they people or companies), for any
- * purpose they wish to use it, including modification, use, peeing on, or
- * even integration into baby mulching machines or atomic bombs to be
- * dropped on Australia."
- *
- * Just make reference to our work, please.
- *
  */
 
 

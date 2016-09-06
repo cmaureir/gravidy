@@ -33,9 +33,9 @@
  * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include "Hermite4GPU.cuh"
+#include "Hermite4CPU.hpp"
 
-void Hermite4GPU::integration()
+void Hermite4CPU::integration()
 {
 
     ns->gtime.integration_ini = omp_get_wtime();
@@ -54,7 +54,7 @@ void Hermite4GPU::integration()
     init_dt(ATIME, ETA_S, ITIME);
 
     // Initial energy calculation
-    ns->en.ini = get_energy_gpu();   // Initial calculation of the energy of the system
+    ns->en.ini = nu->get_energy();   // Initial calculation of the energy of the system
     ns->en.tmp = ns->en.ini;
 
     // Getting system information:
@@ -102,7 +102,7 @@ void Hermite4GPU::integration()
         if(nact == ns->n)
         {
             assert(nact == ns->n);
-            logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, get_energy_gpu());
+            logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy());
             if (ns->ops.print_all)
             {
                 logger->print_all(ITIME, snap_number);

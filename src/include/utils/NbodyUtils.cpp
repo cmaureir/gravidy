@@ -1,28 +1,119 @@
+/*
+ * Copyright (c) 2016
+ *
+ * Cristián Maureira-Fredes <cmaureirafredes@gmail.com>
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. The name of the author may not be used to endorse or promote
+ * products derived from this software without specific prior written
+ * permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
 #include "NbodyUtils.hpp"
 
-NbodyUtils::NbodyUtils(NbodySystem *ns, float ratio)
+NbodyUtils::NbodyUtils(NbodySystem *ns)
 {
     double3 tmp = {0.0,0.0,0.0};
     this->ns = ns;
     this->cod = tmp;
     this->radii.resize(this->ns->n);
-    this->ratio = ratio;
+    this->ratio = RADIUS_RATIO;
     this->layers_radii.resize(1/ratio);
 }
 
 NbodyUtils::~NbodyUtils()
 {
-
+    // Empry
 }
+
+void NbodyUtils::nbody_attributes()
+{
+    // Virial radius
+    ns->r_virial = get_virial_radius(ns->en.ini);
+
+    // Crossing time
+    ns->t_cr  = get_crossing_time(ns->r_virial);
+
+    // Close encounter radius
+    ns->r_cl  = get_close_encounter_radius(ns->r_virial);
+
+    // Close encounter timestep
+    ns->dt_cl = get_close_encounter_timestep(ns->r_cl);
+
+    // Core radius
+    ns->r_core = get_core_radius();
+
+    // Half mass relaxation time
+    ns->t_rlx = get_half_mass_relaxation_time();
+
+    //std::cout << "r_virial: " << ns->r_virial << std::endl;
+    //std::cout << "t_cr: " << ns->t_cr << std::endl;
+    //std::cout << "r_cl: " << ns->r_cl << std::endl;
+    //std::cout << "dt_cl: " << ns->dt_cl << std::endl;
+    //std::cout << "r_core: " << ns->r_core << std::endl;
+    //std::cout << "t_rlx: " << ns->t_rlx << std::endl;
+}
+
+double NbodyUtils::get_virial_radius(double energy)
+{
+    //std::cout << "Rv new: " << (G * ns->n * ns->total_mass) / std::abs(2 * ns->en.potential) << std::endl;
+    return (-G * ns->total_mass * ns->total_mass) / (4 * energy);
+}
+
+double NbodyUtils::get_crossing_time(double r_virial)
+{
+    float M = ns->total_mass;
+    float Rv3 = r_virial * r_virial * r_virial;
+    float Ut = sqrt( Rv3 / (G * M));
+    float t_cr = 2 * sqrt(2) * Ut;
+
+    return t_cr;
+}
+
+double NbodyUtils::get_close_encounter_radius(double r_virial)
+{
+    return (4.0 * r_virial)/ns->n;
+}
+
+double NbodyUtils::get_close_encounter_timestep(double r_cl)
+{
+    float r_cl3 = r_cl * r_cl * r_cl;
+    return 0.04 * sqrt(r_cl3 * ns->n);
+}
+
 double NbodyUtils::get_core_radius()
 {
-
     std::vector<Distance> d(ns->n);
     double core_mass = 0.0;
     double radius = 0.0;
+
     unsigned int i;
 
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for (i = 0; i < ns->n; i++)
     {
         double rx  = ns->h_r[i].x - cod.x;
@@ -49,24 +140,6 @@ double NbodyUtils::get_core_radius()
     return radius;
 }
 
-void NbodyUtils::nbody_attributes()
-{
-    // Virial radius
-    ns->r_virial = get_virial_radius(ns->en.ini);
-
-    // Crossing time
-    ns->t_cr  = get_crossing_time(ns->r_virial);
-
-    // Close encounter radius
-    ns->r_cl  = get_close_encounter_radius(ns->r_virial);
-
-    // Close encounter timestep
-    ns->dt_cl = get_close_encounter_timestep(ns->r_cl);
-
-    // Half mass relaxation time
-    ns->t_rlx = get_half_mass_relaxation_time();
-}
-
 double NbodyUtils::get_half_mass_relaxation_time()
 {
     cod = get_center_of_density();
@@ -79,39 +152,8 @@ double NbodyUtils::get_half_mass_relaxation_time()
     return t_rh;
 }
 
-double NbodyUtils::get_virial_radius(double energy)
-{
-    //std::cout << "Rv new: " << (G * ns->n * ns->total_mass) / std::abs(2 * ns->en.potential) << std::endl;
-    return (-G * ns->total_mass * ns->total_mass) / (4 * energy);
-}
-
-double NbodyUtils::get_close_encounter_radius(double r_virial)
-{
-    return (4.0 * r_virial)/ns->n;
-}
-
-double NbodyUtils::get_close_encounter_timestep(double r_cl)
-{
-    float r_cl3 = r_cl * r_cl * r_cl;
-    return 0.04 * sqrt(r_cl3 * ns->n);
-}
-
-double NbodyUtils::get_crossing_time(double r_virial)
-{
-    float M = ns->total_mass;
-    float Rv3 = r_virial * r_virial * r_virial;
-    float Ut = sqrt( Rv3 / (G * M));
-    float t_cr = 2 * sqrt(2) * Ut;
-
-    //ns->r_sphere = 0.3;
-    //// 2**(1/3)
-    //ns->r_shell  = (1.2599210498948732) * ns->r_sphere;
-    return t_cr;
-}
-
 double3 NbodyUtils::get_center_of_density()
 {
-    std::vector<Distance> d(ns->n);
     std::vector<double> p(ns->n);
     Distance empty;
     float radius, dsum;
@@ -120,10 +162,13 @@ double3 NbodyUtils::get_center_of_density()
     empty.index = 0;
     empty.value = 0.0;
 
-    for (unsigned int i = 0; i < ns->n; i++)
+    unsigned int i, j;
+    #pragma omp parallel for private(j)
+    for (i = 0; i < ns->n; i++)
     {
+        std::vector<Distance> d(ns->n);
         std::fill(d.begin(), d.end(), empty);
-        for (unsigned int j = 0; j < ns->n; j++)
+        for (j = 0; j < ns->n; j++)
         {
             if (i != j)
             {
@@ -135,8 +180,13 @@ double3 NbodyUtils::get_center_of_density()
             }
         }
 
+        // Sorting the distances between the i particle and the whole system (j)
         std::sort(d.begin(), d.end());
+
+        // We define the maximum radius using the J-th neighbor (J = 10)
         radius = d[J].value;
+
+        // Density calculation
         aa = (J-1) * ns->h_r[i].w;
         bb = (4.0 * M_PI * radius * radius * radius)/3.0;
         p[i] = aa / bb;
@@ -163,7 +213,7 @@ double3 NbodyUtils::get_center_of_density()
 double NbodyUtils::get_halfmass_radius()
 {
     float half_mass;
-    double tmp, r_h;
+    double r_h;
     unsigned int i, j;
 
     std::vector<Distance> distances(ns->n);
@@ -171,13 +221,15 @@ double NbodyUtils::get_halfmass_radius()
     half_mass = 0;
     j = 0;
 
+    #pragma omp parallel for
     for (i = 0; i < ns->n; i++)
     {
-        tmp = sqrt( (cod.x - ns->h_r[i].x) * (cod.x - ns->h_r[i].x) +
-                    (cod.y - ns->h_r[i].y) * (cod.y - ns->h_r[i].y) +
-                    (cod.z - ns->h_r[i].z) * (cod.z - ns->h_r[i].z) );
+        double rx = (cod.x - ns->h_r[i].x);
+        double ry = (cod.y - ns->h_r[i].y);
+        double rz = (cod.z - ns->h_r[i].z);
+
         distances[i].index = i;
-        distances[i].value = tmp;
+        distances[i].value = sqrt( rx * rx + ry * ry + rz * rz);
     }
 
     std::sort(distances.begin(), distances.end());
@@ -197,9 +249,27 @@ double NbodyUtils::get_halfmass_radius()
     return r_h;
 }
 
+void NbodyUtils::lagrange_radii()
+{
+
+    // Use the center of density (cod)
+    cod = get_center_of_density();
+
+    // Calculate all the radii of the particles of the system
+    get_radii();
+
+    // Sorting the distances related to the center of density
+    sort(radii.begin(), radii.end());
+
+    // Get the layers of the particles using a certain 'ratio' (by default 5%)
+    // We are going from the center of density to the outside calculating
+    // the different layers to get the lagrange radii
+    get_layers();
+}
+
 void NbodyUtils::get_radii()
 {
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for(unsigned int i = 0; i < ns->n; i++)
     {
         double rx = ns->h_r[i].x - cod.x;
@@ -229,28 +299,6 @@ void NbodyUtils::get_layers()
         }
         tmp_mass += ns->h_r[radii[i].index].w;
     }
-}
-
-void NbodyUtils::lagrange_radii()
-{
-
-    // Use the center of density (cod)
-    cod = get_center_of_density();
-
-    // Calculate all the radii of the particles of the system
-    get_radii();
-
-    // Sorting the distances related to the center of density
-    sort(radii.begin(), radii.end());
-
-    // Get the layers of the particles using a certain 'ratio' (by default 5%)
-    // We are going from the center of density to the outside calculating
-    // the different layers to get the lagrange radii
-    get_layers();
-}
-
-void NbodyUtils::core_radius_and_density()
-{
 }
 
 double NbodyUtils::get_magnitude(double x, double y, double z)
@@ -348,7 +396,7 @@ double NbodyUtils::get_energy(double ext)
     ns->en.potential = 0.0;
     ns->en.kinetic   = 0.0;
 
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for (unsigned int i = 0; i < ns->n; i++)
     {
         double epot_tmp = 0.0;
@@ -369,9 +417,9 @@ double NbodyUtils::get_energy(double ext)
 
         double ekin_tmp = 0.5 * ns->h_r[i].w * v2;
 
-        //#pragma omp atomic
+        #pragma omp atomic
         ns->en.kinetic += ekin_tmp;
-        //#pragma omp atomic
+        #pragma omp atomic
         ns->en.potential += epot_tmp;
     }
 
@@ -383,7 +431,7 @@ double NbodyUtils::get_potential()
 {
     double epot = 0.0;
 
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for (unsigned int i = 0; i < ns->n; i++)
     {
         double epot_tmp = 0.0;
@@ -397,7 +445,7 @@ double NbodyUtils::get_potential()
             epot_tmp -= (ns->h_r[i].w * ns->h_r[j].w) / sqrt(r2);
         }
 
-        //#pragma omp atomic
+        #pragma omp atomic
         epot += epot_tmp;
     }
 
@@ -409,7 +457,7 @@ double NbodyUtils::get_kinetic()
 {
     double ekin = 0.0;
 
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for (unsigned int i = 0; i < ns->n; i++)
     {
         double vx = ns->h_v[i].x * ns->h_v[i].x;
@@ -419,7 +467,7 @@ double NbodyUtils::get_kinetic()
 
         double ekin_tmp = 0.5 * ns->h_r[i].w * v2;
 
-        //#pragma omp atomic
+        #pragma omp atomic
         ekin += ekin_tmp;
     }
 

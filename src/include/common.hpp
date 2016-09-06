@@ -1,7 +1,43 @@
+/*
+ * Copyright (c) 2016
+ *
+ * Cristián Maureira-Fredes <cmaureirafredes@gmail.com>
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. The name of the author may not be used to endorse or promote
+ * products derived from this software without specific prior written
+ * permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
 #ifndef COMMON_HPP
 #define COMMON_HPP
 
-#if defined(_MPI) || defined(MPIGPU)
+#if defined(_MPI)
 #include <mpi.h>
 #endif
 
@@ -11,13 +47,20 @@
 #include <cstdio>
 #include <omp.h>
 #include <cmath>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <string>
 
-#if defined(GPU) || defined(MPIGPU)
+
+#if defined(_MPI)
+#define MPI_NUM_SLAVES 600
+#endif
+
+#if defined(GPU)
 /** If we are compiling the CUDA version, we add the definition of the
  * vector types and structs from the CUDA library */
 #include <cuda_runtime.h>
-#define MPI_NUM_SLAVES 600
-
 #else
 /** Defining the «double4» structure based on the CUDA definition for the
  * CPU version, which not include the CUDA headers */
@@ -40,9 +83,6 @@ const int G = 1;
 /** Amount of neighbours to calculate the center of density of the system */
 const int J = 10;
 
-/** Maximum neighbour number for regularization **/
-const int NBMAX = 300; // 70
-
 /** Common radius for the core of a globular cluster */
 const float RADIUS_RATIO = 0.05;
 
@@ -62,19 +102,13 @@ const float ETA_N = 0.01;
 
 /** Lower boundary for the particles timesteps, \f$2^{-23}\f$ */
 const double D_TIME_MIN = 1.1920928955078125e-07;
+
 /** Lower boundary for the binary timesteps, \f$2^{-30}\f$ */
 //const double D_MTIME_MIN = 9.313225746154785e-10;
 const double D_MTIME_MIN = 7.450580596923828e-09; // 2^-27
+
 /** Upper boundary for the particles timesteps, \f$2^{-3}\f$ */
 const double D_TIME_MAX = 0.125;
-
-/** Gamma pertuber constant \f$\gamma_{pert}\f$ **/
-const double GAMMA_PERT = 10e-7;
-/** Maximum pertubers **/
-const int MAX_PERT = 200;
-
-/** Maximum size of a MultipleSystem **/
-const int MAX_MSYSTEM = 5;
 
 /** @struct Distance
  *  @brief ...
@@ -169,7 +203,6 @@ typedef struct Predictor {
 typedef struct Forces {
     double a[3];
     double a1[3];
-    int nb;
 } Forces;
 
 /** @struct Gtime
@@ -276,7 +309,7 @@ typedef struct file_data
 } file_data;
 
 const double KERNEL_GFLOP = 48e-9; // 60e-9
-#if defined(GPU) || defined(MPIGPU)
+#if defined(GPU)
 const int BSIZE   = 32;
 const int NJBLOCK = 16;
 //#define KERNEL_ERROR_DEBUG 1

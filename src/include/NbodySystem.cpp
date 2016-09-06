@@ -1,21 +1,56 @@
+/*
+ * Copyright (c) 2016
+ *
+ * Cristián Maureira-Fredes <cmaureirafredes@gmail.com>
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. The name of the author may not be used to endorse or promote
+ * products derived from this software without specific prior written
+ * permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
 #include "NbodySystem.hpp"
 
 /** Constructor */
 NbodySystem::NbodySystem(OptionsParser op)
 {
-    input_filename   = op.input_filename;
-    output_filename  = op.output_filename;
-    resume_filename  = op.resume_filename;
+    input_filename     = op.input_filename;
+    output_filename    = op.output_filename;
+    resume_filename    = op.resume_filename;
     snapshot_filename  = op.snapshot_filename;
-    integration_time = op.integration_time;
-    snapshot_time    = op.snapshot_time;
-    snapshot_number  = op.snapshot_number;
-    e2               = op.softening * op.softening;
-    eta              = op.eta;
-    ops              = op.ops;
-    iterations       = 0;
-    gpus             = op.gpus;
-    resume           = op.resume;
+    integration_time   = op.integration_time;
+    snapshot_time      = op.snapshot_time;
+    snapshot_number    = op.snapshot_number;
+    e2                 = op.softening * op.softening;
+    eta                = op.eta;
+    ops                = op.ops;
+    iterations         = 0;
+    gpus               = op.gpus;
+    resume             = op.resume;
 
     en.ini = 0.0;
     en.end = 0.0;
@@ -69,8 +104,6 @@ void NbodySystem::read_input_file()
             {
                 if (!got_time)
                 {
-                    // TO DO: look for integration time if restart option
-
                     // remove all the "#" and ":"
                     char chars[] = "#:";
                     for (unsigned int i = 0; i < strlen(chars); i++)
@@ -137,8 +170,11 @@ void NbodySystem::read_input_file()
                     tmp.v[0] = strtod(tokens[5].c_str(), NULL);
                     tmp.v[1] = strtod(tokens[6].c_str(), NULL);
                     tmp.v[2] = strtod(tokens[7].c_str(), NULL);
+
                     if (tmp.m > max_mass)
+                    {
                         max_mass = tmp.m;
+                    }
 
                 }
                 reader.push_back(tmp);
@@ -153,14 +189,16 @@ void NbodySystem::read_input_file()
 
 void NbodySystem::alloc_base_attributes(int rank)
 {
+    #if defined(_MPI)
 
-    #if defined(_MPI) || defined(MPIGPU)
     // Sending the amount of particles
-    MPI_Bcast(&n, 1, MPI_UNSIGNED_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&n, 1, MPI_UNSIGNED, 0, MPI_COMM_WORLD);
 
     // Resizing input data vector, to be able to Bcast it
     if (rank > 0)
+    {
         reader.resize(n);
+    }
 
     MPI_Bcast(&reader[0], sizeof(file_data) * n, MPI_BYTE, 0, MPI_COMM_WORLD);
     #endif
@@ -179,6 +217,7 @@ void NbodySystem::free_base_attributes()
 
 void NbodySystem::copy_input_data()
 {
+    #pragma omp parallel for
     for (unsigned int i = 0; i < (unsigned int)reader.size(); i++)
     {
         h_id[i]     = reader[i].id;

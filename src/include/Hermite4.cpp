@@ -1,3 +1,38 @@
+/*
+ * Copyright (c) 2016
+ *
+ * Cristián Maureira-Fredes <cmaureirafredes@gmail.com>
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. The name of the author may not be used to endorse or promote
+ * products derived from this software without specific prior written
+ * permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
 #include "Hermite4.hpp"
 
 Hermite4::Hermite4(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
@@ -32,8 +67,6 @@ unsigned int Hermite4::find_particles_to_move(double ITIME)
         {
             ns->h_move[j] = i;
             j++;
-
-            ns->h_f[i].nb = 0;
         }
     }
     return j;
@@ -111,7 +144,6 @@ void Hermite4::alloc_arrays_host()
     ns->h_i        = new Predictor[ns->n];
     ns->h_ekin     = new double[ns->n];
     ns->h_epot     = new double[ns->n];
-    ns->h_r_sphere = new double[ns->n];
 
 }
 
@@ -128,7 +160,6 @@ void Hermite4::free_arrays_host()
     delete ns->h_i;
     delete ns->h_ekin;
     delete ns->h_epot;
-    delete ns->h_r_sphere;
 }
 
 void Hermite4::init_data()
@@ -157,8 +188,6 @@ void Hermite4::init_data()
         ns->h_f[i].a1[1] = 0.0;
         ns->h_f[i].a1[2] = 0.0;
 
-        ns->h_f[i].nb = 0;
-
         ns->h_a2[i]      = empty;
         ns->h_a3[i]      = empty;
 
@@ -174,8 +203,6 @@ void Hermite4::init_data()
         ns->h_dt[i]      = 0.0;
 
         ns->h_move[i]    = 0;
-
-        ns->h_r_sphere[i] = 0.0;
 
         // Heaviest star
         if (mass > ns->m_g)

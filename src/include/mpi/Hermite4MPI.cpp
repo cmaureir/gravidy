@@ -1,3 +1,38 @@
+/*
+ * Copyright (c) 2016
+ *
+ * Cristián Maureira-Fredes <cmaureirafredes@gmail.com>
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *
+ * 3. The name of the author may not be used to endorse or promote
+ * products derived from this software without specific prior written
+ * permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
 #include "MPIUtils.hpp"
 
 Hermite4MPI::Hermite4MPI(NbodySystem *ns, Logger *logger, NbodyUtils *nu,
@@ -45,7 +80,7 @@ void Hermite4MPI::alloc_slaves_memory(int rank)
     ns->h_fout_tmp  = (Forces*)malloc(sizeof(Forces) * ns->n);
 
     //#pragma omp parallel for
-    for (int i = 0; i < ns->n; i++)
+    for (unsigned int i = 0; i < ns->n; i++)
     {
         tmp_f[i].a[0]  = 0.0;
         tmp_f[i].a[1]  = 0.0;
@@ -100,9 +135,9 @@ void Hermite4MPI::init_acc_jrk()
 
     if (rank < MPI_NUM_SLAVES)
     {
-        for (int i = 0; i < ns->n; i++)
+        for (unsigned int i = 0; i < ns->n; i++)
         {
-            for (int j = chunk_begin; j < chunk_end; j++)
+            for (unsigned int j = chunk_begin; j < chunk_end; j++)
             {
                 if(i == j) continue;
                 force_calculation(ns->h_p[i], ns->h_p[j], tmp_f[i]);
@@ -112,14 +147,14 @@ void Hermite4MPI::init_acc_jrk()
     }
 }
 
-void Hermite4MPI::update_acc_jrk(int nact)
+void Hermite4MPI::update_acc_jrk(unsigned int nact)
 {
     ns->gtime.update_ini = omp_get_wtime();
     if (rank < MPI_NUM_SLAVES)
     {
 
         // Temporal Predictor array with only the active particle information
-        for (int i = 0; i < nact; i++)
+        for (unsigned int i = 0; i < nact; i++)
         {
             int id = ns->h_move[i];
             ns->h_i[i] = ns->h_p[id];
@@ -127,7 +162,7 @@ void Hermite4MPI::update_acc_jrk(int nact)
         MPI_Barrier(MPI_COMM_WORLD);
 
         // Forces loop with the temporal active particles array and the whole system
-        for (int i = 0; i < nact; i++)
+        for (unsigned int i = 0; i < nact; i++)
         {
             tmp_f[i].a[0]  = 0.0;
             tmp_f[i].a[1]  = 0.0;
@@ -138,7 +173,7 @@ void Hermite4MPI::update_acc_jrk(int nact)
 
             Predictor pi = ns->h_i[i];
 
-            for (int j = chunk_begin; j < chunk_end; j++)
+            for (unsigned int j = chunk_begin; j < chunk_end; j++)
             {
                 if(ns->h_move[i] == j) continue;
                 force_calculation(pi, ns->h_p[j], tmp_f[i]);
@@ -149,7 +184,7 @@ void Hermite4MPI::update_acc_jrk(int nact)
         // new forces.
         MPI_Allreduce(tmp_f, ns->h_fout_tmp, nact, f_type, f_op, MPI_COMM_WORLD);
 
-        for (int i = 0; i < nact; i++)
+        for (unsigned int i = 0; i < nact; i++)
         {
             int id = ns->h_move[i];
             ns->h_f[id] = ns->h_fout_tmp[i];
@@ -166,7 +201,7 @@ void Hermite4MPI::predicted_pos_vel(double ITIME)
     if (rank == 0)
     {
         ns->gtime.prediction_ini = omp_get_wtime();
-        for (int i = 0; i < ns->n; i++)
+        for (unsigned int i = 0; i < ns->n; i++)
         {
             double dt  = ITIME - ns->h_t[i];
             double dt2 = (dt  * dt);
@@ -188,10 +223,10 @@ void Hermite4MPI::predicted_pos_vel(double ITIME)
     MPI_Bcast(ns->h_p, sizeof(Predictor) * ns->n, MPI_BYTE, 0, MPI_COMM_WORLD);
 }
 
-void Hermite4MPI::correction_pos_vel(double ITIME, int nact)
+void Hermite4MPI::correction_pos_vel(double ITIME, unsigned int nact)
 {
     ns->gtime.correction_ini = omp_get_wtime();
-    for (int k = 0; k < nact; k++)
+    for (unsigned int k = 0; k < nact; k++)
     {
         int i = ns->h_move[k];
 
@@ -229,110 +264,4 @@ void Hermite4MPI::correction_pos_vel(double ITIME, int nact)
 
     }
     ns->gtime.correction_end += omp_get_wtime() - ns->gtime.correction_ini;
-}
-
-
-
-void Hermite4MPI::integration()
-{
-
-    // The main process will guide the integration process,
-    // using the slaves only in some functions
-    ns->gtime.integration_ini = omp_get_wtime();
-
-    double ATIME = 1.0e+10; // Actual integration time
-    double ITIME = ns->snapshot_time;     // Integration time
-    int nact     = 0;       // Active particles
-    int nsteps   = 0;       // Amount of steps per particles on the system
-    static long long interactions = 0;
-
-
-    int max_threads = omp_get_max_threads();
-    omp_set_num_threads( max_threads - 1);
-
-    init_acc_jrk();
-    init_dt(ATIME, ETA_S, ITIME);
-
-    ns->en.ini = nu->get_energy();   // Initial calculation of the energy of the system
-    ns->en.tmp = ns->en.ini;
-
-    //ns->t_rlx = nu->get_half_mass_relaxation_time();
-    //ns->t_cr  = nu->get_crossing_time();
-    int snap_number = 0;
-
-    if (rank == 0)
-    {
-        logger->print_info();
-        logger->write_info();
-        logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, ns->en.ini);
-        if (ns->ops.print_all)
-        {
-            logger->print_all(ITIME);
-        }
-        if (ns->ops.print_lagrange)
-        {
-            nu->lagrange_radii();
-            logger->print_lagrange_radii(ITIME, nu->layers_radii);
-        }
-
-        snap_number = ns->snapshot_number;
-        logger->write_snapshot(snap_number, ITIME);
-        snap_number++;
-    }
-
-    while (ITIME < ns->integration_time)
-    {
-        ITIME = ATIME;
-
-        nact = find_particles_to_move(ITIME);
-
-        save_old_acc_jrk(nact);
-
-        predicted_pos_vel(ITIME);
-
-        update_acc_jrk(nact);
-
-        correction_pos_vel(ITIME, nact);
-
-        // Update the amount of interactions counter
-        interactions += nact * ns->n;
-
-        // Find the next integration time
-        next_integration_time(ATIME);
-
-        if (rank == 0)
-        {
-            if(nact == ns->n)
-            {
-                assert(nact == ns->n);
-                logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy());
-                if (ns->ops.print_all)
-                {
-                    logger->print_all(ITIME);
-                }
-                if (ns->ops.print_lagrange)
-                {
-                    nu->lagrange_radii();
-                    logger->print_lagrange_radii(ITIME, nu->layers_radii);
-                }
-                logger->write_snapshot(snap_number, ITIME);
-                snap_number++;
-            }
-        }
-
-        // Update nsteps with nact
-        nsteps += nact;
-
-        // Increase iteration counter
-        ns->iterations++;
-    }
-
-    ns->gtime.integration_end =  omp_get_wtime() - ns->gtime.integration_ini;
-    if (rank == 0)
-    {
-        logger->write_snapshot(snap_number, ITIME);
-        //logger->add_info(std::string("SnapshotNumber:"), std::to_string(snap_number));
-        logger->add_info(std::string("SnapshotNumber:"), std::string(SSTR(snap_number)));
-    }
-
 }
