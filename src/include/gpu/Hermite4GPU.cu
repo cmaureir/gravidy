@@ -56,13 +56,23 @@ Hermite4GPU::Hermite4GPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
 
     if (detected_gpus > gpus)
     {
-        std::cout << "[Warning] Not using all the available GPUs: "
-                  << gpus << " of " << detected_gpus << std::endl;
+        std::string s = "";
+        s += std::string("Not using all the available GPUs: ");
+        s += std::string(SSTR(gpus));
+        s += std::string(" of ");
+        s += std::string(SSTR(detected_gpus));
+        logger->log_warning(s);
     }
 
-    std::cout << "[Info] GPUs: " << gpus << std::endl;
+    logger->log_info(std::string("GPUs: ")+std::string(SSTR(gpus)));
 
-    std::cout << "[Info] Spliting " << ns->n << " particles in " << gpus << " GPUs" << std::endl;
+    std::string ss = "";
+    ss += std::string("Spliting ");
+    ss += std::string(SSTR(ns->n));
+    ss += std::string(" particles in ");
+    ss += std::string(SSTR(gpus));
+    ss += std::string(" GPUs");
+    logger->log_info(ss);
 
     if (ns->n % gpus == 0)
     {
@@ -84,7 +94,12 @@ Hermite4GPU::Hermite4GPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
 
     for(int g = 0; g < gpus; g++)
     {
-        std::cout << "[Info] GPU " << g << " particles: " << n_part[g] << std::endl;
+        std::string sss = "";
+        sss += std::string("GPU ");
+        sss += std::string(SSTR(g));
+        sss += std::string(" particles: ");
+        sss += std::string(SSTR(n_part[g]));
+        logger->log_info(sss);
     }
 
     i1_size = ns->n * sizeof(int);
@@ -545,10 +560,10 @@ double Hermite4GPU::get_energy_gpu()
     return ns->en.kinetic + ns->en.potential;
 }
 
-void Hermite4GPU::get_kernel_error(){
+void Hermite4GPU::get_kernel_error()
+{
     #ifdef KERNEL_ERROR_DEBUG
-        std::cerr << "[Error] : ";
-        std::cerr << cudaGetErrorString(cudaGetLastError()) << std::endl;
+    logger->log_error(std::string(cudaGetErrorString(cudaGetLastError())));
     #endif
 }
 
@@ -563,7 +578,14 @@ float Hermite4GPU::gpu_timer_stop(std::string f){
     cudaEventElapsedTime(&msec, start, stop);
     #if KERNEL_TIME
     if (f != "")
-        std::cout << "[Time] " << f << " : " << msec << " msec" << std::endl;
+    {
+        std::string s = "";
+        s += std::string("Kernel ");
+        s += std::string(SSTR(f));
+        s += std::string(" : ");
+        s += std::string(SSTR(msec));
+        logger->log_info(s)
+    }
     #endif
     return msec;
 }

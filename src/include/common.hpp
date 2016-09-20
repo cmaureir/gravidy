@@ -80,8 +80,9 @@ typedef struct double3
 /** Gravitational constant. Since we are working in N-body units we set G as one. */
 const int G = 1;
 
-/** Amount of neighbours to calculate the center of density of the system */
-const int J = 10;
+/** Amount of neighbours to calculate the center of density of the system
+ *  (Casertano & Hut 1985)*/
+const int J = 6;
 
 /** Common radius for the core of a globular cluster */
 const float RADIUS_RATIO = 0.05;

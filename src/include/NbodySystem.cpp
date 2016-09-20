@@ -129,7 +129,7 @@ void NbodySystem::read_input_file()
                         {
                             snapshot_time = strtod(ctokens[t+1].c_str(), NULL);
                             got_time = true;
-                            std::cout << "It's a snapshot" << std::endl;
+                    //        std::cout << "It's a snapshot" << std::endl;
                     //        getline(file, line);
                             break;
                         }

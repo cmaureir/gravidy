@@ -39,6 +39,16 @@
 #include "../NbodySystem.hpp"
 #include <cctype>
 
+const std::string color_black   = "\033[0;30m";
+const std::string color_red     = "\033[0;31m";
+const std::string color_green   = "\033[0;32m";
+const std::string color_yellow  = "\033[0;33m";
+const std::string color_blue    = "\033[0;34m";
+const std::string color_purple  = "\033[0;35m";
+const std::string color_cyan    = "\033[0;36m";
+const std::string color_white   = "\033[0;37m";
+const std::string color_disable = "\033[m";
+
 #define SSTR( x ) static_cast< std::ostringstream & >( \
         ( std::ostringstream() << std::dec << x ) ).str()
 
@@ -49,10 +59,10 @@ class Logger {
 
         NbodySystem *ns;
 
+        bool print_screen;
         std::ofstream out_file;
         std::ofstream info_file;
         std::ostream *gstream;
-        bool print_screen;
         std::string ofname;
         std::string ofname_info;
 
@@ -62,9 +72,17 @@ class Logger {
         void write_info();
         void write_snapshot(unsigned int snapshot_number, double ITIME);
         void print_all(double ITIME, unsigned int snapshot_number);
-        void print_energy_log(double ITIME, unsigned int iterations, long long interactions,
-                              unsigned int nsteps, double new_energy);
+        void print_energy_log(double ITIME, unsigned int iterations,
+                              long long interactions, unsigned int nsteps,
+                              double new_energy);
         void print_lagrange_radii(double ITIME, std::vector<double> lagrange_radii);
+
+
+        void log(int type,  std::string msg);
+        void log_error(std::string msg);
+        void log_warning(std::string msg);
+        void log_success(std::string msg);
+        void log_info(std::string msg);
 };
 
 #endif // LOGGER_HPP

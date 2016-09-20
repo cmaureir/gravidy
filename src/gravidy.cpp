@@ -101,6 +101,7 @@ int main(int argc, char *argv[])
     #if defined(_MPI)
     MPI_Finalize();
     #endif
+    logger.log_success(std::string("Finishing..."));
 
     return 0;
 }

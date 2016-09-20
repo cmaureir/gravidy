@@ -62,12 +62,15 @@ std::string Logger::get_timestamp()
     tm *ltm = localtime(&now);
     std::ostringstream s;
 
+    s << "[";
+    s << std::setw(4) << std::setfill('0') << 1900 + ltm->tm_year << "-";
+    s << std::setw(2) << std::setfill('0') << 1 + ltm->tm_mon<< "-";
+    s << std::setw(2) << std::setfill('0') << ltm->tm_mday << " ";
+
     s << std::setw(2) << std::setfill('0') << 1 + ltm->tm_hour << ":";
     s << std::setw(2) << std::setfill('0') << 1 + ltm->tm_min  << ":";
-    s << std::setw(2) << std::setfill('0') << 1 + ltm->tm_sec  << "_";
-    s << std::setw(2) << std::setfill('0') << ltm->tm_mday << "-";
-    s << std::setw(2) << std::setfill('0') << 1 + ltm->tm_mon<< "-";
-    s << std::setw(4) << std::setfill('0') << 1900 + ltm->tm_year;
+    s << std::setw(2) << std::setfill('0') << 1 + ltm->tm_sec  << "";
+    s << "]";
 
     return s.str();
 }
@@ -224,41 +227,10 @@ void Logger::print_info()
     }
     else
     {
-        //std::string ofname_info = ofname + ".info";
         std::string ofname_info = ofname + ".log";
         out_file.open(ofname_info.c_str(), std::ios::out);
         gstream = &out_file;
     }
-
-    *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(8)  << std::left  << "N:";
-    *gstream << std::setw(8)  << std::right << ns->n;
-    *gstream << std::endl;
-
-    *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(8)  << std::left  << "E2:";
-    *gstream << std::setw(8)  << std::right << ns->e2;
-    *gstream << std::endl;
-
-    *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(8)  << std::left  << "Eta:";
-    *gstream << std::setw(8)  << std::right << ns->eta;
-    *gstream << std::endl;
-
-    *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(8)  << std::left  << "T:";
-    *gstream << std::setw(8)  << std::right << ns->integration_time;
-    *gstream << std::endl;
-
-    *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(8)  << std::left  << "T_rh:";
-    *gstream << std::setw(8)  << std::right << ns->t_rlx;
-    *gstream << std::endl;
-
-    *gstream << std::setw(2)  << std::left  << "#";
-    *gstream << std::setw(8)  << std::left  << "T_cr:";
-    *gstream << std::setw(8)  << std::right << ns->t_cr;
-    *gstream << std::endl;
 
     if(!print_screen)
     {
@@ -417,4 +389,48 @@ void Logger::print_energy_log(double ITIME, unsigned int iterations, long long i
     {
         out_file.close();
     }
+}
+
+void Logger::log(int type,  std::string msg)
+{
+    // Error
+    if (type == 0)
+    {
+        std::cerr << get_timestamp() << " [ERROR] " << msg << std::endl;
+    }
+    // Warning
+    else if (type == 1)
+    {
+        std::cerr << get_timestamp() << " [WARNING] " << msg << std::endl;
+    }
+    // Success
+    else if (type == 2)
+    {
+        std::cerr << get_timestamp() << " [SUCCESS] " << msg << std::endl;
+    }
+    // Information
+    else if (type == 3)
+    {
+        std::cerr << get_timestamp() << " [INFO] " << msg << std::endl;
+    }
+}
+
+void Logger::log_error(std::string msg)
+{
+    log(0, msg);
+}
+
+void Logger::log_warning(std::string msg)
+{
+    log(1, msg);
+}
+
+void Logger::log_success(std::string msg)
+{
+    log(2, msg);
+}
+
+void Logger::log_info(std::string msg)
+{
+    log(3, msg);
 }

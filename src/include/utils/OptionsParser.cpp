@@ -119,7 +119,7 @@ bool OptionsParser::check_options()
 
         if(!file_exists(resume_filename))
         {
-            std::cout << "gravidy: cannot access "
+            std::cerr << "gravidy: cannot access "
                       << resume_filename
                       << ": No such file or directory"
                       << std::endl;
@@ -127,7 +127,7 @@ bool OptionsParser::check_options()
         }
         else
         {
-            std::cout << "Reading resume_filename: " << resume_filename << std::endl;
+            std::cerr << "Reading resume_filename: " << resume_filename << std::endl;
 
             // Open resume_filename
             std::ifstream rfile(resume_filename.c_str());
@@ -188,11 +188,11 @@ bool OptionsParser::check_options()
             {
                 if (allowed_param.find((*ii).first) != allowed_param.end())
                 {
-                    std::cout << (*ii).first << " -> " << (*ii).second << std::endl;
+                    std::cerr << (*ii).first << " -> " << (*ii).second << std::endl;
                 }
                 else
                 {
-                    std::cout << "Invalid param" << std::endl;
+                    std::cerr << "Invalid param" << std::endl;
                     std::cerr << "gravidy: Invalid option -- "
                               << (*ii).first
                               << " in the info file"
