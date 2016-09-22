@@ -84,8 +84,10 @@ const int G = 1;
  *  (Casertano & Hut 1985)*/
 const int J = 6;
 
-/** Common radius for the core of a globular cluster */
-const float RADIUS_RATIO = 0.05;
+/** Common mass percentage in the core of a globular cluster */
+const float CORE_MASS = 0.1;
+
+const float LAGRANGE_RADII[] = {0.01, 0.05, 0.1, 0.2, 0.5, 0.75};
 
 /** Softening parameter */
 const double E = 1e-4;

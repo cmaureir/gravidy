@@ -256,8 +256,10 @@ void Logger::print_lagrange_radii(double ITIME, std::vector<double> lagrange_rad
     *gstream << "01 ";
     *gstream << std::fixed;
     *gstream << ITIME << " ";
-    gstream->precision(4);
-    for (unsigned int i = 0; i < 1/RADIUS_RATIO; i++) {
+    gstream->precision(6);
+    size_t lr_size = sizeof(LAGRANGE_RADII)/4.0;
+    for (unsigned int i = 0; i < lr_size; i++)
+    {
         *gstream << std::setw(6) << std::right << lagrange_radii[i] << " ";
     }
     *gstream << std::endl;

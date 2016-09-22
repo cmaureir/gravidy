@@ -40,9 +40,9 @@ NbodyUtils::NbodyUtils(NbodySystem *ns)
     double3 tmp = {0.0,0.0,0.0};
     this->ns = ns;
     this->cod = tmp;
+
     this->radii.resize(this->ns->n);
-    this->ratio = RADIUS_RATIO;
-    this->layers_radii.resize(1/ratio);
+    this->layers_radii.resize(sizeof(LAGRANGE_RADII)/4.0);
 }
 
 NbodyUtils::~NbodyUtils()
@@ -128,7 +128,7 @@ double NbodyUtils::get_core_radius()
 
     for (i = 0; i < ns->n; i++)
     {
-        if (core_mass > ratio)
+        if (core_mass > ns->total_mass*CORE_MASS)
         {
             i -= 1;
             break;
@@ -168,6 +168,7 @@ double3 NbodyUtils::get_center_of_density()
     {
         std::vector<Distance> d(ns->n);
         std::fill(d.begin(), d.end(), empty);
+        #pragma omp parallel for
         for (j = 0; j < ns->n; j++)
         {
             if (i != j)
@@ -284,19 +285,29 @@ void NbodyUtils::get_radii()
 void NbodyUtils::get_layers()
 {
     float tmp_mass = 0.0;
-    unsigned int layer_id = 1;
-    float m_ratio = ratio * layer_id;
+
+    unsigned int layer_id = 0;
+    //float m_ratio = ratio * layer_id;
 
     for (unsigned int i = 0; i < ns->n; i++)
     {
-        if (tmp_mass > m_ratio)
+        //if (tmp_mass > m_ratio)
+        //{
+        //    layers_radii[layer_id - 1] = radii[i-1].value;
+        //    layer_id += 1;
+        //    m_ratio = ns->ratio * layer_id;
+        //    if (m_ratio >= 1.0)
+        //        break;
+        //}
+        if (tmp_mass >= ns->total_mass)
+            break;
+
+        if (tmp_mass > LAGRANGE_RADII[layer_id])
         {
-            layers_radii[layer_id - 1] = radii[i-1].value;
+            layers_radii[layer_id] = radii[i].value;
             layer_id += 1;
-            m_ratio = ratio * layer_id;
-            if (m_ratio >= 1.0)
-                break;
         }
+
         tmp_mass += ns->h_r[radii[i].index].w;
     }
 }
