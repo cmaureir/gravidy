@@ -79,10 +79,10 @@ NVFLAGS=   -DGPU -pg -O3 -arch=sm_20
 ############################# Objects
 
 OBJS=       include/utils/OptionsParser.o   \
-            include/NbodySystem.o           \
             include/utils/NbodyUtils.o      \
             include/utils/Logger.o          \
             include/Hermite4.o              \
+            include/NbodySystem.o
 
 OBJS_CPU=   $(OBJS)                         \
             include/cpu/Hermite4CPU_integration.o \
@@ -98,12 +98,8 @@ OBJS_GPU=   $(OBJS)                               \
             include/gpu/Hermite4GPU_integration.o \
             include/gpu/Hermite4GPU.cuo
 
-OBJS_KEPLER=$(OBJS)                         \
-            include/kepler/Hermite4Kepler.o
-
 ############################# Main rules
-
-all: gpu
+all: gpu # use `cpu`, `gpu` or `mpi` to set as default
 
 cpu: gravidy-cpu
 
@@ -113,7 +109,7 @@ mpi: gravidy-mpi
 gpu: CXXFLAGS+=$(LINKFLAGS)
 gpu: gravidy-gpu
 
-############################# Rules to generate cuda object
+############################# Rules to generate CUDA object
 %.cuo : %.cu
 	$(NVCC) $(BOOSTFLAGS) $(NVFLAGS) -c $^ -o $@
 

@@ -12,3 +12,5 @@ tmp
 output
 doc
 m*
+SConstruct
+CMakeLists.txt

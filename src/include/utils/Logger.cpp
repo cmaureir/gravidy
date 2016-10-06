@@ -39,7 +39,6 @@ Logger::Logger(NbodySystem *ns)
 {
     this->ns = ns;
     this->print_screen = this->ns->ops.print_screen;
-    //this->ofname = this->get_timestamp() +"_"+ ns->output_filename;
     this->ofname = ns->output_filename;
     if (ns->resume)
     {
@@ -47,7 +46,7 @@ Logger::Logger(NbodySystem *ns)
     }
     else
     {
-      this->ofname_info = ofname + ".info";
+        this->ofname_info = ofname + ".info";
     }
 }
 
@@ -115,7 +114,7 @@ void Logger::add_info(std::string key, std::string value)
 {
     info_file.open(ofname_info.c_str(), std::ios_base::app);
 
-    info_file << std::setw(2) << std::left  << "#";
+    info_file << std::setw(2)  << std::left  << "#";
     info_file << std::setw(20) << std::left  << key;
     info_file << std::setw(20) << std::right << value;
     info_file << std::endl;
@@ -136,7 +135,6 @@ bool file_exists(std::string filename)
 
 void Logger::write_info()
 {
-
     if(file_exists(ofname_info))
     {
         size_t fsize = ofname_info.size();
@@ -180,37 +178,37 @@ void Logger::write_info()
     info_file.open(ofname_info.c_str(), std::ios::out);
 
 
-    info_file << std::setw(2) << std::left  << "#";
+    info_file << std::setw(2)  << std::left  << "#";
     info_file << std::setw(20) << std::left  << "NumberParticles:";
     info_file << std::setw(20) << std::right << ns->n;
     info_file << std::endl;
 
-    info_file << std::setw(2) << std::left  << "#";
+    info_file << std::setw(2)  << std::left  << "#";
     info_file << std::setw(20) << std::left  << "Softening:";
     info_file << std::setw(20) << std::right << sqrt(ns->e2);
     info_file << std::endl;
 
-    info_file << std::setw(2) << std::left  << "#";
+    info_file << std::setw(2)  << std::left  << "#";
     info_file << std::setw(20) << std::left  << "EtaTimestep:";
     info_file << std::setw(20) << std::right << ns->eta;
     info_file << std::endl;
 
-    info_file << std::setw(2) << std::left  << "#";
+    info_file << std::setw(2)  << std::left  << "#";
     info_file << std::setw(20) << std::left  << "IntegrationTime:";
     info_file << std::setw(20) << std::right << ns->integration_time;
     info_file << std::endl;
 
-    info_file << std::setw(2) << std::left  << std::left  << "#";
+    info_file << std::setw(2)  << std::left  << std::left  << "#";
     info_file << std::setw(20) << std::left  << "PrintScreen:";
     info_file << std::setw(20) << std::right << print_screen;
     info_file << std::endl;
 
-    info_file << std::setw(2) << std::left  << std::left  << "#";
+    info_file << std::setw(2)  << std::left  << std::left  << "#";
     info_file << std::setw(20) << std::left  << "InputFilename:";
     info_file << std::setw(20) << std::right << ns->input_filename;
     info_file << std::endl;
 
-    info_file << std::setw(2) << std::left  << std::left  << "#";
+    info_file << std::setw(2)  << std::left  << std::left  << "#";
     info_file << std::setw(20) << std::left  << "OutputFilename:";
     info_file << std::setw(20) << std::left << ns->output_filename;
     info_file << std::endl;
@@ -220,7 +218,6 @@ void Logger::write_info()
 
 void Logger::print_info()
 {
-
     if(print_screen)
     {
         gstream = &std::cout;
@@ -252,12 +249,12 @@ void Logger::print_lagrange_radii(double ITIME, std::vector<double> lagrange_rad
         gstream = &out_file;
     }
 
-
     *gstream << "01 ";
     *gstream << std::fixed;
     *gstream << ITIME << " ";
     gstream->precision(6);
-    size_t lr_size = sizeof(LAGRANGE_RADII)/4.0;
+
+    size_t lr_size = sizeof(LAGRANGE_RADII)/4.0; // float in bytes is 4.0
     for (unsigned int i = 0; i < lr_size; i++)
     {
         *gstream << std::setw(6) << std::right << lagrange_radii[i] << " ";
@@ -370,7 +367,7 @@ void Logger::print_energy_log(double ITIME, unsigned int iterations, long long i
     *gstream << std::setw(2)  << std::right << "00";
     gstream->precision(3);
     *gstream << std::setw(10) << std::right << ITIME;
-    *gstream << std::setw(15)  << std::right << iterations;
+    *gstream << std::setw(15) << std::right << iterations;
     *gstream << std::setw(15) << std::right << nsteps;
 
     *gstream << std::scientific;
