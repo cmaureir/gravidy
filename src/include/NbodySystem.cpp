@@ -67,9 +67,12 @@ NbodySystem::NbodySystem(OptionsParser op)
 /** Destructor */
 NbodySystem::~NbodySystem()
 {
-    /* Empty constructor */
+    /* Empty */
 }
 
+/** Method in charge of reading the input file.
+ *  This can be done from a Snapshot file or a normal Input file.
+ */
 void NbodySystem::read_input_file()
 {
     file_data tmp;
@@ -187,6 +190,9 @@ void NbodySystem::read_input_file()
     n = (unsigned int)reader.size();
 }
 
+/** Memory allocation for the identification, positions, and velocities of the
+ * particles
+ */
 void NbodySystem::alloc_base_attributes(int rank)
 {
     #if defined(_MPI)
@@ -208,6 +214,9 @@ void NbodySystem::alloc_base_attributes(int rank)
     h_v = new double4[n];
 }
 
+/** Memory deallocation for the identification, positions, and velocities of the
+ * particles
+ */
 void NbodySystem::free_base_attributes()
 {
     delete h_id;
@@ -215,6 +224,9 @@ void NbodySystem::free_base_attributes()
     delete h_v;
 }
 
+/** Initialization of the data readed from the Input/Snapshot file to the
+ * data structures that the code will use
+ */
 void NbodySystem::copy_input_data()
 {
     #pragma omp parallel for

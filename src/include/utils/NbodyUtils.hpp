@@ -39,6 +39,13 @@
 #include "../NbodySystem.hpp"
 
 
+/**
+ * Class in charge of the different properties of the system.
+ *
+ * All the calculation of radii, times, energy, density, etc plus
+ * some utilities for the code, like the normalization of the timesteps.
+ *
+ */
 class NbodyUtils {
     public:
         NbodyUtils(NbodySystem *ns);
@@ -47,6 +54,7 @@ class NbodyUtils {
         NbodySystem *ns;
         // Variables
         float ratio;
+        /** Center of density */
         double3 cod;
 
         /** Radii array related to the center of density, and related to the
@@ -60,7 +68,6 @@ class NbodyUtils {
         void get_radii();
         void get_layers();
         void lagrange_radii();
-        void core_radius_and_density();
 
         double get_virial_radius(double energy);
         double get_close_encounter_radius(double r_virial);
@@ -72,7 +79,6 @@ class NbodyUtils {
         double get_magnitude(double x, double y, double z);
         double get_timestep_normal(unsigned int i, float ETA);
         double normalize_dt(double new_dt, double old_dt, double t, unsigned int i);
-        double get_timestep_central(unsigned int i);
 
         double get_potential();
         double get_kinetic();

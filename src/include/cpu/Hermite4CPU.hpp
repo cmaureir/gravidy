@@ -37,14 +37,19 @@
 #define HERMITE4CPU_HPP
 #include "../Hermite4.hpp"
 
+/**
+ * Class which implements on the CPU the structure of the Hermite4 scheme.
+ *
+ * This contains all the implementations of the requirements processes to perform
+ * the integration, like the initialization of the forces, the prediction,
+ * the correction, and the general integration of the system.
+ *
+ */
+
 class Hermite4CPU : public Hermite4 {
     public:
         Hermite4CPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu);
         ~Hermite4CPU();
-
-        Forces *h_fn;
-        Forces *h_fn_old;
-        double *h_tn;
 
         void force_calculation(Predictor pi, Predictor pj, Forces &fi);
         void init_acc_jrk();

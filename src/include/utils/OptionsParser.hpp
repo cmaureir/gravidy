@@ -41,6 +41,12 @@
 
 namespace po = boost::program_options;
 
+/**
+ * Class in charge to handle all the command-line parameters.
+ * Besides handling the information, this class uses the boost/program_options
+ * module to verify all the options.
+ */
+
 class OptionsParser {
     public:
         OptionsParser(int argc, char *argv[]);

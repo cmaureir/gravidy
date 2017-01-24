@@ -36,20 +36,22 @@
 #include "Hermite4CPU.hpp"
 
 
+/** Constructor that uses its parent constructor */
 Hermite4CPU::Hermite4CPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
                          : Hermite4(ns, logger, nu)
 {
-    h_fn     = new Forces[ns->n];
-    h_fn_old = new Forces[ns->n];
-    h_tn     = new double[ns->n];
+    /* Empty */
 }
 
 
+/** Destructor */
 Hermite4CPU::~Hermite4CPU()
 {
-    // None
+    /* Empty */
 }
 
+/** Method that calculate the gravitational interaction between two particles
+ */
 void Hermite4CPU::force_calculation(Predictor pi, Predictor pj, Forces &fi)
 {
     double rx = pj.r[0] - pi.r[0];
@@ -79,6 +81,8 @@ void Hermite4CPU::force_calculation(Predictor pi, Predictor pj, Forces &fi)
     fi.a1[2] += (vz * mr3inv - (3 * rv ) * rz * mr5inv);
 }
 
+/** Method that initializes the acceleration and it first derivative
+ */
 void Hermite4CPU::init_acc_jrk()
 {
     unsigned int i,j;
@@ -93,6 +97,9 @@ void Hermite4CPU::init_acc_jrk()
     }
 }
 
+/** Method that call the force_calculation method for every \f$i-\f$ and \f$j\f$
+ * particles interaction of the \f$N_{act}\f$ ones.
+ */
 void Hermite4CPU::update_acc_jrk(unsigned int nact)
 {
     ns->gtime.update_ini = omp_get_wtime();
@@ -118,6 +125,8 @@ void Hermite4CPU::update_acc_jrk(unsigned int nact)
     ns->gtime.update_end += omp_get_wtime() - ns->gtime.update_ini;
 }
 
+/** Method that predict all the particles to the current integration time
+ */
 void Hermite4CPU::predicted_pos_vel(double ITIME)
 {
 
@@ -145,6 +154,9 @@ void Hermite4CPU::predicted_pos_vel(double ITIME)
     ns->gtime.prediction_end += omp_get_wtime() - ns->gtime.prediction_ini;
 }
 
+/** Method that correct the positions and velocities of the particles at the
+ * end of every integration step
+ */
 void Hermite4CPU::correction_pos_vel(double ITIME, unsigned int nact)
 {
     ns->gtime.correction_ini = omp_get_wtime();

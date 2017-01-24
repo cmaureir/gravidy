@@ -21,12 +21,8 @@ MPI_LIB_PATH=/usr/lib/openmpi
 MPI_INC_PATH=/usr/include/openmpi
 endif
 
-############################# Paths
-#CUDA_PATH=/usr
-
 ############################# Compilers
-#CXX=        vtc++
-CXX=        g++
+CXX=        g++-5
 NVCC=       $(CUDA_PATH)/bin/nvcc
 
 ############################# FLAGS
@@ -126,6 +122,9 @@ gravidy-mpi: gravidy.cpp $(OBJS_MPI)
 
 gravidy-gpu: gravidy.cpp $(OBJS_GPU)
 	$(CXX) $(CXXFLAGS) $^ -o $@
+
+doxy:
+	@doxygen -s Doxyfile
 
 clean:
 	rm -f gravidy

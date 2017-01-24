@@ -39,6 +39,16 @@
 
 #define MPI_NUM_SLAVES 600
 
+/**
+ * Class which implements on the MPI the structure of the Hermite4 scheme.
+ *
+ * This contains all the implementations of the requirements processes to perform
+ * the integration, like the initialization of the forces, the prediction,
+ * the correction, and the general integration of the system.
+ *
+ * Please note that this class uses the variable MPI_NUM_SLAVES to set an upper
+ * limit for the amount of slaves that can be use.
+ */
 class Hermite4MPI : public Hermite4 {
     public:
         Hermite4MPI(NbodySystem *ns, Logger *logger, NbodyUtils *nu,

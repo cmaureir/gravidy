@@ -35,6 +35,7 @@
  */
 #include "NbodyUtils.hpp"
 
+/** Constructor */
 NbodyUtils::NbodyUtils(NbodySystem *ns)
 {
     double3 tmp = {0.0,0.0,0.0};
@@ -45,11 +46,16 @@ NbodyUtils::NbodyUtils(NbodySystem *ns)
     this->layers_radii.resize(sizeof(LAGRANGE_RADII)/4.0);
 }
 
+/** Destructor */
 NbodyUtils::~NbodyUtils()
 {
-    // Empry
+    /* Empty */
 }
 
+/** General method to get many N-body attributes.
+ * Virial radius, Crossing time, Close encounter radus, close encounter timestep,
+ * core radius and half mass relaxation time.
+ */
 void NbodyUtils::nbody_attributes()
 {
     // Virial radius
@@ -69,21 +75,16 @@ void NbodyUtils::nbody_attributes()
 
     // Half mass relaxation time
     ns->t_rlx = get_half_mass_relaxation_time();
-
-    //std::cout << "r_virial: " << ns->r_virial << std::endl;
-    //std::cout << "t_cr: " << ns->t_cr << std::endl;
-    //std::cout << "r_cl: " << ns->r_cl << std::endl;
-    //std::cout << "dt_cl: " << ns->dt_cl << std::endl;
-    //std::cout << "r_core: " << ns->r_core << std::endl;
-    //std::cout << "t_rlx: " << ns->t_rlx << std::endl;
 }
 
+/** Virial radius calculation */
 double NbodyUtils::get_virial_radius(double energy)
 {
     //std::cout << "Rv new: " << (G * ns->n * ns->total_mass) / std::abs(2 * ns->en.potential) << std::endl;
     return (-G * ns->total_mass * ns->total_mass) / (4 * energy);
 }
 
+/** Crossing time calculation */
 double NbodyUtils::get_crossing_time(double r_virial)
 {
     float M = ns->total_mass;
@@ -94,17 +95,21 @@ double NbodyUtils::get_crossing_time(double r_virial)
     return t_cr;
 }
 
+/** Close encounter radius calculation */
 double NbodyUtils::get_close_encounter_radius(double r_virial)
 {
     return (4.0 * r_virial)/ns->n;
 }
 
+/** Close encounter timestep calculation */
 double NbodyUtils::get_close_encounter_timestep(double r_cl)
 {
     float r_cl3 = r_cl * r_cl * r_cl;
     return 0.04 * sqrt(r_cl3 * ns->n);
 }
 
+/** Core radius calculation using CORE_MASS as limit point, and
+ * respect the center of mass of the system*/
 double NbodyUtils::get_core_radius()
 {
     std::vector<Distance> d(ns->n);
@@ -140,18 +145,23 @@ double NbodyUtils::get_core_radius()
     return radius;
 }
 
+/** Half mass relaxation time calculation.
+ * Please note that this method uses a lot of empirical values and approximations.
+ */
 double NbodyUtils::get_half_mass_relaxation_time()
 {
     cod = get_center_of_density();
     float r_h = get_halfmass_radius();
+    ns->r_hm = r_h;
     float a = sqrt( (ns->n * r_h * r_h * r_h) / ( G * (ns->total_mass/(ns->n)) ));
     //float b = 1/log(r_h/sqrt(ns->e2));
-    float b = 1/log(0.11 * ns->n); // Old non-softening depending
+    float b = 1/log(0.11 * ns->n); // non-softening depending
     float t_rh = 0.138 * a * b;
 
     return t_rh;
 }
 
+/** Center of density calculation */
 double3 NbodyUtils::get_center_of_density()
 {
     std::vector<double> p(ns->n);
@@ -211,6 +221,7 @@ double3 NbodyUtils::get_center_of_density()
     return density_center;
 }
 
+/** Half mass radius calculation */
 double NbodyUtils::get_halfmass_radius()
 {
     float half_mass;
@@ -250,6 +261,7 @@ double NbodyUtils::get_halfmass_radius()
     return r_h;
 }
 
+/** Lagrange radii calculation */
 void NbodyUtils::lagrange_radii()
 {
 
@@ -268,6 +280,8 @@ void NbodyUtils::lagrange_radii()
     get_layers();
 }
 
+/** Radii respect the center of density calculation, to be able to calculate
+ * the layers of the Lagrange radii */
 void NbodyUtils::get_radii()
 {
     #pragma omp parallel for
@@ -282,6 +296,10 @@ void NbodyUtils::get_radii()
 
 }
 
+/** Layers of the Lagrange radii calculation.
+ * This method consider the distribution in LAGRANGE_RADII to select
+ * the % of mass for each layer
+ */
 void NbodyUtils::get_layers()
 {
     float tmp_mass = 0.0;
@@ -312,11 +330,13 @@ void NbodyUtils::get_layers()
     }
 }
 
+/** Vector magnitude calculation */
 double NbodyUtils::get_magnitude(double x, double y, double z)
 {
     return sqrt(x*x + y*y + z*z);
 }
 
+/** Time step calculation */
 double NbodyUtils::get_timestep_normal(unsigned int i, float ETA)
 {
     // Calculating a_{1,i}^{(2)} = a_{0,i}^{(2)} + dt * a_{0,i}^{(3)}
@@ -347,6 +367,10 @@ double NbodyUtils::get_timestep_normal(unsigned int i, float ETA)
     return normal_dt;
 }
 
+/** Normalization of the timestep.
+ * This method take care of the limits conditions to avoid large jumps between
+ * the timestep distribution
+ */
 double NbodyUtils::normalize_dt(double new_dt, double old_dt, double t, unsigned int i)
 {
     if (new_dt <= old_dt/8)
@@ -402,6 +426,7 @@ double NbodyUtils::normalize_dt(double new_dt, double old_dt, double t, unsigned
     return new_dt;
 }
 
+/** Kinetic and Potential energy calculation */
 double NbodyUtils::get_energy(double ext)
 {
     ns->en.potential = 0.0;
@@ -434,10 +459,12 @@ double NbodyUtils::get_energy(double ext)
         ns->en.potential += epot_tmp;
     }
 
-    //printf("get_energy: K = %.15e | U = %.15e | Ext = %.15e\n", ns->en.kinetic, ns->en.potential, ext);
     return ns->en.kinetic + ns->en.potential + ext;
 }
 
+
+/** Potential energy calculation. This method is auxiliary and use only
+ * for verification procedures */
 double NbodyUtils::get_potential()
 {
     double epot = 0.0;
@@ -460,10 +487,11 @@ double NbodyUtils::get_potential()
         epot += epot_tmp;
     }
 
-    //printf("get_potential %.15e\n", epot);
     return epot;
 }
 
+/** Kinetic energy calculation. This method is auxiliary and use only
+ * for verification procedures */
 double NbodyUtils::get_kinetic()
 {
     double ekin = 0.0;
@@ -482,6 +510,5 @@ double NbodyUtils::get_kinetic()
         ekin += ekin_tmp;
     }
 
-    //printf("get_kinetic %.15e\n", ekin);
     return ekin;
 }

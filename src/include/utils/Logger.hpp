@@ -52,6 +52,11 @@ const std::string color_disable = "\033[m";
 #define SSTR( x ) static_cast< std::ostringstream & >( \
         ( std::ostringstream() << std::dec << x ) ).str()
 
+/**
+ * Class in charge of all the logging system in the code.
+ * This class includes the methods to be able to report something on-screen
+ * and also writing the infor and snapshot files.
+ */
 class Logger {
     public:
         Logger(NbodySystem *ns);

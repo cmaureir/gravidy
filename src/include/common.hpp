@@ -114,13 +114,14 @@ const double D_MTIME_MIN = 7.450580596923828e-09; // 2^-27
 const double D_TIME_MAX = 0.125;
 
 /** @struct Distance
- *  @brief ...
+ *  @brief Structure to handle the distance of the particles, to be able to
+ *  identify them while sorted.
  *  @var Distance::index
- *  Member 'index' ...
+ *  Member 'index' identification of the particle.
  *  @var Distance::value
- *  Member 'value' ...
- *  @fn Distance::operator<
- *  Member 'operator<' ...
+ *  Member 'value' distance of the particle respect to a reference.
+ *  @fn Distance::operator
+ *  Member 'operator' special operator to sort the particles.
  */
 struct Distance
 {
@@ -293,15 +294,15 @@ typedef struct Gtime {
 } Gtime;
 
 /** @struct file_data
- *  @brief ...
+ *  @brief General structure to read the INPUT file.
  *  @var file_data::id
- *  Member 'id' ...
+ *  Member 'id' particle identification.
  *  @var file_data::m
- *  Member 'm' ...
+ *  Member 'm' particle mass.
  *  @var file_data::r
- *  Member 'r' ...
+ *  Member 'r' Array that contain the particle position.
  *  @var file_data::v
- *  Member 'v' ...
+ *  Member 'v' Array that contain the particle velocity.
  *  */
 typedef struct file_data
 {

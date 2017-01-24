@@ -35,6 +35,9 @@
  */
 #include "OptionsParser.hpp"
 
+/** Constructor which includes the options and requirements for the
+ * command line interface
+ */
 OptionsParser::OptionsParser(int argc, char *argv[])
 {
 
@@ -83,11 +86,13 @@ OptionsParser::OptionsParser(int argc, char *argv[])
     po::notify(vm);
 }
 
+/** Destructor */
 OptionsParser::~OptionsParser()
 {
     // Empty destructor
 }
 
+/** Method that check if a file exist on the system */
 bool OptionsParser::file_exists(std::string filename)
 {
     struct stat buffer;
@@ -98,7 +103,9 @@ bool OptionsParser::file_exists(std::string filename)
     return false;
 }
 
-
+/** Method in charge to verify all the command-line arguments that where
+ * used for the current run
+ */
 bool OptionsParser::check_options()
 {
 
@@ -370,12 +377,6 @@ bool OptionsParser::check_options()
         {
 
             std::ostringstream ss;
-            //ss << "_t";
-            //ss << integration_time;
-            //ss << "_s";
-            //ss << softening;
-            //ss << "_e";
-            //ss << eta;
             ss << ".out";
             std::string ext(ss.str());
             output_filename = input_filename+ext;

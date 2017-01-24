@@ -43,10 +43,10 @@
 #include "utils/OptionsParser.hpp"
 #define MAXGPUS 4
 
-/*
- * @class NbodySystem
- * @desc N-body system general class with all the information of the integration
- *       process and the particles of the system.
+/**
+ * Class in charge of the general aspects of the N-body integrator.
+ * Here is all the informattion related to the integration process, particle
+ * information, filenames, etc.
  */
 class NbodySystem {
     public:
@@ -77,6 +77,7 @@ class NbodySystem {
         float t_cr;
         float r_virial;
         float max_mass;
+        float r_hm;
 
         // Close encounter
         double r_cl;

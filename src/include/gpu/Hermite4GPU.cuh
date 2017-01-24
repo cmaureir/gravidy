@@ -88,6 +88,15 @@ inline __host__ __device__ void operator+=(Forces &a, Forces &b)
     a.a1[2] += b.a1[2];
 }
 
+/**
+ * Class which implements on the GPU the structure of the Hermite4 scheme.
+ *
+ * This contains all the implementations of the requirements processes to perform
+ * the integration, like the initialization of the forces, the prediction,
+ * the correction, and the general integration of the system.
+ *
+ */
+
 class Hermite4GPU : public Hermite4 {
     public:
         Hermite4GPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu);
@@ -134,6 +143,9 @@ class Hermite4GPU : public Hermite4 {
 
 };
 
+/**
+ * Initialization kernel, which consider an \f$N^2\f$ interaction of the particles.
+ */
 __global__ void k_init_acc_jrk(Predictor *p,
                                Forces *f,
                                int n,
@@ -141,6 +153,10 @@ __global__ void k_init_acc_jrk(Predictor *p,
                                int dev,
                                int dev_size);
 
+/**
+ * Predictor kernel, in charge of performing the prediction step of all the particles
+ * on each integration step.
+ */
 __global__ void k_prediction(Forces *f,
                              double4 *r,
                              double4 *v,
@@ -149,11 +165,20 @@ __global__ void k_prediction(Forces *f,
                              int dev_size,
                              double ITIME);
 
+/**
+ * Force interaction kernel, in charge of performing gravitational interaction
+ * computation between two particles.
+ */
 __device__ void k_force_calculation(Predictor i_p,
                                     Predictor j_p,
                                     Forces &f,
                                     double e2);
 
+/**
+ * Force kernel, in charge of performing distribution of how the \f$N, N_{act}\f$
+ * particles will be distributed among the GPUs.
+ * This kernel calls the k_prediction kernel.
+ */
 __global__ void k_update(Predictor *i_p,
                          Predictor *j_p,
                          Forces *fout,
@@ -161,11 +186,19 @@ __global__ void k_update(Predictor *i_p,
                          int total,
                          double e2);
 
+/**
+ * Force reduction kernel, in charge of summing up all the preliminary results
+ * of the forces for the \f$N_{act}\f$ particles.
+ */
 __global__ void k_reduce(Forces *in,
                        Forces *out,
                        int shift_id,
                        int shift);
 
+/**
+ * Energy kernel, in charge of the calculation of the kinetic and potential
+ * energy on the GPUs.
+ */
 __global__ void k_energy(double4 *r,
                          double4 *v,
                          double *ekin,

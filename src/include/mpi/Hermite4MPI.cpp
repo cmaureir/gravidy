@@ -35,6 +35,10 @@
  */
 #include "MPIUtils.hpp"
 
+/** Constructor that uses its parent one.
+ * Additionally, this method allocates and initialize the memory
+ * on each slave, defining before the size of the data to be transfer.
+ */
 Hermite4MPI::Hermite4MPI(NbodySystem *ns, Logger *logger, NbodyUtils *nu,
                          int rank, int nproc )
                          : Hermite4(ns, logger, nu)
@@ -62,6 +66,8 @@ Hermite4MPI::Hermite4MPI(NbodySystem *ns, Logger *logger, NbodyUtils *nu,
 
 }
 
+/** Destructor that free memory of two tmp arrays
+ */
 Hermite4MPI::~Hermite4MPI()
 {
     // free main and slaves
@@ -70,6 +76,9 @@ Hermite4MPI::~Hermite4MPI()
 
 }
 
+/** Method in charge of allocating the memory and initializing the data for all the
+ * data structures in all the slaves
+ */
 void Hermite4MPI::alloc_slaves_memory(int rank)
 {
 
@@ -100,6 +109,9 @@ void Hermite4MPI::alloc_slaves_memory(int rank)
     }
 }
 
+
+/** Method that calculate the gravitational interaction between two particles
+ */
 void Hermite4MPI::force_calculation(Predictor pi, Predictor pj, Forces &fi)
 {
     double rx = pj.r[0] - pi.r[0];
@@ -130,6 +142,8 @@ void Hermite4MPI::force_calculation(Predictor pi, Predictor pj, Forces &fi)
 
 }
 
+/** Method that initializes the acceleration and it first derivative
+ */
 void Hermite4MPI::init_acc_jrk()
 {
 
@@ -147,6 +161,9 @@ void Hermite4MPI::init_acc_jrk()
     }
 }
 
+/** Method that call the force_calculation method for every \f$i-\f$ and \f$j\f$
+ * particles interaction of the \f$N_{act}\f$ ones.
+ */
 void Hermite4MPI::update_acc_jrk(unsigned int nact)
 {
     ns->gtime.update_ini = omp_get_wtime();
@@ -195,6 +212,8 @@ void Hermite4MPI::update_acc_jrk(unsigned int nact)
     ns->gtime.update_end += omp_get_wtime() - ns->gtime.update_ini;
 }
 
+/** Method that predict all the particles to the current integration time
+ */
 void Hermite4MPI::predicted_pos_vel(double ITIME)
 {
 
@@ -223,6 +242,9 @@ void Hermite4MPI::predicted_pos_vel(double ITIME)
     MPI_Bcast(ns->h_p, sizeof(Predictor) * ns->n, MPI_BYTE, 0, MPI_COMM_WORLD);
 }
 
+/** Method that correct the positions and velocities of the particles at the
+ * end of every integration step
+ */
 void Hermite4MPI::correction_pos_vel(double ITIME, unsigned int nact)
 {
     ns->gtime.correction_ini = omp_get_wtime();

@@ -36,6 +36,10 @@
 #undef _GLIBCXX_ATOMIC_BUILTINS
 #include "Hermite4GPU.cuh"
 
+/** Constructor that uses its parent one.
+ * Additionally handles the split of the particles of the system among the available
+ * GPUs, allocation of the variables, and defining widely use sizes for arrays.
+ */
 Hermite4GPU::Hermite4GPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
             : Hermite4(ns, logger, nu)
 {
@@ -111,11 +115,15 @@ Hermite4GPU::Hermite4GPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
     alloc_arrays_device();
 }
 
+/** Destructor in charge of memory deallocation */
 Hermite4GPU::~Hermite4GPU()
 {
     free_arrays_device();
 }
 
+/** Method in charge of allocating the data structures on the available GPUs,
+ * also initializing all the arrays to zero
+ */
 void Hermite4GPU::alloc_arrays_device()
 {
     for(int g = 0; g < gpus; g++)
@@ -156,6 +164,8 @@ void Hermite4GPU::alloc_arrays_device()
     ns->h_fout_tmp = new Forces[ns->n*NJBLOCK];
 }
 
+/** Method in charge of deallocating the data structures on the available GPUs.
+ */
 void Hermite4GPU::free_arrays_device()
 {
 
@@ -183,7 +193,11 @@ void Hermite4GPU::free_arrays_device()
     //delete ns->h_fout_gpu;
 }
 
-/** Not implemented using GPU */
+/** Method in charge of the prediction step.
+ * This can be use on the CPU (commented section) or on the GPUs.
+ * The reason of having both reasons, is the improvement is not much for small
+ * amount of particles.
+ */
 void Hermite4GPU::predicted_pos_vel(double ITIME)
 {
     ns->gtime.prediction_ini = omp_get_wtime();
@@ -253,7 +267,10 @@ void Hermite4GPU::predicted_pos_vel(double ITIME)
     ns->gtime.prediction_end += omp_get_wtime() - ns->gtime.prediction_ini;
 }
 
-/** Not implemented using GPU */
+/** Method in charge of the corrector step.
+ * This is not implemented on the GPU because the benefit was not much
+ * for small amount of particles.
+ */
 void Hermite4GPU::correction_pos_vel(double ITIME, int nact)
 {
     ns->gtime.correction_ini = omp_get_wtime();
@@ -310,6 +327,9 @@ void Hermite4GPU::correction_pos_vel(double ITIME, int nact)
     ns->gtime.correction_end += omp_get_wtime() - ns->gtime.correction_ini;
 }
 
+/** Method in charge of the initialization of all the particle's acceleration
+ * and first derivative of the system, at the begining of the simulation.
+ */
 void Hermite4GPU::init_acc_jrk()
 {
     size_t pp_size = ns->n * sizeof(Predictor);
@@ -354,6 +374,14 @@ void Hermite4GPU::init_acc_jrk()
     }
 }
 
+/** Method in charge of the force interaction between \f$N_{act}\f$ and the whole
+ * system.
+ *  First there is a tmp construction of predictors to be send to the GPUs.
+ *  Then the data is copied to the devices.
+ *  The first kernel perform the preliminary calculation of the forces in JPBLOCKS.
+ *  The second kernel, reduction, is in charge of summing all the preliminary forces
+ *  to the final value for all the active particles.
+ */
 void Hermite4GPU::update_acc_jrk(int nact)
 {
     // Timer begin
@@ -506,6 +534,9 @@ void Hermite4GPU::update_acc_jrk(int nact)
     ns->gtime.update_end += (omp_get_wtime() - ns->gtime.update_ini);
 }
 
+/** Method in charge of calculating the potential and kinetic energy
+ * on the GPU devices
+ */
 double Hermite4GPU::get_energy_gpu()
 {
     double time_energy_ini = omp_get_wtime();
@@ -557,9 +588,13 @@ double Hermite4GPU::get_energy_gpu()
 
     double time_energy_end = omp_get_wtime() - time_energy_ini;
 
+    std::cout << "epot: " << ns->en.potential << std::endl;
     return ns->en.kinetic + ns->en.potential;
 }
 
+/** Method that get the last kernel error if the code is running with the DEBUG
+ * flag
+ */
 void Hermite4GPU::get_kernel_error()
 {
     #ifdef KERNEL_ERROR_DEBUG
@@ -567,10 +602,14 @@ void Hermite4GPU::get_kernel_error()
     #endif
 }
 
+/** Method to start the device timer
+ */
 void Hermite4GPU::gpu_timer_start(){
     cudaEventRecord(start);
 }
 
+/** Method that ends the device timer
+ */
 float Hermite4GPU::gpu_timer_stop(std::string f){
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
@@ -590,5 +629,7 @@ float Hermite4GPU::gpu_timer_stop(std::string f){
     return msec;
 }
 
-// Not being use: to satisfy virtual implementation
+/** This method is not implemented becasue we use a CUDA kernel
+ * to perfom the force calculation, not a host method.
+ * /
 void Hermite4GPU::force_calculation(Predictor pi, Predictor pj, Forces &fi) {}

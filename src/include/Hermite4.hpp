@@ -39,13 +39,22 @@
 #include "utils/NbodyUtils.hpp"
 #include <limits>
 
+/**
+ * General class that define the structure to be follow by any implementation
+ * of the integrator (CPU, MPI or GPU).
+ * The methods on this class must be implemented to have a proper behaviour of the
+ * integrator.
+ */
 class Hermite4 {
     public:
         Hermite4(NbodySystem *ns, Logger *logger, NbodyUtils *nu);
         ~Hermite4();
 
+        /** NbodySystem object reference */
         NbodySystem *ns;
+        /** Logger object reference */
         Logger      *logger;
+        /** NbodyUtils object reference */
         NbodyUtils  *nu;
 
         unsigned int  find_particles_to_move(double ITIME);
@@ -56,16 +65,22 @@ class Hermite4 {
         void free_arrays_host();
         void init_data();
 
-        /** Virtual methods to be implemented by the different versions **/
+        /* Virtual methods to be implemented by the different versions */
+        /** Integration virtual method to be implemented */
         virtual void integration() {}
+        /** Prediction virtual method to be implemented */
         virtual void predicted_pos_vel(double itime, double *t, double4 *r,
                                        double4 *v, Forces *f, Predictor *p) {}
+        /** Correction virtual method to be implemented */
         virtual void correction_pos_vel(double itime, unsigned int nact, double *dt,
                                         double *t, unsigned int *move, Predictor *p,
                                         Forces *f, Forces *old, double3 *a2,
                                         double3 *a3, double4 *r, double4 *v) {}
+        /** Force virtual method to be implemented */
         virtual void force_calculation(Predictor pi, Predictor pj, Forces &fi) {}
+        /** Force initialization virtual method to be implemented */
         virtual void init_acc_jrk(Predictor *p, Forces *f) {}
+        /** Force update virtual method to be implemented */
         virtual void update_acc_jrk(unsigned int nact, unsigned int *move,
                                     Predictor *p, Forces *f) {}
 

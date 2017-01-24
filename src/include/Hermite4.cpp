@@ -35,6 +35,7 @@
  */
 #include "Hermite4.hpp"
 
+/** Constructor in charge of calling the allocation and initialization methods */
 Hermite4::Hermite4(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
 {
     this->ns     = ns;
@@ -45,11 +46,19 @@ Hermite4::Hermite4(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
     init_data();
 }
 
+/** Destructor in charge of calling the method that free the memory
+ */
 Hermite4::~Hermite4()
 {
     free_arrays_host();
 }
 
+/** Method in charge of finding all the particles that need to be updated on the
+ * following integration step.
+ * Since we are using DP, we base the comparison between times and timesteps
+ * using the machine epsilon, to avoid overflows.
+ *
+ */
 unsigned int Hermite4::find_particles_to_move(double ITIME)
 {
 
@@ -72,6 +81,9 @@ unsigned int Hermite4::find_particles_to_move(double ITIME)
     return j;
 }
 
+/** Methods that look for the next integration time, looking for the minimum
+ * combination of timestep and current time of all the particles of the system
+ */
 void Hermite4::next_integration_time(double &CTIME)
 {
     // Initial number as the maximum
@@ -86,6 +98,10 @@ void Hermite4::next_integration_time(double &CTIME)
     }
 }
 
+/** Initialization of the timesteps of the system.
+ * This method is based on the  Aarseth initial timestep definition
+ * and follows a Gaussian distribution.
+ */
 void Hermite4::init_dt(double &CTIME, float ETA, double ITIME)
 {
     // Aarseth initial timestep
@@ -120,6 +136,9 @@ void Hermite4::init_dt(double &CTIME, float ETA, double ITIME)
     }
 }
 
+/** Method in charge of saving the old values of the acceleration and its first
+ * derivative to be use in the Corrector integration step
+ */
 void Hermite4::save_old_acc_jrk(unsigned int nact)
 {
     #pragma omp parallel for
@@ -131,6 +150,8 @@ void Hermite4::save_old_acc_jrk(unsigned int nact)
 
 }
 
+/** Method in charge of the memory allocation of all the data structures
+ */
 void Hermite4::alloc_arrays_host()
 {
     ns->h_f        = new Forces[ns->n];
@@ -147,6 +168,8 @@ void Hermite4::alloc_arrays_host()
 
 }
 
+/** Method in charge of the memory deallocation of all the data structures
+ */
 void Hermite4::free_arrays_host()
 {
     delete ns->h_f;
@@ -162,6 +185,9 @@ void Hermite4::free_arrays_host()
     delete ns->h_epot;
 }
 
+/** Method that initialize all the data structures that will be used in the
+ * integration of hte system.
+ */
 void Hermite4::init_data()
 {
     double3 empty = {0.0, 0.0, 0.0};
