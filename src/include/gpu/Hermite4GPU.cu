@@ -71,7 +71,7 @@ Hermite4GPU::Hermite4GPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
     logger->log_info(std::string("GPUs: ")+std::string(SSTR(gpus)));
 
     std::string ss = "";
-    ss += std::string("Spliting ");
+    ss += std::string("Splitting ");
     ss += std::string(SSTR(ns->n));
     ss += std::string(" particles in ");
     ss += std::string(SSTR(gpus));
@@ -588,7 +588,6 @@ double Hermite4GPU::get_energy_gpu()
 
     double time_energy_end = omp_get_wtime() - time_energy_ini;
 
-    std::cout << "epot: " << ns->en.potential << std::endl;
     return ns->en.kinetic + ns->en.potential;
 }
 
@@ -631,5 +630,5 @@ float Hermite4GPU::gpu_timer_stop(std::string f){
 
 /** This method is not implemented becasue we use a CUDA kernel
  * to perfom the force calculation, not a host method.
- * /
+ */
 void Hermite4GPU::force_calculation(Predictor pi, Predictor pj, Forces &fi) {}
