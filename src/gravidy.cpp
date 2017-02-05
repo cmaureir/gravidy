@@ -101,7 +101,15 @@ int main(int argc, char *argv[])
     #if defined(_MPI)
     MPI_Finalize();
     #endif
+
+    #if defined(_MPI)
+    if (rank == 0)
+    {
+        logger.log_success(std::string("Finishing..."));
+    }
+    #else
     logger.log_success(std::string("Finishing..."));
+    #endif
 
     return 0;
 }

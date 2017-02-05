@@ -43,6 +43,7 @@ NbodySystem::NbodySystem(OptionsParser op)
     resume_filename    = op.resume_filename;
     snapshot_filename  = op.snapshot_filename;
     integration_time   = op.integration_time;
+    interval_time      = op.interval_time;
     snapshot_time      = op.snapshot_time;
     snapshot_number    = op.snapshot_number;
     e2                 = op.softening * op.softening;

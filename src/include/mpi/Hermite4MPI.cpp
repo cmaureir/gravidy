@@ -112,7 +112,7 @@ void Hermite4MPI::alloc_slaves_memory(int rank)
 
 /** Method that calculate the gravitational interaction between two particles
  */
-void Hermite4MPI::force_calculation(Predictor pi, Predictor pj, Forces &fi)
+void Hermite4MPI::force_calculation(const Predictor &pi, const Predictor &pj, Forces &fi)
 {
     double rx = pj.r[0] - pi.r[0];
     double ry = pj.r[1] - pi.r[1];

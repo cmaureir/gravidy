@@ -65,6 +65,8 @@ OptionsParser::OptionsParser(int argc, char *argv[])
         ("eta,e", po::value<float>()->value_name("<value>"),
             "ETA of time-step calculation (default 0.01)")
         ("screen,p", "Print summary in the screen instead of a file")
+        ("interval,z", po::value<float>()->value_name("<value>"),
+            "Output time interval (default 0.125)")
     ;
 
     // Extra
@@ -244,15 +246,34 @@ bool OptionsParser::check_options()
             softening = strtod(config_param["Softening"].c_str(), NULL);
             if (vm.count("softening"))
             {
-                softening = vm["softening"].as<float>();
+                float tmp = vm["softening"].as<float>();
+                if (tmp > 0)
+                {
+                    softening = tmp;
+                }
+                else
+                {
+                    std::cerr << "gravidy: softening cannot be negative"
+                              << std::endl;
+                }
             }
 
             // Checking eta
             eta = strtod(config_param["EtaTimestep"].c_str(), NULL);
             if (vm.count("eta"))
             {
-                eta = vm["eta"].as<float>();
+                float tmp = vm["eta"].as<float>();
+                if (tmp > 0)
+                {
+                    eta = tmp;
+                }
+                else
+                {
+                    std::cerr << "gravidy: eta cannot be negative"
+                              << std::endl;
+                }
             }
+
 
             // Checking PrintScreen
             //ops.print_screen = std::stoi(config_param["PrintScreen"].c_str()); //C++11
@@ -363,6 +384,10 @@ bool OptionsParser::check_options()
         eta  = ETA_N;
         if (vm.count("eta"))
             eta = vm["eta"].as<float>();
+
+        interval_time = D_TIME_MAX;
+        if (vm.count("interval"))
+            interval_time = vm["interval"].as<float>();
 
 
         if (vm.count("output"))

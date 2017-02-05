@@ -77,7 +77,7 @@ class Hermite4 {
                                         Forces *f, Forces *old, double3 *a2,
                                         double3 *a3, double4 *r, double4 *v) {}
         /** Force virtual method to be implemented */
-        virtual void force_calculation(Predictor pi, Predictor pj, Forces &fi) {}
+        virtual void force_calculation(const Predictor &pi, const Predictor &pj, Forces &fi) {}
         /** Force initialization virtual method to be implemented */
         virtual void init_acc_jrk(Predictor *p, Forces *f) {}
         /** Force update virtual method to be implemented */

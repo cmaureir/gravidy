@@ -66,6 +66,7 @@ class NbodySystem {
         float  eta;
         float  total_mass;
         float  integration_time;
+        float  interval_time;
 
         double e2;
         double snapshot_time;

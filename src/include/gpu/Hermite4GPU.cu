@@ -631,4 +631,4 @@ float Hermite4GPU::gpu_timer_stop(std::string f){
 /** This method is not implemented becasue we use a CUDA kernel
  * to perfom the force calculation, not a host method.
  */
-void Hermite4GPU::force_calculation(Predictor pi, Predictor pj, Forces &fi) {}
+void Hermite4GPU::force_calculation(const Predictor &pi, const Predictor &pj, Forces &fi) {}

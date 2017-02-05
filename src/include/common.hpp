@@ -84,6 +84,9 @@ const int G = 1;
  *  (Casertano & Hut 1985)*/
 const int J = 6;
 
+/** Color output */
+const int COLOR_OUTPUT = 1;
+
 /** Common mass percentage in the core of a globular cluster */
 const float CORE_MASS = 0.1;
 

@@ -52,7 +52,7 @@ Hermite4CPU::~Hermite4CPU()
 
 /** Method that calculate the gravitational interaction between two particles
  */
-void Hermite4CPU::force_calculation(Predictor pi, Predictor pj, Forces &fi)
+void Hermite4CPU::force_calculation(const Predictor &pi, const Predictor &pj, Forces &fi)
 {
     double rx = pj.r[0] - pi.r[0];
     double ry = pj.r[1] - pi.r[1];
@@ -85,9 +85,9 @@ void Hermite4CPU::force_calculation(Predictor pi, Predictor pj, Forces &fi)
  */
 void Hermite4CPU::init_acc_jrk()
 {
-    unsigned int i,j;
+    unsigned int j = 0;
     #pragma omp parallel for private(j)
-    for (i = 0; i < ns->n; i++)
+    for (unsigned int i = 0; i < ns->n; i++)
     {
         for (j = 0; j < ns->n; j++)
         {
@@ -103,9 +103,10 @@ void Hermite4CPU::init_acc_jrk()
 void Hermite4CPU::update_acc_jrk(unsigned int nact)
 {
     ns->gtime.update_ini = omp_get_wtime();
-    unsigned int i, j, k;
+    unsigned int i = 0;
+    unsigned int j = 0;
     #pragma omp parallel for private(i,j)
-    for (k = 0; k < nact; k++)
+    for (unsigned int k = 0; k < nact; k++)
     {
         i = ns->h_move[k];
         ns->h_f[i].a[0]  = 0.0;

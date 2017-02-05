@@ -86,10 +86,10 @@ __global__ void k_init_acc_jrk (Predictor *p,
     }
 }
 
-__device__ void k_force_calculation(Predictor i_p,
-                                    Predictor j_p,
+__device__ void k_force_calculation(const Predictor &i_p,
+                                    const Predictor &j_p,
                                     Forces &f,
-                                    double e2)
+                                    const double &e2)
 {
     double rx = j_p.r[0] - i_p.r[0];
     double ry = j_p.r[1] - i_p.r[1];

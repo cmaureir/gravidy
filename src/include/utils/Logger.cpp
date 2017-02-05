@@ -393,24 +393,49 @@ void Logger::print_energy_log(double ITIME, unsigned int iterations, long long i
 void Logger::log(int type,  std::string msg)
 {
     // Error
-    if (type == 0)
+    if (COLOR_OUTPUT)
     {
-        std::cerr << get_timestamp() << " [ERROR] " << msg << std::endl;
+        if (type == 0)
+        {
+            std::cerr << color_blue << get_timestamp() << color_red << " [ERROR] " << color_disable << msg << std::endl;
+        }
+        // Warning
+        else if (type == 1)
+        {
+            std::cerr << color_blue << get_timestamp() << color_yellow << " [WARNING] " << color_disable << msg << std::endl;
+        }
+        // Success
+        else if (type == 2)
+        {
+            std::cerr << color_blue << get_timestamp() << color_green <<" [SUCCESS] " << color_disable << msg << std::endl;
+        }
+        // Information
+        else if (type == 3)
+        {
+            std::cerr << color_blue << get_timestamp() << color_cyan << " [INFO] " << color_disable << msg << std::endl;
+        }
     }
-    // Warning
-    else if (type == 1)
+    else
     {
-        std::cerr << get_timestamp() << " [WARNING] " << msg << std::endl;
-    }
-    // Success
-    else if (type == 2)
-    {
-        std::cerr << get_timestamp() << " [SUCCESS] " << msg << std::endl;
-    }
-    // Information
-    else if (type == 3)
-    {
-        std::cerr << get_timestamp() << " [INFO] " << msg << std::endl;
+        if (type == 0)
+        {
+            std::cerr << get_timestamp() << " [ERROR] " << msg << std::endl;
+        }
+        // Warning
+        else if (type == 1)
+        {
+            std::cerr << get_timestamp() << " [WARNING] " << msg << std::endl;
+        }
+        // Success
+        else if (type == 2)
+        {
+            std::cerr << get_timestamp() << " [SUCCESS] " << msg << std::endl;
+        }
+        // Information
+        else if (type == 3)
+        {
+            std::cerr << get_timestamp() << " [INFO] " << msg << std::endl;
+        }
     }
 }
 

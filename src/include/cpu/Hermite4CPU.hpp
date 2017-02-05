@@ -51,7 +51,7 @@ class Hermite4CPU : public Hermite4 {
         Hermite4CPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu);
         ~Hermite4CPU();
 
-        void force_calculation(Predictor pi, Predictor pj, Forces &fi);
+        void force_calculation(const Predictor &pi, const Predictor &pj, Forces &fi);
         void init_acc_jrk();
         void update_acc_jrk(unsigned int nact);
         void predicted_pos_vel(double ITIME);

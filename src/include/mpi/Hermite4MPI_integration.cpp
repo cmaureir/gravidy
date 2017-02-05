@@ -47,10 +47,10 @@ void Hermite4MPI::integration()
     unsigned int nact     = 0;       // Active particles
     unsigned int nsteps   = 0;       // Amount of steps per particles on the system
     static long long interactions = 0;
+    unsigned int output_factor = 1;
 
     // Setting maximum number of threads for OpenMP sections
-    int max_threads = omp_get_max_threads();
-    omp_set_num_threads( max_threads - 1);
+    omp_set_num_threads(omp_get_max_threads());
 
     init_acc_jrk();
     init_dt(ATIME, ETA_S, ITIME);
@@ -103,9 +103,8 @@ void Hermite4MPI::integration()
 
         if (rank == 0)
         {
-            if(nact == ns->n)
+            if (ITIME >= ns->interval_time * output_factor)
             {
-                assert(nact == ns->n);
                 logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy());
                 if (ns->ops.print_all)
                 {
@@ -118,6 +117,7 @@ void Hermite4MPI::integration()
                 }
                 logger->write_snapshot(snap_number, ITIME);
                 snap_number++;
+                output_factor += 1;
             }
         }
 

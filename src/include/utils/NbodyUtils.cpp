@@ -116,10 +116,8 @@ double NbodyUtils::get_core_radius()
     double core_mass = 0.0;
     double radius = 0.0;
 
-    unsigned int i;
-
     #pragma omp parallel for
-    for (i = 0; i < ns->n; i++)
+    for (unsigned int i = 0; i < ns->n; i++)
     {
         double rx  = ns->h_r[i].x - cod.x;
         double ry  = ns->h_r[i].y - cod.y;
@@ -131,16 +129,16 @@ double NbodyUtils::get_core_radius()
 
     std::sort(d.begin(), d.end());
 
-    for (i = 0; i < ns->n; i++)
+    for (unsigned int i = 0; i < ns->n; i++)
     {
         if (core_mass > ns->total_mass*CORE_MASS)
         {
             i -= 1;
+            radius = d[i].value;
             break;
         }
         core_mass += ns->h_r[d[i].index].w;
     }
-    radius = d[i].value;
 
     return radius;
 }
@@ -172,9 +170,9 @@ double3 NbodyUtils::get_center_of_density()
     empty.index = 0;
     empty.value = 0.0;
 
-    unsigned int i, j;
+    unsigned int j = 0;
     #pragma omp parallel for private(j)
-    for (i = 0; i < ns->n; i++)
+    for (unsigned int i = 0; i < ns->n; i++)
     {
         std::vector<Distance> d(ns->n);
         std::fill(d.begin(), d.end(), empty);
@@ -226,15 +224,14 @@ double NbodyUtils::get_halfmass_radius()
 {
     float half_mass;
     double r_h;
-    unsigned int i, j;
 
     std::vector<Distance> distances(ns->n);
 
     half_mass = 0;
-    j = 0;
+    unsigned int j = 0;
 
     #pragma omp parallel for
-    for (i = 0; i < ns->n; i++)
+    for (unsigned int i = 0; i < ns->n; i++)
     {
         double rx = (cod.x - ns->h_r[i].x);
         double ry = (cod.y - ns->h_r[i].y);
@@ -246,7 +243,7 @@ double NbodyUtils::get_halfmass_radius()
 
     std::sort(distances.begin(), distances.end());
 
-    for (i = 0; i < ns->n; i++)
+    for (unsigned int i = 0; i < ns->n; i++)
     {
         if(half_mass >= ns->total_mass/2.0)
         {

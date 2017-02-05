@@ -128,7 +128,7 @@ class Hermite4GPU : public Hermite4 {
         void alloc_arrays_device();
         void free_arrays_device();
 
-        void force_calculation(Predictor pi, Predictor pj, Forces &fi);
+        void force_calculation(const Predictor &pi, const Predictor &pj, Forces &fi);
         void init_acc_jrk();
         void update_acc_jrk(int nact);
         void predicted_pos_vel(double ITIME);
@@ -169,10 +169,10 @@ __global__ void k_prediction(Forces *f,
  * Force interaction kernel, in charge of performing gravitational interaction
  * computation between two particles.
  */
-__device__ void k_force_calculation(Predictor i_p,
-                                    Predictor j_p,
+__device__ void k_force_calculation(const Predictor &i_p,
+                                    const Predictor &j_p,
                                     Forces &f,
-                                    double e2);
+                                    const double &e2);
 
 /**
  * Force kernel, in charge of performing distribution of how the \f$N, N_{act}\f$
