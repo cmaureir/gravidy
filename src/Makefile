@@ -8,11 +8,6 @@ CUDA_PATH=/cluster/gpu/nvidia/5.5
 MPI_LIB_PATH=/cluster/openmpi/SL6/1.5.4/gcc/lib
 MPI_INC_PATH=/cluster/openmpi/SL6/1.5.4/gcc/include
 endif
-# Cluster at AEI
-ifeq ($(HOST), pinatubo)
-BOOST_PATH=/usr
-CUDA_PATH=/usr
-MPI_PATH=/usr/lib/openmpi
 endif
 ifeq ($(HOST), neXus)
 BOOST_PATH=/usr
@@ -21,8 +16,16 @@ MPI_LIB_PATH=/usr/lib/openmpi
 MPI_INC_PATH=/usr/include/openmpi
 endif
 
+# Your configuration
+#ifeq ($(HOST), )
+#BOOST_PATH=
+#CUDA_PATH=
+#MPI_LIB_PATH=
+#MPI_INC_PATH=
+#endif
+
 ############################# Compilers
-CXX=        g++-5
+CXX=        g++
 NVCC=       $(CUDA_PATH)/bin/nvcc
 
 ############################# FLAGS
@@ -39,23 +42,40 @@ LINKFLAGS=  -L$(CUDA_PATH)/lib64     \
             -lcudart                 \
             -DGPU
 
-# C++ FLAGS
-CXXFLAGS=   $(BOOSTFLAGS) \
-            -O3           \
-            -Wall         \
-            -pg           \
-            -lgomp        \
-            -fopenmp      \
-            -pipe         \
-            -fstack-protector -Wl,-z,relro -Wl,-z,now -Wformat-security \
-            -Wpointer-arith \
-            -Wformat-nonliteral \
-            -Werror \
-            -Wl,-O1 \
-            -Wl,--discard-all \
-            -Wl,--no-undefined \
-            -rdynamic \
-            #-fno-exceptions \
+## C++ FLAGS
+# -O3 -- Optimisation
+# -Wall -- Warning messages
+# -fopenmp -- Enable OpenMP
+# -pipe -- Pipes over temp files in the compilation
+# -fstack-protector -- Emit extra code to check for buffer overflows
+# -Wl,-z,relro -- Provides a read-only relocation table area in the final ELF
+# -Wl,-z,now -- This prevents GOT overwrite attacks
+# -Wformat-security -- Prevents formats vulnerabilities
+# -Wpointer-arith -- Prevent void size
+# -Wformat-nonliteral -- Prevent non literal format strings
+# -Wl,-O1 -- Optimisation flag for the linker
+# -Wl,--discard-all -- Discard local symbols
+# -Wl,--no-undefined -- Prevent missing/unresolved symbols
+# -rdynamic -- More exported symbols in the dynamic symbol table
+# -pg -- For gprof
+# -Werror -- For ninja-coders, Warnings will be Errors
+CXXFLAGS=   $(BOOSTFLAGS)                   \
+            -O3                             \
+            -Wall                           \
+            -fopenmp                        \
+            -pipe                           \
+            -fstack-protector               \
+            -Wl,-z,relro                    \
+            -Wl,-z,now                      \
+            -Wformat-security               \
+            -Wpointer-arith                 \
+            -Wformat-nonliteral             \
+            -Wl,-O1                         \
+            -Wl,--discard-all               \
+            -Wl,--no-undefined              \
+            -rdynamic                       \
+            #-pg                            \
+            #-Werror                        \
 
 # MPI FLAGS
 MPIFLAGS=   -L$(MPI_LIB_PATH)             \
