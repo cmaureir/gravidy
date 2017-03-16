@@ -8,7 +8,6 @@ CUDA_PATH=/cluster/gpu/nvidia/5.5
 MPI_LIB_PATH=/cluster/openmpi/SL6/1.5.4/gcc/lib
 MPI_INC_PATH=/cluster/openmpi/SL6/1.5.4/gcc/include
 endif
-endif
 ifeq ($(HOST), neXus)
 BOOST_PATH=/usr
 CUDA_PATH=/opt/cuda
