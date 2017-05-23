@@ -428,6 +428,9 @@ double NbodyUtils::get_energy(double ext)
 {
     ns->en.potential = 0.0;
     ns->en.kinetic   = 0.0;
+    #ifdef PN
+    double energy_pn = 0.0;
+    #endif
 
     #pragma omp parallel for
     for (unsigned int i = 0; i < ns->n; i++)
@@ -441,14 +444,77 @@ double NbodyUtils::get_energy(double ext)
             double r2 = rx*rx + ry*ry + rz*rz;
 
             epot_tmp -= (ns->h_r[i].w * ns->h_r[j].w) / sqrt(r2);
+            #ifdef PN
+            double vx = ns->h_v[j].x - ns->h_v[i].x;
+            double vy = ns->h_v[j].y - ns->h_v[i].y;
+            double vz = ns->h_v[j].z - ns->h_v[i].z;
+            double v_2 = vx*vx + vy*vy + vz*vz;
+            double cinv = 1.0/SPEED_OF_LIGHT;
+            double c2inv = cinv * cinv;
+            double c4inv = c2inv * c2inv;
+            double c5inv = c4inv * cinv;
+            double G2 = G*G;
+            double G3 = G*G2;
+            double m1 =  ns->h_r[i].w;
+            double m2 =  ns->h_r[j].w;
+            double m1_2 = m1*m1;
+            double m1_3 = m1*m2;
+            double m2_2 = m2*m2;
+            double rinv = 1.0/sqrt(r2);
+            double r2inv = rinv*rinv;
+            double r3inv = rinv*r2inv;
+
+            double nv[3] = {rx * rinv, ry * rinv, rz * rinv};
+            double nv1 = nv[0] * ns->h_v[i].x +
+                         nv[1] * ns->h_v[i].y +
+                         nv[2] * ns->h_v[i].z;
+            double nv2 = nv[0] * ns->h_v[j].x +
+                         nv[1] * ns->h_v[j].y +
+                         nv[2] * ns->h_v[j].z;
+
+            double nv1_2 = nv1 * nv1;
+            double nv1_3 = nv1 * nv1_2;
+            double nv2_2 = nv2 * nv2;
+
+            double v1 = sqrt(ns->h_v[i].x * ns->h_v[i].x +
+                             ns->h_v[i].y * ns->h_v[i].y +
+                             ns->h_v[i].z * ns->h_v[i].z);
+            double v2 = sqrt(ns->h_v[j].x * ns->h_v[j].x +
+                             ns->h_v[j].y * ns->h_v[j].y +
+                             ns->h_v[j].z * ns->h_v[j].z);
+
+            double v1_2 = v1*v1;
+            double v1_4 = v1_2*v1_2;
+            double v1_6 = v1_4*v1_2;
+
+            double v2_2 = v2*v2;
+
+            double v1v2 = v1*v2;
+            double v1v2_2 = v1v2*v1v2;
+
+            energy_pn += c2inv * (0.5 * G2 * m1_2 * m2 * r2inv + 3.0/8.0 * m1 *
+                         v1_4 + G * m1 * m2 * rinv * (-0.25 * nv1 * nv2 + 1.5 *
+                         v1_2 - 7.0/4.0 * v1v2))
+                         + c4inv * (-0.5 * G3 * m1_3 * m2 * r3inv - 19.0/8.0 * G3 *
+                         m1_2 * m2_2 * r3inv + 5.0/16.0 * m1 * v1_6 + G * m1 * m2 *
+                         rinv * (3.0/8.0 * nv1_3 * nv2 + 3.0/16.0 * nv1_2 * nv2_2 -
+                         9.0/8.0 * nv1 * nv2 * v1_2 - 13.0/8.0 * nv2_2 + 21.0/8.0 *
+                         v1_4 + 13.0/8.0 * nv1_2 * v1v2 + 0.75 * nv1 * nv2 * v1v2 -
+                         55.0/8.0 * v1_2 * v1v2 + 17.0/8.0 * v1v2_2 + 31.0/16.0 *
+                         v1_2 * v2_2) + G2 * m1_2 * m2 * r2inv * (29.0/4.0 * nv1_2 -
+                         13.0/4.0 * nv1 * nv2 + 0.5 * nv2_2 - 1.5*v1_2 + 7.0/4.0 *
+                         v2_2));
+            energy_pn += 4.0/5.0 * G2 * m1_2 * m2 * c5inv * r2inv * nv1 * (v_2 - 2 *
+                         G * (m1 - m2) * rinv);
+            #endif
         }
 
-        double vx = ns->h_v[i].x * ns->h_v[i].x;
-        double vy = ns->h_v[i].y * ns->h_v[i].y;
-        double vz = ns->h_v[i].z * ns->h_v[i].z;
-        double v2 = vx + vy + vz;
+        double vvx = ns->h_v[i].x * ns->h_v[i].x;
+        double vvy = ns->h_v[i].y * ns->h_v[i].y;
+        double vvz = ns->h_v[i].z * ns->h_v[i].z;
+        double vv2 = vvx + vvy + vvz;
 
-        double ekin_tmp = 0.5 * ns->h_r[i].w * v2;
+        double ekin_tmp = 0.5 * ns->h_r[i].w * vv2;
 
         #pragma omp atomic
         ns->en.kinetic += ekin_tmp;
@@ -456,6 +522,9 @@ double NbodyUtils::get_energy(double ext)
         ns->en.potential += epot_tmp;
     }
 
+    #ifdef PN
+    ext += energy_pn;
+    #endif
     return ns->en.kinetic + ns->en.potential + ext;
 }
 

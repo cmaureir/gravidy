@@ -46,6 +46,7 @@ NbodySystem::NbodySystem(OptionsParser op)
     interval_time      = op.interval_time;
     snapshot_time      = op.snapshot_time;
     snapshot_number    = op.snapshot_number;
+    length_snap        = op.length_output_number;
     e2                 = op.softening * op.softening;
     eta                = op.eta;
     ops                = op.ops;
@@ -189,6 +190,17 @@ void NbodySystem::read_input_file()
         file.close();
     }
     n = (unsigned int)reader.size();
+
+    #ifdef PN
+    if (n != 2)
+    {
+        std::cerr << "gravidy: PN is enabled, and we required just two bodies."
+                  << "We got "
+                  << n
+                  << std::endl;
+        exit (EXIT_FAILURE);
+    }
+    #endif
 }
 
 /** Memory allocation for the identification, positions, and velocities of the

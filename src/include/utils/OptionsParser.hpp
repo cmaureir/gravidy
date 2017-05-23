@@ -63,6 +63,7 @@ class OptionsParser {
         float softening;
         float eta;
         unsigned int snapshot_number;
+        unsigned int length_output_number;
         bool resume;
         options ops;
         po::variables_map vm;

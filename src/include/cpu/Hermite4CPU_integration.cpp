@@ -54,7 +54,7 @@ void Hermite4CPU::integration()
     init_dt(ATIME, ETA_S, ITIME);
 
     // Initial energy calculation
-    ns->en.ini = nu->get_energy();   // Initial calculation of the energy of the system
+    ns->en.ini = nu->get_energy(0);   // Initial calculation of the energy of the system
     ns->en.tmp = ns->en.ini;
 
     // Getting system information:
@@ -101,7 +101,7 @@ void Hermite4CPU::integration()
 
         if (ITIME >= ns->interval_time * output_factor)
         {
-            logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy());
+            logger->print_energy_log(ITIME, ns->iterations, interactions, nsteps, nu->get_energy(0));
             if (ns->ops.print_all)
             {
                 logger->print_all(ITIME, snap_number);

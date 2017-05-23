@@ -77,7 +77,7 @@ std::string Logger::get_timestamp()
 void Logger::write_snapshot(unsigned int snapshot_number, double ITIME)
 {
     std::ostringstream s;
-    s << std::setw(4) << std::setfill('0') << snapshot_number;
+    s << std::setw(ns->length_snap) << std::setfill('0') << snapshot_number;
     std::string ofname_all = ofname + ".snapshot_" + s.str();
     out_file.open(ofname_all.c_str(), std::ios::out);
 

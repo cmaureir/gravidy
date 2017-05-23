@@ -80,6 +80,16 @@ typedef struct double3
 /** Gravitational constant. Since we are working in N-body units we set G as one. */
 const int G = 1;
 
+
+/** Flag to enable the PN integration for two bodies. */
+#define PN 1
+
+#ifdef
+/** Speed of light in code units. This will vary with each simulation scenario
+ * so it need to be changed to fit user needs */
+const float SPEED_OF_LIGHT = 3.8241467907228306;
+#endif
+
 /** Amount of neighbours to calculate the center of density of the system
  *  (Casertano & Hut 1985)*/
 const int J = 6;

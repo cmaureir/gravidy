@@ -8,7 +8,7 @@ CUDA_PATH=/cluster/gpu/nvidia/5.5
 MPI_LIB_PATH=/cluster/openmpi/SL6/1.5.4/gcc/lib
 MPI_INC_PATH=/cluster/openmpi/SL6/1.5.4/gcc/include
 endif
-ifeq ($(HOST), neXus)
+ifeq ($(HOST), Gateway)
 BOOST_PATH=/usr
 CUDA_PATH=/opt/cuda
 MPI_LIB_PATH=/usr/lib/openmpi
@@ -114,15 +114,20 @@ OBJS_GPU=   $(OBJS)                               \
             include/gpu/Hermite4GPU.cuo
 
 ############################# Main rules
-all: gpu # use `cpu`, `gpu` or `mpi` to set as default
+#all:  use `cpu`, `pn`, `gpu` or `mpi` to set as default
+all: cpu
 
-cpu: gravidy-cpu
+pn: print_pn
+pn: gravidy-cpu
 
 mpi: CXXFLAGS+=$(MPIFLAGS)
 mpi: gravidy-mpi
 
 gpu: CXXFLAGS+=$(LINKFLAGS)
 gpu: gravidy-gpu
+
+print_pn:
+	@echo "PN implementation is enabled in CPU version"
 
 ############################# Rules to generate CUDA object
 %.cuo : %.cu

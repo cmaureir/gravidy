@@ -158,7 +158,6 @@ bool OptionsParser::check_options()
             {
                 while (rfile.good())
                 {
-
                     // Check EOF
                     if(rfile.eof())
                         break;
@@ -355,9 +354,11 @@ bool OptionsParser::check_options()
         ops.print_lagrange = 0;
 
         if(vm.count("screen"))
-            ops.print_screen=1;
+            ops.print_screen = 1;
+
         if(vm.count("all"))
             ops.print_all = 1;
+
         if(vm.count("lagrange"))
             ops.print_lagrange = 1;
 
@@ -389,6 +390,15 @@ bool OptionsParser::check_options()
         if (vm.count("interval"))
             interval_time = vm["interval"].as<float>();
 
+        // Checking frequency of snapshots and integration time
+        // to know how many snapshots will be written.
+        length_output_number = 0;
+        unsigned int tmp = (integration_time / interval_time);
+        do {
+            ++length_output_number;
+            tmp /= 10;
+        } while (tmp);
+        length_output_number += + 1;
 
         if (vm.count("output"))
         {

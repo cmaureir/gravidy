@@ -62,6 +62,7 @@ class NbodySystem {
         long long int iterations;
         unsigned int n;
         unsigned int snapshot_number;
+        unsigned int length_snap;
 
         float  eta;
         float  total_mass;
