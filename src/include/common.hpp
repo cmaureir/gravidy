@@ -84,7 +84,7 @@ const int G = 1;
 /** Flag to enable the PN integration for two bodies. */
 #define PN 1
 
-#ifdef
+#ifdef PN
 /** Speed of light in code units. This will vary with each simulation scenario
  * so it need to be changed to fit user needs */
 const float SPEED_OF_LIGHT = 3.8241467907228306;
