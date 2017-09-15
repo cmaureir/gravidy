@@ -74,7 +74,7 @@ class OptionsParser {
 
     private:
         int argc;
-        char *argv[];
+        char *argv;
 
 };
 
