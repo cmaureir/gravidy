@@ -120,6 +120,8 @@ all: cpu
 pn: print_pn
 pn: gravidy-cpu
 
+cpu: gravidy-cpu
+
 mpi: CXXFLAGS+=$(MPIFLAGS)
 mpi: gravidy-mpi
 

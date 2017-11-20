@@ -82,7 +82,7 @@ const int G = 1;
 
 
 /** Flag to enable the PN integration for two bodies. */
-#define PN 1
+//#define PN 1
 
 #ifdef PN
 /** Speed of light in code units. This will vary with each simulation scenario
