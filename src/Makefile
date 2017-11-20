@@ -136,16 +136,16 @@ print_pn:
 ############################# Rules to generate binaries
 
 gravidy: gravidy.cpp
-	$(CXX) $(CXXFLAGS) $^ -o $@
+	$(CXX) $^ -o $@ $(CXXFLAGS)
 
 gravidy-cpu: gravidy.cpp $(OBJS_CPU)
-	$(CXX) $(CXXFLAGS) $^ -o $@
+	$(CXX) $^ -o $@ $(CXXFLAGS)
 
 gravidy-mpi: gravidy.cpp $(OBJS_MPI)
-	$(CXX) $(CXXFLAGS) $^ -o $@
+	$(CXX) $^ -o $@ $(CXXFLAGS)
 
 gravidy-gpu: gravidy.cpp $(OBJS_GPU)
-	$(CXX) $(CXXFLAGS) $^ -o $@
+	$(CXX) $^ -o $@ $(CXXFLAGS)
 
 doxy:
 	@doxygen -s Doxyfile
