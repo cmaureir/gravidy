@@ -1,6 +1,6 @@
 [submodule "input"]
 	path = input
-	url = git@gitlab.com:cmaureir/gravidy-input
+	url = https://gitlab.com/cmaureir/gravidy-input
 [submodule "scripts"]
 	path = scripts
-	url = git@gitlab.com:cmaureir/gravidy-scripts
+	url = https://gitlab.com/cmaureir/gravidy-scripts
