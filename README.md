@@ -49,3 +49,6 @@ Input submodule
 ================
 
 The example initial conditions are in a different [git respository](https://gitlab.com/cmaureir/gravidy-input), that it can be cloned through the `setup-submodule` script, in the root of the repository.
+If you do not have a Gitlab account, you can clone the repository directly:
+
+`git clone https://gitlab.com/cmaureir/gravidy-input.git`
