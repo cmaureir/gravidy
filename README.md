@@ -1,4 +1,5 @@
 ## GraviDy
+[![Build Status](https://travis-ci.org/cmaureir/gravidy.svg?branch=master)](https://travis-ci.org/cmaureir/gravidy)
 
 The astrophysics "N-body problem" consist in a dynamical
 N celestial bodies model which interact gravitationally.
