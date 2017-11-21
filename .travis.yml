@@ -1,6 +1,8 @@
 language: cpp
 compiler:
  - gcc
+git:
+ submodules: false
 
 matrix:
   include:
