@@ -8,9 +8,11 @@ matrix:
       addons:
         apt:
           sources:
+            - boost-latest
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
+            - libboost1.55-all-dev
       env:
          - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
 
@@ -25,5 +27,5 @@ install:
 os:
  - linux
 script:
-    make
+    cd src && make cpu
 
