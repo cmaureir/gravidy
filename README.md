@@ -26,6 +26,11 @@ Hermite scheme. The most important features of the code are:
  * its maintenance and improvement cycle,
  * the fact that the code is publicly released under a BSD license and will be maintained via planned, public, regular updates.
 
+#### Publication reference
+*"GraviDy, a GPU modular, parallel direct-summation N−body integrator: Dynamics with softening"*
+ * [arxiv link](https://arxiv.org/abs/1702.00440)
+
+
 ### Requirements
 
 Software               | Version            | Description
