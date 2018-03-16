@@ -102,6 +102,8 @@ OBJS_GPU += include/gpu/Hermite4GPU_integration.o
 OBJS_GPU += include/gpu/Hermite4GPU.cuo
 
 # Main rules
+.PHONY: cpu pn mpi gpu doxy clean distclean
+
 all: cpu
 
 pn: print_pn
