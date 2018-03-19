@@ -1,4 +1,4 @@
-## GraviDy
+# GraviDy -  Gravitational Dynamics
 [![Build Status](https://travis-ci.org/cmaureir/gravidy.svg?branch=master)](https://travis-ci.org/cmaureir/gravidy)
 
 The astrophysics "N-body problem" consist in a dynamical
@@ -14,7 +14,7 @@ the problem do not have an analytic solution,
 and it is necessary to use computational methods,
 which are progresively more expensives to largest values of N.
 
-GraviDy is a new GPU,
+**GraviDy** is a new GPU,
 direct-summation N-body integrator written from scratch and based on the
 Hermite scheme. The most important features of the code are:
 
@@ -27,8 +27,8 @@ Hermite scheme. The most important features of the code are:
  * the fact that the code is publicly released under a BSD license and will be maintained via planned, public, regular updates.
 
 #### Publication reference
-*"GraviDy, a GPU modular, parallel direct-summation N−body integrator: Dynamics with softening"*
- * [arxiv link](https://arxiv.org/abs/1702.00440)
+
+Maureira-Fredes, C and Amaro-Seoane, P. ["GraviDy, a GPU modular, parallel direct-summation N−body integrator: Dynamics with softening"](https://arxiv.org/abs/1702.00440), MNRAS, vol. 473, pp. 3113-3127, Jan . 2018.
 
 
 ### Requirements
@@ -67,3 +67,19 @@ If you do not have a Gitlab account, you can clone the repository directly:
 ### Example execution
 
 [![demo](https://asciinema.org/a/148519.png)](https://asciinema.org/a/148519?autoplay=1)
+
+### Licence
+
+```
+Copyright 2014 Cristián Maureira-Fredes
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+```
