@@ -1,11 +1,6 @@
 # Makefile
 HOST:=$(shell hostname | cut -d . -f 1)
 
-# Using space instead of tabs
-space :=
-space +=
-.RECIPEPREFIX := $(space)
-
 ifeq ($(HOST), gpu-01)
     BOOST_PATH=/cluster/boost/1.52.0
     CUDA_PATH=/cluster/gpu/nvidia/5.5
@@ -118,40 +113,40 @@ gpu: CXXFLAGS+=$(LINKFLAGS)
 gpu: gravidy-gpu
 
 print_pn:
-    @echo "PN implementation is enabled in CPU version"
+	@echo "PN implementation is enabled in CPU version"
 
 # Rules to generate CUDA object
 %.cuo : %.cu
-    $(NVCC) $(BOOSTFLAGS) $(NVFLAGS) -c $^ -o $@
+	$(NVCC) $(BOOSTFLAGS) $(NVFLAGS) -c $^ -o $@
 
 # Rules to generate binaries
 gravidy: gravidy.cpp
-   $(CXX) $^ -o $@ $(CXXFLAGS)
+	$(CXX) $^ -o $@ $(CXXFLAGS)
 
 gravidy-cpu: gravidy.cpp $(OBJS_CPU)
-    $(CXX) $^ -o $@ $(CXXFLAGS)
+	$(CXX) $^ -o $@ $(CXXFLAGS)
 
 gravidy-mpi: gravidy.cpp $(OBJS_MPI)
-    $(CXX) $^ -o $@ $(CXXFLAGS)
+	$(CXX) $^ -o $@ $(CXXFLAGS)
 
 gravidy-gpu: gravidy.cpp $(OBJS_GPU)
-    $(CXX) $^ -o $@ $(CXXFLAGS)
+	$(CXX) $^ -o $@ $(CXXFLAGS)
 
 # Generate documentation
 doxy:
-    @doxygen -s Doxyfile
+	@doxygen -s Doxyfile
 
 # Clean
 clean:
-    rm -f gravidy
-    rm -f gravidy-gpu
-    rm -f gravidy-cpu
-    rm -f gravidy-mpi
+	rm -f gravidy
+	rm -f gravidy-gpu
+	rm -f gravidy-cpu
+	rm -f gravidy-mpi
 
 distclean: clean
-    rm -f include/*.o
-    rm -f include/cpu/*.o
-    rm -f include/utils/*.o
-    rm -f include/gpu/*.{o,cuo}
-    rm -f include/mpi/*.o
-    rm -f gmon.out
+	rm -f include/*.o
+	rm -f include/cpu/*.o
+	rm -f include/utils/*.o
+	rm -f include/gpu/*.{o,cuo}
+	rm -f include/mpi/*.o
+	rm -f gmon.out
