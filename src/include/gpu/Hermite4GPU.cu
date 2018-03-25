@@ -335,7 +335,7 @@ void Hermite4GPU::init_acc_jrk()
     size_t pp_size = ns->n * sizeof(Predictor);
 
     // Copying arrays to device
-    //#pragma omp parallel for num_threads(gpus)
+    #pragma omp parallel for num_threads(gpus)
     for(int g = 0; g < gpus; g++)
     {
         CSC(cudaSetDevice(g));

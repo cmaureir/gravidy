@@ -90,31 +90,31 @@ class NbodySystem {
         double m_g;
 
         // Files
-        std::string   input_filename;
-        std::string   output_filename;
-        std::string   resume_filename;
-        std::string   snapshot_filename;
+        std::string input_filename;
+        std::string output_filename;
+        std::string resume_filename;
+        std::string snapshot_filename;
 
         /******************************** Host Particles arrays */
 
-        unsigned int  *h_id;   // Array with index of the particles
-        unsigned int  *h_move; // Array with index of the active particles
-        double        *h_t;    // Particle's time
-        double        *h_dt;   // Particle's timestep
-        double        *h_ekin; // Kinetic energy
-        double        *h_epot; // Potential Energy
-        double4       *h_r;    // Position + Mass
-        double4       *h_v;    // Velocity + Empty
-        double3       *h_a2;   // 2nd acceleration derivative (from interpolation)
-        double3       *h_a3;   // 3rd acceleration derivative (from interpolation)
-        Predictor     *h_p;    // Predicted position and velocities
-        Predictor     *h_i;    // Temporary array of the position and velocity of the
+        unsigned int *h_id;   // Array with index of the particles
+        unsigned int *h_move; // Array with index of the active particles
+        double       *h_t;    // Particle's time
+        double       *h_dt;   // Particle's timestep
+        double       *h_ekin; // Kinetic energy
+        double       *h_epot; // Potential Energy
+        double4      *h_r;    // Position + Mass
+        double4      *h_v;    // Velocity + Empty
+        double3      *h_a2;   // 2nd acceleration derivative (from interpolation)
+        double3      *h_a3;   // 3rd acceleration derivative (from interpolation)
+        Predictor    *h_p;    // Predicted position and velocities
+        Predictor    *h_i;    // Temporary array of the position and velocity of the
                                //   active particle only
 
-        Forces        *h_f;                 // Struct with the acceleration and jerk
-        Forces        *h_old;               // Old forces (from previous step)
-        Forces        *h_fout_tmp;          // Temporary array for partial forces
-        Forces        *h_fout_gpu[MAXGPUS]; // Temporary array for partial forces
+        Forces *h_f;                 // Struct with the acceleration and jerk
+        Forces *h_old;               // Old forces (from previous step)
+        Forces *h_fout_tmp;          // Temporary array for partial forces
+        Forces *h_fout_gpu[MAXGPUS]; // Temporary array for partial forces
 
         /******************************** Device Particles arrays */
 
@@ -132,6 +132,7 @@ class NbodySystem {
         Forces       *d_fout[MAXGPUS];
         Forces       *d_fout_tmp[MAXGPUS];
         Forces       *d_old[MAXGPUS];
+
 
         /******************************** General functions of the system */
         void read_input_file();

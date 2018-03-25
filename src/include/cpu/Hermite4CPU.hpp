@@ -38,11 +38,13 @@
 #include "../Hermite4.hpp"
 
 /**
- * Class which implements on the CPU the structure of the Hermite4 scheme.
+ * Class which implements on the CPU the structure of the Hermite4
+ * scheme.
  *
- * This contains all the implementations of the requirements processes to perform
- * the integration, like the initialization of the forces, the prediction,
- * the correction, and the general integration of the system.
+ * This contains all the implementations of the requirements processes
+ * to perform the integration, like the initialization of the forces,
+ * the prediction, the correction, and the general integration of the
+ * system.
  *
  */
 
@@ -51,15 +53,19 @@ class Hermite4CPU : public Hermite4 {
         Hermite4CPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu);
         ~Hermite4CPU();
 
-        void force_calculation(const Predictor &pi, const Predictor &pj, Forces &fi);
+        void integration();
+
+    private:
+        void force_calculation(const Predictor &pi, const Predictor &pj,
+            Forces &fi);
         #ifdef PN
-        void force_calculation_pn(const Predictor &pi, const Predictor &pj, Forces &fi, Forces &fj, int id);
+        void force_calculation_pn(const Predictor &pi, const Predictor &pj,
+            Forces &fi, Forces &fj, int id);
         #endif
         void init_acc_jrk();
         void update_acc_jrk(unsigned int nact);
         void predicted_pos_vel(double ITIME);
         void correction_pos_vel(double ITIME, unsigned int nact);
-        void integration();
 };
 
 #endif

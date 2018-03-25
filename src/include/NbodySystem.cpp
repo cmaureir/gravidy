@@ -57,6 +57,7 @@ NbodySystem::NbodySystem(OptionsParser op)
     en.ini = 0.0;
     en.end = 0.0;
     en.tmp = 0.0;
+    gtime = {};
 
     r_cl = 0.0;
     dt_cl = 0.0;
@@ -119,7 +120,8 @@ void NbodySystem::read_input_file()
                                                line.end());
                     }
                     // Lowering the case of the line
-                    std::transform(line.begin(), line.end(), line.begin(), ::tolower);
+                    std::transform(line.begin(), line.end(), line.begin(),
+                        ::tolower);
 
                     // Split string
                     std::vector<std::string> ctokens;
@@ -156,7 +158,8 @@ void NbodySystem::read_input_file()
                      std::istream_iterator<std::string>(),
                      std::back_inserter<std::vector<std::string> >(tokens));
 
-                // We need only 7 parameters id, m, rx, ry, rz, vx, vy, vz
+                // We need only 7 parameters:
+                //  id, m, rx, ry, rz, vx, vy, vz
                 if (tokens.size() != 8)
                 {
                     std::cerr << "gravidy: wrong line format in"
@@ -203,8 +206,8 @@ void NbodySystem::read_input_file()
     #endif
 }
 
-/** Memory allocation for the identification, positions, and velocities of the
- * particles
+/** Memory allocation for the identification, positions, and velocities
+ * of the particles
  */
 void NbodySystem::alloc_base_attributes(int rank)
 {
@@ -227,8 +230,8 @@ void NbodySystem::alloc_base_attributes(int rank)
     h_v = new double4[n];
 }
 
-/** Memory deallocation for the identification, positions, and velocities of the
- * particles
+/** Memory deallocation for the identification, positions, and
+ * velocities of the particles
  */
 void NbodySystem::free_base_attributes()
 {
@@ -237,21 +240,24 @@ void NbodySystem::free_base_attributes()
     delete [] h_v;
 }
 
-/** Initialization of the data readed from the Input/Snapshot file to the
- * data structures that the code will use
+/** Initialization of the data readed from the Input/Snapshot file to
+ * the data structures that the code will use
  */
 void NbodySystem::copy_input_data()
 {
-    #pragma omp parallel for
-    for (unsigned int i = 0; i < (unsigned int)reader.size(); i++)
+    unsigned int size = reader.size();
+    //#pragma omp parallel for
+    for (unsigned int i = 0; i < size; i++)
     {
-        h_id[i]     = reader[i].id;
-        h_r[i].w    = reader[i].m;
-        h_r[i].x    = reader[i].r[0];
-        h_r[i].y    = reader[i].r[1];
-        h_r[i].z    = reader[i].r[2];
-        h_v[i].x    = reader[i].v[0];
-        h_v[i].y    = reader[i].v[1];
-        h_v[i].z    = reader[i].v[2];
+        h_id[i]  = reader[i].id;
+        h_r[i].w = reader[i].m;
+        h_r[i].x = reader[i].r[0];
+        h_r[i].y = reader[i].r[1];
+        h_r[i].z = reader[i].r[2];
+        h_v[i].x = reader[i].v[0];
+        h_v[i].y = reader[i].v[1];
+        h_v[i].z = reader[i].v[2];
     }
+
+    std::vector<file_data>().swap(reader);
 }
