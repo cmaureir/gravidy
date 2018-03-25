@@ -172,17 +172,17 @@ void Hermite4::alloc_arrays_host()
  */
 void Hermite4::free_arrays_host()
 {
-    delete ns->h_f;
-    delete ns->h_a2;
-    delete ns->h_a3;
-    delete ns->h_old;
-    delete ns->h_t;
-    delete ns->h_dt;
-    delete ns->h_move;
-    delete ns->h_p;
-    delete ns->h_i;
-    delete ns->h_ekin;
-    delete ns->h_epot;
+    delete [] ns->h_f;
+    delete [] ns->h_a2;
+    delete [] ns->h_a3;
+    delete [] ns->h_old;
+    delete [] ns->h_t;
+    delete [] ns->h_dt;
+    delete [] ns->h_move;
+    delete [] ns->h_p;
+    delete [] ns->h_i;
+    delete [] ns->h_ekin;
+    delete [] ns->h_epot;
 }
 
 /** Method that initialize all the data structures that will be used in the

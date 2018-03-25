@@ -69,7 +69,7 @@ NbodySystem::NbodySystem(OptionsParser op)
 /** Destructor */
 NbodySystem::~NbodySystem()
 {
-    /* Empty */
+    free_base_attributes();
 }
 
 /** Method in charge of reading the input file.
@@ -232,9 +232,9 @@ void NbodySystem::alloc_base_attributes(int rank)
  */
 void NbodySystem::free_base_attributes()
 {
-    delete h_id;
-    delete h_r;
-    delete h_v;
+    delete [] h_id;
+    delete [] h_r;
+    delete [] h_v;
 }
 
 /** Initialization of the data readed from the Input/Snapshot file to the
