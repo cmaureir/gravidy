@@ -71,7 +71,7 @@ If you do not have a Gitlab account, you can clone the repository directly:
 ### Licence
 
 ```
-Copyright 2014 Cristián Maureira-Fredes
+Copyright 2014 Cristián Maureira-Fredes, Pau Amaro-Seoane
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
