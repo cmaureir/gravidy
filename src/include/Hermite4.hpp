@@ -70,21 +70,17 @@ class Hermite4 {
         /* Virtual methods to be implemented by the different versions */
         /** Integration virtual method to be implemented */
         virtual void integration() {}
-        /** Prediction virtual method to be implemented */
-        virtual void predicted_pos_vel(double itime, double *t, double4 *r,
-            double4 *v, Forces *f, Predictor *p) {}
-        /** Correction virtual method to be implemented */
-        virtual void correction_pos_vel(double itime, unsigned int nact,
-            double *dt, double *t, unsigned int *move, Predictor *p, Forces *f,
-            Forces *old, double3 *a2, double3 *a3, double4 *r, double4 *v) {}
         /** Force virtual method to be implemented */
         virtual void force_calculation(const Predictor &pi,
             const Predictor &pj, Forces &fi) {}
-        /** Force initialization virtual method to be implemented */
-        virtual void init_acc_jrk(Predictor *p, Forces *f) {}
-        /** Force update virtual method to be implemented */
-        virtual void update_acc_jrk(unsigned int nact, unsigned int *move,
-            Predictor *p, Forces *f) {}
+
+        /* On top of the two methods above, every implementation provides its
+         * own prediction (predicted_pos_vel), correction (correction_pos_vel),
+         * force initialization (init_acc_jrk) and force update
+         * (update_acc_jrk).  They are not declared here because each version
+         * reads the particle arrays straight from the NbodySystem reference,
+         * so their argument lists differ between the CPU, MPI and GPU
+         * implementations. */
 };
 
 #endif // HERMITE4_HPP
