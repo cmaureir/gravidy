@@ -5,8 +5,11 @@
 *~
 *.o*
 *.e*
+build/
 gravidy-cpu
 gravidy-gpu
+gravidy-mpi
+gravidy-pn
 gravidy-kepler
 tmp
 output

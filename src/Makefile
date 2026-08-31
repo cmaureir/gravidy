@@ -1,6 +1,8 @@
 # Makefile
 HOST:=$(shell hostname | cut -d . -f 1)
 
+# Paths of the dependencies.  Leave them empty to use the versions that are
+# installed on the system, the flags are added only when a path is given.
 ifeq ($(HOST), gpu-01)
     BOOST_PATH=/cluster/boost/1.52.0
     CUDA_PATH=/cluster/gpu/nvidia/5.5
@@ -18,119 +20,188 @@ else
     MPI_INC_PATH=
 endif
 
+# When no CUDA_PATH is given, try to locate the toolkit through the nvcc that
+# is on the PATH, to get the include and library directories for free.
+ifeq ($(CUDA_PATH),)
+    NVCC_BIN := $(shell command -v nvcc 2>/dev/null)
+    ifneq ($(NVCC_BIN),)
+        CUDA_PATH := $(patsubst %/bin/nvcc,%,$(NVCC_BIN))
+    endif
+endif
+
 # Compilers
-CXX=  g++
-NVCC= $(CUDA_PATH)/bin/nvcc
+CXX    = g++
+MPICXX = mpicxx
+ifeq ($(CUDA_PATH),)
+    NVCC = nvcc
+else
+    NVCC = $(CUDA_PATH)/bin/nvcc
+endif
+
+# Every version is built in its own directory, because the sources are shared
+# between them and the preprocessor flags (PN, _MPI, GPU) are not.  Mixing the
+# objects of two versions produces a binary that misbehaves at runtime.
+BUILD_DIR = build
+
+# Binaries
+BIN_CPU = gravidy-cpu
+BIN_PN  = gravidy-pn
+BIN_MPI = gravidy-mpi
+BIN_GPU = gravidy-gpu
 
 # FLAGS
 
 # Boost FLAGS
-BOOSTFLAGS  = -L$(BOOST_PATH)/lib
-BOOSTFLAGS += -I$(BOOST_PATH)/include
-BOOSTFLAGS += -lboost_program_options
+ifneq ($(BOOST_PATH),)
+    BOOSTFLAGS = -I$(BOOST_PATH)/include
+    BOOSTLIBS  = -L$(BOOST_PATH)/lib
+endif
+BOOSTLIBS += -lboost_program_options
 
-# Links FLAGS
-LINKFLAGS  = -L$(CUDA_PATH)/lib64
-LINKFLAGS += -I$(CUDA_PATH)/include
-LINKFLAGS += -lcuda
-LINKFLAGS += -lcudart
-LINKFLAGS += -DGPU
-
-# C++ FLAGS
+# C++ FLAGS (compilation)
 CXXFLAGS  = $(BOOSTFLAGS)
 CXXFLAGS += -O3 # Optimisation
 CXXFLAGS += -Wall # Warning messages
 CXXFLAGS += -fopenmp # Enable OpenMP
 CXXFLAGS += -pipe # Pipes over temp files in the process
 CXXFLAGS += -fstack-protector # Emit extra code to check buffer overflow
-CXXFLAGS += -Wl,-z,relro # RO relocation table area in the final ELF
-CXXFLAGS += -Wl,-z,now # Prevent GOT overwrite attacks
 CXXFLAGS += -Wformat-security # Prevent formats vulnerabilities
 CXXFLAGS += -Wpointer-arith # Prevent void size
 CXXFLAGS += -Wformat-nonliteral # Prevent non literal format string
-CXXFLAGS += -Wl,-O1 # Optimisation for the linker
-CXXFLAGS += -Wl,--discard-all # Discard local symbols
-CXXFLAGS += -Wl,--no-undefined # Prevent missing/unresolved symbols
-CXXFLAGS += -rdynamic # Exported symbols in dynamics symbol table
+CXXFLAGS += -MMD -MP # Track the headers, to rebuild when one of them changes
 #CXXFLAGS += -pg # For gprof
 #CXXFLAGS += -Werror # Warnings will be errors
 
+# Link FLAGS
+LDFLAGS  = -fopenmp
+LDFLAGS += -Wl,-z,relro # RO relocation table area in the final ELF
+LDFLAGS += -Wl,-z,now # Prevent GOT overwrite attacks
+LDFLAGS += -Wl,-O1 # Optimisation for the linker
+LDFLAGS += -Wl,--discard-all # Discard local symbols
+LDFLAGS += -Wl,--no-undefined # Prevent missing/unresolved symbols
+LDFLAGS += -rdynamic # Exported symbols in dynamics symbol table
+LDLIBS   = $(BOOSTLIBS)
+
+# PN FLAGS (Post-Newtonian terms on the CPU version)
+PNFLAGS = -DPN
+
 # MPI FLAGS
-MPIFLAGS  = -L$(MPI_LIB_PATH)
-MPIFLAGS += -I$(MPI_INC_PATH)
-MPIFLAGS += -pthread
-MPIFLAGS += -lmpi
-MPIFLAGS += -lmpi_cxx
-MPIFLAGS += -ldl
-MPIFLAGS += -D_MPI
+MPIFLAGS  = -D_MPI
 MPIFLAGS += -DOMPI_SKIP_MPICXX
+MPIFLAGS += -pthread
+ifneq ($(MPI_INC_PATH),)
+    MPIFLAGS += -I$(MPI_INC_PATH)
+endif
+MPILDFLAGS = -pthread
+ifneq ($(MPI_LIB_PATH),)
+    MPILDFLAGS += -L$(MPI_LIB_PATH)
+endif
 
 # CUDA FLAGS
-NVFLAGS  = -DGPU
+GPUFLAGS = -DGPU
+GPULIBS  = -lcuda -lcudart
+ifneq ($(CUDA_PATH),)
+    GPUFLAGS   += -I$(CUDA_PATH)/include
+    GPULDFLAGS  = -L$(CUDA_PATH)/lib64
+endif
+
+NVFLAGS  = $(BOOSTFLAGS)
+NVFLAGS += -DGPU
 NVFLAGS += -pg
 NVFLAGS += -O3
-#NVFLAGS=-std=c++11 -arch=sm_20 # -DBOOST_NOINLINE='__attribute__ ((noinline))'
-#NVFLAGS=-std=c++11 -arch=sm_20 -D_MWAITXINTRIN_H_INCLUDED # For gcc > 5.2.1
+#NVFLAGS += -arch=sm_20 # -DBOOST_NOINLINE='__attribute__ ((noinline))'
+#NVFLAGS += -D_MWAITXINTRIN_H_INCLUDED # For gcc > 5.2.1
 
-# General Objects
-OBJS  = include/utils/OptionsParser.o
-OBJS += include/utils/NbodyUtils.o
-OBJS += include/utils/Logger.o
-OBJS += include/Hermite4.o
-OBJS += include/NbodySystem.o
+# Sources shared by every version
+SRC  = gravidy.cpp
+SRC += include/utils/OptionsParser.cpp
+SRC += include/utils/NbodyUtils.cpp
+SRC += include/utils/Logger.cpp
+SRC += include/Hermite4.cpp
+SRC += include/NbodySystem.cpp
 
-# CPU objects
-OBJS_CPU  = $(OBJS)
-OBJS_CPU += include/cpu/Hermite4CPU_integration.o
-OBJS_CPU += include/cpu/Hermite4CPU.o
+# CPU sources (also used by the PN version)
+SRC_CPU  = $(SRC)
+SRC_CPU += include/cpu/Hermite4CPU.cpp
+SRC_CPU += include/cpu/Hermite4CPU_integration.cpp
 
-# MPI objects
-OBJS_MPI  = $(OBJS)
-OBJS_MPI += include/mpi/Hermite4MPI_integration.o
-OBJS_MPI += include/mpi/Hermite4MPI.o
-OBJS_MPI += include/mpi/MPIUtils.o
+# MPI sources
+SRC_MPI  = $(SRC)
+SRC_MPI += include/mpi/Hermite4MPI.cpp
+SRC_MPI += include/mpi/Hermite4MPI_integration.cpp
+SRC_MPI += include/mpi/MPIUtils.cpp
 
-# GPU objects
-OBJS_GPU  = $(OBJS)
-OBJS_GPU += include/gpu/Hermite4GPU_kernels.cuo
-OBJS_GPU += include/gpu/Hermite4GPU_integration.o
-OBJS_GPU += include/gpu/Hermite4GPU.cuo
+# GPU sources
+SRC_GPU  = $(SRC)
+SRC_GPU += include/gpu/Hermite4GPU_integration.cpp
+SRC_CU   = include/gpu/Hermite4GPU.cu
+SRC_CU  += include/gpu/Hermite4GPU_kernels.cu
+
+# Objects
+OBJS_CPU = $(SRC_CPU:%.cpp=$(BUILD_DIR)/cpu/%.o)
+OBJS_PN  = $(SRC_CPU:%.cpp=$(BUILD_DIR)/pn/%.o)
+OBJS_MPI = $(SRC_MPI:%.cpp=$(BUILD_DIR)/mpi/%.o)
+OBJS_GPU_CPP = $(SRC_GPU:%.cpp=$(BUILD_DIR)/gpu/%.o)
+OBJS_GPU_CU  = $(SRC_CU:%.cu=$(BUILD_DIR)/gpu/%.cuo)
+OBJS_GPU     = $(OBJS_GPU_CPP) $(OBJS_GPU_CU)
+
+# Header dependencies generated by -MMD (only for the g++ objects, nvcc does
+# not get the flag)
+DEPS  = $(OBJS_CPU:.o=.d)
+DEPS += $(OBJS_PN:.o=.d)
+DEPS += $(OBJS_MPI:.o=.d)
+DEPS += $(OBJS_GPU_CPP:.o=.d)
 
 # Main rules
-.PHONY: cpu pn mpi gpu doxy clean distclean
+.PHONY: all cpu pn mpi gpu print_pn doxy clean distclean
 
 all: cpu
 
-pn: print_pn
-pn: gravidy-cpu
+cpu: $(BIN_CPU)
 
-cpu: gravidy-cpu
+pn: print_pn $(BIN_PN)
 
-mpi: CXXFLAGS+=$(MPIFLAGS)
-mpi: gravidy-mpi
+mpi: $(BIN_MPI)
 
-gpu: CXXFLAGS+=$(LINKFLAGS)
-gpu: gravidy-gpu
+gpu: $(BIN_GPU)
 
 print_pn:
 	@echo "PN implementation is enabled in CPU version"
 
-# Rules to generate CUDA object
-%.cuo : %.cu
-	$(NVCC) $(BOOSTFLAGS) $(NVFLAGS) -c $^ -o $@
+# Rules to generate the objects of every version
+$(BUILD_DIR)/cpu/%.o: %.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/pn/%.o: %.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $(PNFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/mpi/%.o: %.cpp
+	@mkdir -p $(@D)
+	$(MPICXX) $(CXXFLAGS) $(MPIFLAGS) -c $< -o $@
+
+$(BUILD_DIR)/gpu/%.o: %.cpp
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) $(GPUFLAGS) -c $< -o $@
+
+# Rule to generate CUDA objects
+$(BUILD_DIR)/gpu/%.cuo: %.cu
+	@mkdir -p $(@D)
+	$(NVCC) $(NVFLAGS) -c $< -o $@
 
 # Rules to generate binaries
-gravidy: gravidy.cpp
-	$(CXX) $^ -o $@ $(CXXFLAGS)
+$(BIN_CPU): $(OBJS_CPU)
+	$(CXX) $^ -o $@ $(LDFLAGS) $(LDLIBS)
 
-gravidy-cpu: gravidy.cpp $(OBJS_CPU)
-	$(CXX) $^ -o $@ $(CXXFLAGS)
+$(BIN_PN): $(OBJS_PN)
+	$(CXX) $^ -o $@ $(LDFLAGS) $(LDLIBS)
 
-gravidy-mpi: gravidy.cpp $(OBJS_MPI)
-	$(CXX) $^ -o $@ $(CXXFLAGS)
+$(BIN_MPI): $(OBJS_MPI)
+	$(MPICXX) $^ -o $@ $(MPILDFLAGS) $(LDFLAGS) $(LDLIBS)
 
-gravidy-gpu: gravidy.cpp $(OBJS_GPU)
-	$(CXX) $^ -o $@ $(CXXFLAGS)
+$(BIN_GPU): $(OBJS_GPU)
+	$(CXX) $^ -o $@ $(GPULDFLAGS) $(LDFLAGS) $(LDLIBS) $(GPULIBS)
 
 # Generate documentation
 doxy:
@@ -138,15 +209,13 @@ doxy:
 
 # Clean
 clean:
-	rm -f gravidy
-	rm -f gravidy-gpu
-	rm -f gravidy-cpu
-	rm -f gravidy-mpi
+	rm -f $(BIN_CPU)
+	rm -f $(BIN_PN)
+	rm -f $(BIN_MPI)
+	rm -f $(BIN_GPU)
 
 distclean: clean
-	rm -f include/*.o
-	rm -f include/cpu/*.o
-	rm -f include/utils/*.o
-	rm -f include/gpu/*.{o,cuo}
-	rm -f include/mpi/*.o
+	rm -rf $(BUILD_DIR)
 	rm -f gmon.out
+
+-include $(DEPS)
