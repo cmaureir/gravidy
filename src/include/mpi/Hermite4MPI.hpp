@@ -65,7 +65,7 @@ class Hermite4MPI : public Hermite4 {
         unsigned int chunk_size;
         unsigned int chunk_begin;
         unsigned int chunk_end;
-        Forces *tmp_f;
+        std::vector<Forces> tmp_f;
 
         void alloc_slaves_memory(int rank);
         void force_calculation(const Predictor &pi, const Predictor &pj, Forces &fi);

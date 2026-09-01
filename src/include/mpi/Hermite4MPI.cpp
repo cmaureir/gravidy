@@ -70,10 +70,7 @@ Hermite4MPI::Hermite4MPI(NbodySystem *ns, Logger *logger, NbodyUtils *nu,
  */
 Hermite4MPI::~Hermite4MPI()
 {
-    // free main and slaves
-    free(tmp_f);
-    free(ns->h_fout_tmp);
-
+    /* The arrays free themselves */
 }
 
 /** Method in charge of allocating the memory and initializing the data for all the
@@ -85,28 +82,10 @@ void Hermite4MPI::alloc_slaves_memory(int)
     define_forces_struct(&f_type);
     MPI_Op_create(forces_operation, 1, &f_op);
 
-    tmp_f           = (Forces*)malloc(sizeof(Forces) * ns->n);
-    ns->h_fout_tmp  = (Forces*)malloc(sizeof(Forces) * ns->n);
-
-    //#pragma omp parallel for
-    for (unsigned int i = 0; i < ns->n; i++)
-    {
-        tmp_f[i].a[0]  = 0.0;
-        tmp_f[i].a[1]  = 0.0;
-        tmp_f[i].a[2]  = 0.0;
-
-        tmp_f[i].a1[0] = 0.0;
-        tmp_f[i].a1[1] = 0.0;
-        tmp_f[i].a1[2] = 0.0;
-
-        ns->h_fout_tmp[i].a[0] = 0.0;
-        ns->h_fout_tmp[i].a[1] = 0.0;
-        ns->h_fout_tmp[i].a[2] = 0.0;
-
-        ns->h_fout_tmp[i].a1[0] = 0.0;
-        ns->h_fout_tmp[i].a1[1] = 0.0;
-        ns->h_fout_tmp[i].a1[2] = 0.0;
-    }
+    // The value initialization of the vector leaves every member at zero,
+    // which is what the loop that used to be here was doing
+    tmp_f.assign(ns->n, Forces());
+    ns->h_fout_tmp.assign(ns->n, Forces());
 }
 
 
@@ -157,7 +136,7 @@ void Hermite4MPI::init_acc_jrk()
                 force_calculation(ns->h_p[i], ns->h_p[j], tmp_f[i]);
             }
         }
-        MPI_Allreduce(tmp_f, ns->h_f.data(), ns->n, f_type, f_op, MPI_COMM_WORLD);
+        MPI_Allreduce(tmp_f.data(), ns->h_f.data(), ns->n, f_type, f_op, MPI_COMM_WORLD);
     }
 }
 
@@ -199,7 +178,7 @@ void Hermite4MPI::update_acc_jrk(unsigned int nact)
 
         // All the nodes will reduce the forces, having the same results for the
         // new forces.
-        MPI_Allreduce(tmp_f, ns->h_fout_tmp, nact, f_type, f_op, MPI_COMM_WORLD);
+        MPI_Allreduce(tmp_f.data(), ns->h_fout_tmp.data(), nact, f_type, f_op, MPI_COMM_WORLD);
 
         for (unsigned int i = 0; i < nact; i++)
         {

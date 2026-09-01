@@ -157,11 +157,11 @@ void Hermite4GPU::alloc_arrays_device()
         CSC(cudaMemset(ns->d_fout[g], 0, ff_size * NJBLOCK));
         CSC(cudaMemset(ns->d_fout_tmp[g], 0, ff_size * NJBLOCK));
 
-        ns->h_fout_gpu[g] = new Forces[ns->n*NJBLOCK];
+        ns->h_fout_gpu[g].resize(ns->n*NJBLOCK);
     }
 
     // Extra CPU array
-    ns->h_fout_tmp = new Forces[ns->n*NJBLOCK];
+    ns->h_fout_tmp.resize(ns->n*NJBLOCK);
 }
 
 /** Method in charge of deallocating the data structures on the available GPUs.
@@ -186,10 +186,7 @@ void Hermite4GPU::free_arrays_device()
         CSC(cudaFree(ns->d_move[g]));
         CSC(cudaFree(ns->d_fout[g]));
         CSC(cudaFree(ns->d_fout_tmp[g]));
-        delete [] ns->h_fout_gpu[g];
     }
-
-    delete [] ns->h_fout_tmp;
 }
 
 /** Method in charge of the prediction step.
@@ -501,8 +498,8 @@ void Hermite4GPU::update_acc_jrk(int nact)
             size_t chunk = nact*sizeof(Forces);
 
             // Copy from the GPU the new forces for the d_i particles.
-            //CSC(cudaMemcpy(ns->h_fout_gpu[g], ns->d_fout_tmp[g], chunk, cudaMemcpyDeviceToHost));
-            CSC(cudaMemcpyAsync(ns->h_fout_gpu[g], ns->d_fout_tmp[g], chunk, cudaMemcpyDeviceToHost, 0));
+            //CSC(cudaMemcpy(ns->h_fout_gpu[g].data(), ns->d_fout_tmp[g], chunk, cudaMemcpyDeviceToHost));
+            CSC(cudaMemcpyAsync(ns->h_fout_gpu[g].data(), ns->d_fout_tmp[g], chunk, cudaMemcpyDeviceToHost, 0));
         }
     }
 
