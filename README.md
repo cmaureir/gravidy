@@ -42,7 +42,10 @@ CUDA 	                 | v11 or greater 	   | GPU implementation, first one with
 Python 	                | v3.6 or greater 	  | Regression tests only
 
 The build is pinned to C++17, so the versions of GCC and CUDA that the code
-used to accept are no longer enough.
+used to accept are no longer enough.  The version 11 of CUDA is the first one
+whose nvcc takes the dialect, and it is the oldest one that the GPU version
+is meant to support; the versions it has been built with so far are GCC 16
+and CUDA 13.3.
 
 ### Install
 
