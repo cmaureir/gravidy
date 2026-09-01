@@ -21,11 +21,15 @@ else
 endif
 
 # When no CUDA_PATH is given, try to locate the toolkit through the nvcc that
-# is on the PATH, to get the include and library directories for free.
+# is on the PATH, and if it is not there, in the directories where the
+# toolkit is usually installed, to get the include and library directories
+# for free.
 ifeq ($(CUDA_PATH),)
     NVCC_BIN := $(shell command -v nvcc 2>/dev/null)
     ifneq ($(NVCC_BIN),)
         CUDA_PATH := $(patsubst %/bin/nvcc,%,$(NVCC_BIN))
+    else
+        CUDA_PATH := $(firstword $(wildcard /opt/cuda /usr/local/cuda))
     endif
 endif
 
