@@ -67,6 +67,7 @@ BOOSTLIBS += -lboost_program_options
 
 # C++ FLAGS (compilation)
 CXXFLAGS  = $(BOOSTFLAGS)
+CXXFLAGS += -std=c++17 # Language standard, not the default of the compiler
 CXXFLAGS += -O3 # Optimisation
 CXXFLAGS += -Wall # Warning messages
 CXXFLAGS += -fopenmp # Enable OpenMP
@@ -113,6 +114,8 @@ ifneq ($(CUDA_PATH),)
 endif
 
 NVFLAGS  = $(BOOSTFLAGS)
+# The same standard as the rest, nvcc passes it to the host compiler too
+NVFLAGS += -std=c++17
 NVFLAGS += -DGPU
 NVFLAGS += -pg
 NVFLAGS += -O3
