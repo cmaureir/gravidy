@@ -322,7 +322,8 @@ void Hermite4CPU::update_acc_jrk(unsigned int nact)
         ns->h_f[i].a1[1] = 0.0;
         ns->h_f[i].a1[2] = 0.0;
 
-        #pragma omp parallel for
+        // This loop cannot be parallel, every iteration accumulates on the
+        // very same ns->h_f[i]
         for (j = 0; j < ns->n; j++)
         {
             if(i == j) continue;
