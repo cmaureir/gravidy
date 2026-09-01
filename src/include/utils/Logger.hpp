@@ -74,7 +74,7 @@ class Logger {
         bool print_screen;
         std::ofstream out_file;
         std::ofstream info_file;
-        std::ostream *gstream;
+        std::ostream *gstream = nullptr;
         std::string ofname;
         std::string ofname_info;
 

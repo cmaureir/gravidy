@@ -88,12 +88,12 @@ void Logger::write_snapshot(unsigned int snapshot_number, double ITIME)
 
     for (unsigned int i = 0; i < ns->n; i++)
     {
-        gstream->precision(2);
+        out_file.precision(2);
         out_file << std::setw(6)  << std::right << ns->h_id[i];
 
         // Scientific notation
         out_file << std::scientific;
-        gstream->precision(6);
+        out_file.precision(6);
         out_file << std::setw(15) << std::right << ns->h_r[i].w;
 
         out_file << std::setw(15) << std::right << ns->h_r[i].x;
