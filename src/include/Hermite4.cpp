@@ -193,7 +193,7 @@ void Hermite4::free_arrays_host()
  */
 void Hermite4::init_data()
 {
-    double3 empty = {0};
+    double3 empty = {0.0, 0.0, 0.0};
     ns->m_g = 0.0;
     for (unsigned int i = 0; i < ns->n; i++)
     {

@@ -84,7 +84,7 @@ void Hermite4CPU::force_calculation(const Predictor &pi, const Predictor &pj, Fo
 #ifdef PN
 // Adding PN1, PN2 and PN2 terms to the acceleration
 // including its derivatives
-void Hermite4CPU::force_calculation_pn(const Predictor &pi, const Predictor &pj, Forces &fi, Forces &fj, int id)
+void Hermite4CPU::force_calculation_pn(const Predictor &pi, const Predictor &pj, Forces &fi, Forces &fj, int)
 {
     double rx = pi.r[0] - pj.r[0];
     double ry = pi.r[1] - pj.r[1];

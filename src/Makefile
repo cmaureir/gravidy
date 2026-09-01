@@ -70,6 +70,7 @@ CXXFLAGS  = $(BOOSTFLAGS)
 CXXFLAGS += -std=c++17 # Language standard, not the default of the compiler
 CXXFLAGS += -O3 # Optimisation
 CXXFLAGS += -Wall # Warning messages
+CXXFLAGS += -Wextra # The ones that -Wall leaves out
 CXXFLAGS += -fopenmp # Enable OpenMP
 CXXFLAGS += -pipe # Pipes over temp files in the process
 CXXFLAGS += -fstack-protector # Emit extra code to check buffer overflow

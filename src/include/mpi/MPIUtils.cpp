@@ -54,7 +54,7 @@ void define_forces_struct(MPI_Datatype *ts)
     MPI_Type_commit(ts);
 }
 
-void forces_operation(void *in, void *inout, int *len, MPI_Datatype *type){
+void forces_operation(void *in, void *inout, int *len, MPI_Datatype *){
 
     Forces *invals    = (Forces*)in;
     Forces *inoutvals = (Forces*)inout;

@@ -71,8 +71,8 @@ class Hermite4 {
         /** Integration virtual method to be implemented */
         virtual void integration() {}
         /** Force virtual method to be implemented */
-        virtual void force_calculation(const Predictor &pi,
-            const Predictor &pj, Forces &fi) {}
+        virtual void force_calculation(const Predictor &,
+            const Predictor &, Forces &) {}
 
         /* On top of the two methods above, every implementation provides its
          * own prediction (predicted_pos_vel), correction (correction_pos_vel),

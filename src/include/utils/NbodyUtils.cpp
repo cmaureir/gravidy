@@ -371,7 +371,7 @@ double NbodyUtils::get_timestep_normal(unsigned int i, float ETA)
  * This method take care of the limits conditions to avoid large jumps between
  * the timestep distribution
  */
-double NbodyUtils::normalize_dt(double new_dt, double old_dt, double t, unsigned int i)
+double NbodyUtils::normalize_dt(double new_dt, double old_dt, double t, unsigned int)
 {
     if (new_dt <= old_dt/8)
     {

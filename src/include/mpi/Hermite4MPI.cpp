@@ -79,7 +79,7 @@ Hermite4MPI::~Hermite4MPI()
 /** Method in charge of allocating the memory and initializing the data for all the
  * data structures in all the slaves
  */
-void Hermite4MPI::alloc_slaves_memory(int rank)
+void Hermite4MPI::alloc_slaves_memory(int)
 {
 
     define_forces_struct(&f_type);

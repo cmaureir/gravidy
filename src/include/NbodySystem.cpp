@@ -209,7 +209,7 @@ void NbodySystem::read_input_file()
 /** Memory allocation for the identification, positions, and velocities
  * of the particles
  */
-void NbodySystem::alloc_base_attributes(int rank)
+void NbodySystem::alloc_base_attributes([[maybe_unused]] int rank)
 {
     #if defined(_MPI)
 
