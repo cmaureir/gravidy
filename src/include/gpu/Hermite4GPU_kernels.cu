@@ -125,8 +125,8 @@ __device__ void k_force_calculation(const Predictor &i_p,
  *
  */
 __global__ void k_prediction(Forces *f,
-                             double4 *r,
-                             double4 *v,
+                             Double4 *r,
+                             Double4 *v,
                              double *t,
                              Predictor *p,
                              int dev_size,
@@ -142,8 +142,8 @@ __global__ void k_prediction(Forces *f,
         double dt3 = 0.166666666666666 * (dt * dt * dt);
 
         Forces ff = f[i];
-        double4 rr = r[i];
-        double4 vv = v[i];
+        Double4 rr = r[i];
+        Double4 vv = v[i];
 
         p[i].r[0] = (dt3 * ff.a1[0]) + (dt2 * ff.a[0]) + (dt * vv.x) + rr.x;
         p[i].r[1] = (dt3 * ff.a1[1]) + (dt2 * ff.a[1]) + (dt * vv.y) + rr.y;
@@ -247,8 +247,8 @@ __global__ void k_reduce(Forces *in,
     }
 }
 
-__global__ void k_energy(double4 *r,
-                         double4 *v,
+__global__ void k_energy(Double4 *r,
+                         Double4 *v,
                          double *ekin,
                          double *epot,
                          int n,
@@ -263,8 +263,8 @@ __global__ void k_energy(double4 *r,
     if (i < dev_size)
     {
         double epot_tmp = 0.0;
-        double4 ri = r[id];
-        double4 vi = v[id];
+        Double4 ri = r[id];
+        Double4 vi = v[id];
         for (j = id+1; j < n; j++)
         {
             double rx = r[j].x - ri.x;

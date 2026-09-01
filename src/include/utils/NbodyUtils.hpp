@@ -55,7 +55,7 @@ class NbodyUtils {
         // Variables
         float ratio;
         /** Center of density */
-        double3 cod;
+        Double3 cod;
 
         /** Radii array related to the center of density, and related to the
          * percentage distribution that we want to obtain */
@@ -84,7 +84,7 @@ class NbodyUtils {
         double get_kinetic();
         double get_energy(double ext = 0);
 
-        double3 get_center_of_density();
+        Double3 get_center_of_density();
 };
 
 #endif

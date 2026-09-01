@@ -49,13 +49,13 @@
     } } while (0)
 #define CSC( call)     CSC_NO_SYNC(call);
 
-inline __host__ __device__ double4 operator+(const double4 &a, const double4 &b)
+inline __host__ __device__ Double4 operator+(const Double4 &a, const Double4 &b)
 {
-    double4 tmp = {a.x + b.x, a.y + b.y, a.z + b.z,  a.w + b.w};
+    Double4 tmp = {a.x + b.x, a.y + b.y, a.z + b.z,  a.w + b.w};
     return tmp;
 }
 
-inline __host__ __device__ void operator+=(double4 &a, double4 &b)
+inline __host__ __device__ void operator+=(Double4 &a, Double4 &b)
 {
     a.x += b.x;
     a.y += b.y;
@@ -152,8 +152,8 @@ __global__ void k_init_acc_jrk(Predictor *p,
  * on each integration step.
  */
 __global__ void k_prediction(Forces *f,
-                             double4 *r,
-                             double4 *v,
+                             Double4 *r,
+                             Double4 *v,
                              double *t,
                              Predictor *p,
                              int dev_size,
@@ -193,8 +193,8 @@ __global__ void k_reduce(Forces *in,
  * Energy kernel, in charge of the calculation of the kinetic and potential
  * energy on the GPUs.
  */
-__global__ void k_energy(double4 *r,
-                         double4 *v,
+__global__ void k_energy(Double4 *r,
+                         Double4 *v,
                          double *ekin,
                          double *epot,
                          int n,

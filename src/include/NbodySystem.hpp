@@ -103,10 +103,10 @@ class NbodySystem {
         double       *h_dt;   // Particle's timestep
         double       *h_ekin; // Kinetic energy
         double       *h_epot; // Potential Energy
-        double4      *h_r;    // Position + Mass
-        double4      *h_v;    // Velocity + Empty
-        double3      *h_a2;   // 2nd acceleration derivative (from interpolation)
-        double3      *h_a3;   // 3rd acceleration derivative (from interpolation)
+        Double4      *h_r;    // Position + Mass
+        Double4      *h_v;    // Velocity + Empty
+        Double3      *h_a2;   // 2nd acceleration derivative (from interpolation)
+        Double3      *h_a3;   // 3rd acceleration derivative (from interpolation)
         Predictor    *h_p;    // Predicted position and velocities
         Predictor    *h_i;    // Temporary array of the position and velocity of the
                                //   active particle only
@@ -124,8 +124,8 @@ class NbodySystem {
         double       *d_dt[MAXGPUS];
         double       *d_ekin[MAXGPUS];
         double       *d_epot[MAXGPUS];
-        double4      *d_r[MAXGPUS];
-        double4      *d_v[MAXGPUS];
+        Double4      *d_r[MAXGPUS];
+        Double4      *d_v[MAXGPUS];
         Predictor    *d_p[MAXGPUS];
         Predictor    *d_i[MAXGPUS];
         Forces       *d_f[MAXGPUS];

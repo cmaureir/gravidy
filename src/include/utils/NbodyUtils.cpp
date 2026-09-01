@@ -38,7 +38,7 @@
 /** Constructor */
 NbodyUtils::NbodyUtils(NbodySystem *ns)
 {
-    double3 tmp = {0.0,0.0,0.0};
+    Double3 tmp = {0.0,0.0,0.0};
     this->ns = ns;
     this->cod = tmp;
 
@@ -161,7 +161,7 @@ double NbodyUtils::get_half_mass_relaxation_time()
 }
 
 /** Center of density calculation */
-double3 NbodyUtils::get_center_of_density()
+Double3 NbodyUtils::get_center_of_density()
 {
     std::vector<double> p(ns->n);
     Distance empty;
@@ -202,7 +202,7 @@ double3 NbodyUtils::get_center_of_density()
         p[i] = aa / bb;
     }
 
-    double3 density_center = {0.0, 0.0, 0.0};
+    Double3 density_center = {0.0, 0.0, 0.0};
     dsum = 0.0;
 
     for (unsigned int i = 0; i < ns->n; i++)

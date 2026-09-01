@@ -108,7 +108,7 @@ Hermite4GPU::Hermite4GPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
 
     i1_size = ns->n * sizeof(int);
     d1_size = ns->n * sizeof(double);
-    d4_size = ns->n * sizeof(double4);
+    d4_size = ns->n * sizeof(Double4);
     ff_size = ns->n * sizeof(Forces);
     pp_size = ns->n * sizeof(Predictor);
 
@@ -208,8 +208,8 @@ void Hermite4GPU::predicted_pos_vel(double ITIME)
     //    double dt3 = 0.166666666666666*(dt * dt * dt);
 
     //    Forces ff = ns->h_f[i];
-    //    double4 rr = ns->h_r[i];
-    //    double4 vv = ns->h_v[i];
+    //    Double4 rr = ns->h_r[i];
+    //    Double4 vv = ns->h_v[i];
 
     //    ns->h_p[i].r[0] = (dt3 * ff.a1[0]) + (dt2 * ff.a[0]) + (dt * vv.x) + rr.x;
     //    ns->h_p[i].r[1] = (dt3 * ff.a1[1]) + (dt2 * ff.a[1]) + (dt * vv.y) + rr.y;
@@ -227,7 +227,7 @@ void Hermite4GPU::predicted_pos_vel(double ITIME)
         CSC(cudaSetDevice(g));
         int shift = g*n_part[g-1];
         size_t ff_size = n_part[g] * sizeof(Forces);
-        size_t d4_size = n_part[g] * sizeof(double4);
+        size_t d4_size = n_part[g] * sizeof(Double4);
         size_t d1_size = n_part[g] * sizeof(double);
 
         CSC(cudaMemcpyAsync(ns->d_f[g], ns->h_f + shift, ff_size, cudaMemcpyHostToDevice, 0));
@@ -540,7 +540,7 @@ double Hermite4GPU::get_energy_gpu()
 {
     double time_energy_ini = omp_get_wtime();
 
-    size_t d4_size = ns->n * sizeof(double4);
+    size_t d4_size = ns->n * sizeof(Double4);
 
     for(int g = 0; g < gpus; g++)
     {

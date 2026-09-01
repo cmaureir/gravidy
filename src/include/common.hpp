@@ -58,24 +58,40 @@
 #endif
 
 #if defined(GPU)
-/** If we are compiling the CUDA version, we add the definition of the
- * vector types and structs from the CUDA library */
+/** If we are compiling the CUDA version, we add the runtime of the library
+ * for the memory and the device functions */
 #include <cuda_runtime.h>
-#else
-/** Defining the «double4» structure based on the CUDA definition for
- * the CPU version, which not include the CUDA headers */
-typedef struct double4
+#endif
+
+/** @struct Double4
+ *  @brief Position and mass, or velocity, of a particle.
+ *  The alignment is the one that the vector types of CUDA use, so the
+ *  layout is the same on the host and on the device, and the same one that
+ *  the CPU and the GPU versions had.  This used to be the «double4» of
+ *  CUDA on the GPU version and a structure of our own on the rest, until
+ *  the version 13 of the toolkit deprecated «double4» in favour of
+ *  «double4_16a».
+ *  */
+struct alignas(16) Double4
 {
     double x, y, z, w;
-} double4;
+};
 
-/** Defining the «double3» structure based on the CUDA definition for
- * the CPU version, which not include the CUDA headers */
-typedef struct double3
+/** @struct Double3
+ *  @brief Three components, used for the second and third derivatives of
+ *  the acceleration.
+ *  */
+struct Double3
 {
     double x, y, z;
-} double3;
-#endif
+};
+
+/* The arrays of these two are copied to the device as they are, so their
+ * layout has to stay the one of the vector types of CUDA */
+static_assert(sizeof(Double4) == 32 && alignof(Double4) == 16,
+              "Double4 no longer has the layout of the double4 of CUDA");
+static_assert(sizeof(Double3) == 24 && alignof(Double3) == 8,
+              "Double3 no longer has the layout of the double3 of CUDA");
 
 /** Gravitational constant. Since we are working in N-body units we
  * set G as one. */

@@ -226,8 +226,8 @@ void NbodySystem::alloc_base_attributes([[maybe_unused]] int rank)
     #endif
 
     h_id = new unsigned int[n];
-    h_r = new double4[n];
-    h_v = new double4[n];
+    h_r = new Double4[n];
+    h_v = new Double4[n];
 }
 
 /** Memory deallocation for the identification, positions, and
