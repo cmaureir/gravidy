@@ -289,7 +289,13 @@ void Hermite4CPU::force_calculation_pn(const Predictor &pi, const Predictor &pj,
 void Hermite4CPU::init_acc_jrk()
 {
     unsigned int j = 0;
+    // The PN terms of the particle i read the acceleration of the particle
+    // j, which the thread that owns j is writing at the same time, so the
+    // loop can only be parallel without them.  This costs nothing, the PN
+    // version integrates two bodies.
+    #ifndef PN
     #pragma omp parallel for private(j)
+    #endif
     for (unsigned int i = 0; i < ns->n; i++)
     {
         for (j = 0; j < ns->n; j++)
@@ -311,7 +317,10 @@ void Hermite4CPU::update_acc_jrk(unsigned int nact)
     ns->gtime.update_ini = omp_get_wtime();
     unsigned int i = 0;
     unsigned int j = 0;
+    // Not parallel with the PN terms, see init_acc_jrk
+    #ifndef PN
     #pragma omp parallel for private(i,j)
+    #endif
     for (unsigned int k = 0; k < nact; k++)
     {
         i = ns->h_move[k];
