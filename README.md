@@ -39,6 +39,7 @@ GCC                    | v4.4.7 or greater  | Compiler
 boost::program_options |	v1.52.0 or greater |	command-line options
 OpenMPI 	              | v1.8.8 or greater 	| MPI implementation
 CUDA 	                 | v5.5 or greater 	  | GPU implementation
+Python 	                | v3.6 or greater 	  | Regression tests only
 
 ### Install
 
@@ -60,6 +61,35 @@ Each version keeps its objects in its own `src/build` subdirectory, so the
 different versions can coexist without a `make distclean` in between.
 
 [![demo](https://asciinema.org/a/148518.png)](https://asciinema.org/a/148518?autoplay=1)
+
+### Tests
+
+`make check` runs a set of short simulations and compares their result
+against the references stored in `tests/reference`:
+
+```
+cd src
+make cpu pn mpi
+make check
+```
+
+The cases whose binary is not built are skipped, so `make check` on its own
+only exercises the CPU and the PN versions.  The MPI version is compared
+against the very same reference as the CPU one, since both have to produce
+the same numbers.
+
+These tests do not validate the physics, the references were produced by the
+code itself.  What they do is to notice when a change alters the result of a
+simulation, so they are meant to be run before and after every modification
+of the integrator.  The comparison uses a relative tolerance of `1e-9`,
+because the last digits of a floating point result depend on the compiler and
+on the machine.
+
+When a change is meant to alter the results, look at what changed and then
+rewrite the references with `make check-update`.
+
+The input files of the tests live in `tests/data` and do not need the `input`
+submodule.
 
 
 ### Input submodule

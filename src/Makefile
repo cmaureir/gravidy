@@ -43,6 +43,9 @@ endif
 # objects of two versions produces a binary that misbehaves at runtime.
 BUILD_DIR = build
 
+# Regression tests
+TESTS_DIR = ../tests
+
 # Binaries
 BIN_CPU = gravidy-cpu
 BIN_PN  = gravidy-pn
@@ -153,7 +156,7 @@ DEPS += $(OBJS_MPI:.o=.d)
 DEPS += $(OBJS_GPU_CPP:.o=.d)
 
 # Main rules
-.PHONY: all cpu pn mpi gpu print_pn doxy clean distclean
+.PHONY: all cpu pn mpi gpu print_pn check check-update doxy clean distclean
 
 all: cpu
 
@@ -167,6 +170,17 @@ gpu: $(BIN_GPU)
 
 print_pn:
 	@echo "PN implementation is enabled in CPU version"
+
+# Regression tests.  The MPI and the GPU cases are skipped when their binary
+# is not built, so «make cpu pn mpi check» exercises more than «make check».
+check: $(BIN_CPU) $(BIN_PN)
+	@$(TESTS_DIR)/run_tests.py --bindir .
+
+# Rewrites the references with the output of the current binaries.  Only to
+# be used when a change is meant to alter the results, and after looking at
+# what changed.
+check-update: $(BIN_CPU) $(BIN_PN)
+	@$(TESTS_DIR)/run_tests.py --bindir . --update
 
 # Rules to generate the objects of every version
 $(BUILD_DIR)/cpu/%.o: %.cpp
