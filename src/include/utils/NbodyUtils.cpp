@@ -129,15 +129,16 @@ double NbodyUtils::get_core_radius()
 
     std::sort(d.begin(), d.end());
 
+    // The radius of the last particle that fits in the core, adding them
+    // from the center outwards
     for (unsigned int i = 0; i < ns->n; i++)
     {
+        core_mass += ns->h_r[d[i].index].w;
         if (core_mass > ns->total_mass*CORE_MASS)
         {
-            i -= 1;
             radius = d[i].value;
             break;
         }
-        core_mass += ns->h_r[d[i].index].w;
     }
 
     return radius;
@@ -243,17 +244,19 @@ double NbodyUtils::get_halfmass_radius()
 
     std::sort(distances.begin(), distances.end());
 
+    // The radius of the last particle that fits in half of the mass, adding
+    // them from the center outwards
     for (unsigned int i = 0; i < ns->n; i++)
     {
+        half_mass += ns->h_r[distances[i].index].w;
         if(half_mass >= ns->total_mass/2.0)
         {
             j = i;
             break;
         }
-        half_mass += ns->h_r[distances[i].index].w;
     }
 
-    r_h = distances[j-1].value;
+    r_h = distances[j].value;
 
     return r_h;
 }
