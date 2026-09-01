@@ -43,15 +43,13 @@ Hermite4::Hermite4(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
     this->logger = logger;
     this->nu     = nu;
 
-    alloc_arrays_host();
     init_data();
 }
 
-/** Destructor in charge of calling the method that free the memory
- */
+/** Destructor.  The arrays belong to the system, which frees them */
 Hermite4::~Hermite4()
 {
-    free_arrays_host();
+    /* Empty */
 }
 
 /** Method in charge of finding all the particles that need to be
@@ -150,42 +148,6 @@ void Hermite4::save_old_acc_jrk(unsigned int nact)
         unsigned int i = ns->h_move[k];
         ns->h_old[i] = ns->h_f[i];
     }
-}
-
-/** Method in charge of the memory allocation of all the data
- * structures
- */
-void Hermite4::alloc_arrays_host()
-{
-    ns->h_f    = new Forces[ns->n];
-    ns->h_a2   = new Double3[ns->n];
-    ns->h_a3   = new Double3[ns->n];
-    ns->h_old  = new Forces[ns->n];
-    ns->h_t    = new double[ns->n];
-    ns->h_dt   = new double[ns->n];
-    ns->h_move = new unsigned int[ns->n];
-    ns->h_p    = new Predictor[ns->n];
-    ns->h_i    = new Predictor[ns->n];
-    ns->h_ekin = new double[ns->n];
-    ns->h_epot = new double[ns->n];
-}
-
-/** Method in charge of the memory deallocation of all the data
- * structures
- */
-void Hermite4::free_arrays_host()
-{
-    delete [] ns->h_f;
-    delete [] ns->h_a2;
-    delete [] ns->h_a3;
-    delete [] ns->h_old;
-    delete [] ns->h_t;
-    delete [] ns->h_dt;
-    delete [] ns->h_move;
-    delete [] ns->h_p;
-    delete [] ns->h_i;
-    delete [] ns->h_ekin;
-    delete [] ns->h_epot;
 }
 
 /** Method that initialize all the data structures that will be used

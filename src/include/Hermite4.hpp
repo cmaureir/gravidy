@@ -64,8 +64,6 @@ class Hermite4 {
 
     private:
         void init_data();
-        void alloc_arrays_host();
-        void free_arrays_host();
 
         /* Virtual methods to be implemented by the different versions */
         /** Integration virtual method to be implemented */

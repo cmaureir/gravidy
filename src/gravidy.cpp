@@ -72,10 +72,10 @@ int main(int argc, char *argv[])
     {
         ns.read_input_file();
     }
-    ns.alloc_base_attributes(rank);
+    ns.alloc_arrays(rank);
     #else
     ns.read_input_file();
-    ns.alloc_base_attributes(0);
+    ns.alloc_arrays(0);
     #endif
 
     ns.copy_input_data();

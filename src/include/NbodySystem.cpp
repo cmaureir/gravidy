@@ -67,10 +67,10 @@ NbodySystem::NbodySystem(OptionsParser op)
     r_virial = 0.0;
 }
 
-/** Destructor */
+/** Destructor.  The arrays free themselves */
 NbodySystem::~NbodySystem()
 {
-    free_base_attributes();
+    /* Empty */
 }
 
 /** Method in charge of reading the input file.
@@ -206,10 +206,11 @@ void NbodySystem::read_input_file()
     #endif
 }
 
-/** Memory allocation for the identification, positions, and velocities
- * of the particles
+/** Allocation of every array of the system.
+ * They all have one element per particle, so they are all sized here, once
+ * the amount of particles is known.
  */
-void NbodySystem::alloc_base_attributes([[maybe_unused]] int rank)
+void NbodySystem::alloc_arrays([[maybe_unused]] int rank)
 {
     #if defined(_MPI)
 
@@ -222,22 +223,26 @@ void NbodySystem::alloc_base_attributes([[maybe_unused]] int rank)
         reader.resize(n);
     }
 
-    MPI_Bcast(&reader[0], sizeof(file_data) * n, MPI_BYTE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(reader.data(), sizeof(file_data) * n, MPI_BYTE, 0, MPI_COMM_WORLD);
     #endif
 
-    h_id = new unsigned int[n];
-    h_r = new Double4[n];
-    h_v = new Double4[n];
-}
+    // Identification, positions and velocities, which the input file fills
+    h_id.resize(n);
+    h_r.resize(n);
+    h_v.resize(n);
 
-/** Memory deallocation for the identification, positions, and
- * velocities of the particles
- */
-void NbodySystem::free_base_attributes()
-{
-    delete [] h_id;
-    delete [] h_r;
-    delete [] h_v;
+    // The ones that the integration needs
+    h_f.resize(n);
+    h_a2.resize(n);
+    h_a3.resize(n);
+    h_old.resize(n);
+    h_t.resize(n);
+    h_dt.resize(n);
+    h_move.resize(n);
+    h_p.resize(n);
+    h_i.resize(n);
+    h_ekin.resize(n);
+    h_epot.resize(n);
 }
 
 /** Initialization of the data readed from the Input/Snapshot file to

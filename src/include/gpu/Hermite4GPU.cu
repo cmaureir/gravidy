@@ -230,10 +230,10 @@ void Hermite4GPU::predicted_pos_vel(double ITIME)
         size_t d4_size = n_part[g] * sizeof(Double4);
         size_t d1_size = n_part[g] * sizeof(double);
 
-        CSC(cudaMemcpyAsync(ns->d_f[g], ns->h_f + shift, ff_size, cudaMemcpyHostToDevice, 0));
-        CSC(cudaMemcpyAsync(ns->d_r[g], ns->h_r + shift, d4_size, cudaMemcpyHostToDevice, 0));
-        CSC(cudaMemcpyAsync(ns->d_v[g], ns->h_v + shift, d4_size, cudaMemcpyHostToDevice, 0));
-        CSC(cudaMemcpyAsync(ns->d_t[g], ns->h_t + shift, d1_size, cudaMemcpyHostToDevice, 0));
+        CSC(cudaMemcpyAsync(ns->d_f[g], ns->h_f.data() + shift, ff_size, cudaMemcpyHostToDevice, 0));
+        CSC(cudaMemcpyAsync(ns->d_r[g], ns->h_r.data() + shift, d4_size, cudaMemcpyHostToDevice, 0));
+        CSC(cudaMemcpyAsync(ns->d_v[g], ns->h_v.data() + shift, d4_size, cudaMemcpyHostToDevice, 0));
+        CSC(cudaMemcpyAsync(ns->d_t[g], ns->h_t.data() + shift, d1_size, cudaMemcpyHostToDevice, 0));
     }
 
     // Executing kernels
@@ -340,8 +340,8 @@ void Hermite4GPU::init_acc_jrk()
         CSC(cudaSetDevice(g));
 
         // All this information from the predictors is needed by each device
-        CSC(cudaMemcpy(ns->d_p[g], ns->h_p, pp_size, cudaMemcpyHostToDevice));
-        //CSC(cudaMemcpyAsync(ns->d_p[g], ns->h_p, pp_size, cudaMemcpyHostToDevice, 0));
+        CSC(cudaMemcpy(ns->d_p[g], ns->h_p.data(), pp_size, cudaMemcpyHostToDevice));
+        //CSC(cudaMemcpyAsync(ns->d_p[g], ns->h_p.data(), pp_size, cudaMemcpyHostToDevice, 0));
     }
 
     // Executing kernels
@@ -414,8 +414,8 @@ void Hermite4GPU::update_acc_jrk(int nact)
             CSC(cudaSetDevice(g));
             // Copy to the GPU (d_i) the preddictor host array (h_i)
             size_t chunk = nact * sizeof(Predictor);
-            //CSC(cudaMemcpy(ns->d_i[g], ns->h_i, chunk, cudaMemcpyHostToDevice));
-            CSC(cudaMemcpyAsync(ns->d_i[g], ns->h_i, chunk, cudaMemcpyHostToDevice, 0));
+            //CSC(cudaMemcpy(ns->d_i[g], ns->h_i.data(), chunk, cudaMemcpyHostToDevice));
+            CSC(cudaMemcpyAsync(ns->d_i[g], ns->h_i.data(), chunk, cudaMemcpyHostToDevice, 0));
         }
     }
 
@@ -546,8 +546,8 @@ double Hermite4GPU::get_energy_gpu()
     {
         CSC(cudaSetDevice(g));
 
-        CSC(cudaMemcpyAsync(ns->d_r[g], ns->h_r, d4_size, cudaMemcpyHostToDevice, 0));
-        CSC(cudaMemcpyAsync(ns->d_v[g], ns->h_v, d4_size, cudaMemcpyHostToDevice, 0));
+        CSC(cudaMemcpyAsync(ns->d_r[g], ns->h_r.data(), d4_size, cudaMemcpyHostToDevice, 0));
+        CSC(cudaMemcpyAsync(ns->d_v[g], ns->h_v.data(), d4_size, cudaMemcpyHostToDevice, 0));
     }
 
     int nthreads = BSIZE;

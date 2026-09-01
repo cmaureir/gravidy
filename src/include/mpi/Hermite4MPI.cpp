@@ -157,7 +157,7 @@ void Hermite4MPI::init_acc_jrk()
                 force_calculation(ns->h_p[i], ns->h_p[j], tmp_f[i]);
             }
         }
-        MPI_Allreduce(tmp_f, ns->h_f, ns->n, f_type, f_op, MPI_COMM_WORLD);
+        MPI_Allreduce(tmp_f, ns->h_f.data(), ns->n, f_type, f_op, MPI_COMM_WORLD);
     }
 }
 
@@ -239,7 +239,7 @@ void Hermite4MPI::predicted_pos_vel(double ITIME)
         }
         ns->gtime.prediction_end += omp_get_wtime() - ns->gtime.prediction_ini;
     }
-    MPI_Bcast(ns->h_p, sizeof(Predictor) * ns->n, MPI_BYTE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(ns->h_p.data(), sizeof(Predictor) * ns->n, MPI_BYTE, 0, MPI_COMM_WORLD);
 }
 
 /** Method that correct the positions and velocities of the particles at the

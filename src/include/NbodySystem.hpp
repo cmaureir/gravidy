@@ -97,22 +97,22 @@ class NbodySystem {
 
         /******************************** Host Particles arrays */
 
-        unsigned int *h_id;   // Array with index of the particles
-        unsigned int *h_move; // Array with index of the active particles
-        double       *h_t;    // Particle's time
-        double       *h_dt;   // Particle's timestep
-        double       *h_ekin; // Kinetic energy
-        double       *h_epot; // Potential Energy
-        Double4      *h_r;    // Position + Mass
-        Double4      *h_v;    // Velocity + Empty
-        Double3      *h_a2;   // 2nd acceleration derivative (from interpolation)
-        Double3      *h_a3;   // 3rd acceleration derivative (from interpolation)
-        Predictor    *h_p;    // Predicted position and velocities
-        Predictor    *h_i;    // Temporary array of the position and velocity of the
-                               //   active particle only
+        std::vector<unsigned int> h_id;   // Array with index of the particles
+        std::vector<unsigned int> h_move; // Array with index of the active particles
+        std::vector<double>       h_t;    // Particle's time
+        std::vector<double>       h_dt;   // Particle's timestep
+        std::vector<double>       h_ekin; // Kinetic energy
+        std::vector<double>       h_epot; // Potential Energy
+        std::vector<Double4>      h_r;    // Position + Mass
+        std::vector<Double4>      h_v;    // Velocity + Empty
+        std::vector<Double3>      h_a2;   // 2nd acceleration derivative (from interpolation)
+        std::vector<Double3>      h_a3;   // 3rd acceleration derivative (from interpolation)
+        std::vector<Predictor>    h_p;    // Predicted position and velocities
+        std::vector<Predictor>    h_i;    // Temporary array of the position and velocity of the
+                                          //   active particle only
 
-        Forces *h_f;                 // Struct with the acceleration and jerk
-        Forces *h_old;               // Old forces (from previous step)
+        std::vector<Forces> h_f;       // Struct with the acceleration and jerk
+        std::vector<Forces> h_old;     // Old forces (from previous step)
         Forces *h_fout_tmp;          // Temporary array for partial forces
         Forces *h_fout_gpu[MAXGPUS]; // Temporary array for partial forces
 
@@ -137,7 +137,6 @@ class NbodySystem {
         /******************************** General functions of the system */
         void read_input_file();
         void copy_input_data();
-        void alloc_base_attributes(int rank);
-        void free_base_attributes();
+        void alloc_arrays(int rank);
 };
 #endif // NBODYSYSTEM_HPP
