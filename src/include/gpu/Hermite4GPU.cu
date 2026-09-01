@@ -186,11 +186,10 @@ void Hermite4GPU::free_arrays_device()
         CSC(cudaFree(ns->d_move[g]));
         CSC(cudaFree(ns->d_fout[g]));
         CSC(cudaFree(ns->d_fout_tmp[g]));
-        delete ns->h_fout_gpu[g];
+        delete [] ns->h_fout_gpu[g];
     }
 
-    delete ns->h_fout_tmp;
-    //delete ns->h_fout_gpu;
+    delete [] ns->h_fout_tmp;
 }
 
 /** Method in charge of the prediction step.
