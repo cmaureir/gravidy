@@ -66,9 +66,9 @@ std::string Logger::get_timestamp()
     s << std::setw(2) << std::setfill('0') << 1 + ltm->tm_mon<< "-";
     s << std::setw(2) << std::setfill('0') << ltm->tm_mday << " ";
 
-    s << std::setw(2) << std::setfill('0') << 1 + ltm->tm_hour << ":";
-    s << std::setw(2) << std::setfill('0') << 1 + ltm->tm_min  << ":";
-    s << std::setw(2) << std::setfill('0') << 1 + ltm->tm_sec  << "";
+    s << std::setw(2) << std::setfill('0') << ltm->tm_hour << ":";
+    s << std::setw(2) << std::setfill('0') << ltm->tm_min  << ":";
+    s << std::setw(2) << std::setfill('0') << ltm->tm_sec  << "";
     s << "]";
 
     return s.str();
