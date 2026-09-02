@@ -264,5 +264,7 @@ void NbodySystem::copy_input_data()
         h_v[i].z = reader[i].v[2];
     }
 
-    std::vector<file_data>().swap(reader);
+    // The input data is not needed any more
+    reader.clear();
+    reader.shrink_to_fit();
 }
