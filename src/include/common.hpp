@@ -234,14 +234,14 @@ struct Distance
  *  Member 'potential' contains the newest kinetic energy of the
  *  system in a certain time.
  *  */
-typedef struct Energy
+struct Energy
 {
     double ini;
     double end;
     double tmp;
     double kinetic;
     double potential;
-} Energy;
+};
 
 /** @struct options
  *  @brief Options to handling printing options, like printing the
@@ -259,12 +259,12 @@ typedef struct Energy
  *  Member 'print_lagrange' contains the boolean value for calculating
  *  and printing the lagrange radii of the system.
  */
-typedef struct options
+struct options
 {
     bool print_screen;
     bool print_all;
     bool print_lagrange;
-} options;
+};
 
 /** @struct Predictor
  *  @brief This structure contains the predicted information of a
@@ -276,11 +276,12 @@ typedef struct options
  *  @var Predictor::m
  *  Member 'm' contains the mass of the particle.
  *  */
-typedef struct Predictor {
+struct Predictor
+{
     double r[3];
     double v[3];
     float  m;
-} Predictor;
+};
 
 /** @struct Forces
  *  @brief This structure contains the information of the Forces of a
@@ -291,10 +292,11 @@ typedef struct Predictor {
  *  Member 'v' contains the first derivative of the acceleration in
  *  three dimensions (Jerk).
  *  */
-typedef struct Forces {
+struct Forces
+{
     double a[3];
     double a1[3];
-} Forces;
+};
 
 /** @struct Gtime
  *  @brief This structure contains different times of the internal
@@ -350,7 +352,8 @@ typedef struct Forces {
  *  interactions, \f$C_{\rm time}\f$ the elapsed clock-time of the
  *  process, \f$T\f$ a determinated integration time.
  *  */
-typedef struct Gtime {
+struct Gtime
+{
     float integration_ini;
     float integration_end;
 
@@ -373,7 +376,7 @@ typedef struct Gtime {
     float reduce_forces_end;
 
     float gflops;
-} Gtime;
+};
 
 /** @struct file_data
  *  @brief General structure to read the INPUT file.
@@ -386,13 +389,13 @@ typedef struct Gtime {
  *  @var file_data::v
  *  Member 'v' Array that contain the particle velocity.
  *  */
-typedef struct file_data
+struct file_data
 {
     int id;
     float m;
     double r[3];
     double v[3];
-} file_data;
+};
 
 const double KERNEL_GFLOP = 48e-9; // 60e-9
 #if defined(GPU)
