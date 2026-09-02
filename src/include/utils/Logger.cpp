@@ -123,19 +123,9 @@ void Logger::add_info(std::string key, std::string value)
 
 }
 
-bool file_exists(std::string filename)
-{
-    struct stat buffer;
-    if (stat(filename.c_str(), &buffer) != -1)
-    {
-        return true;
-    }
-    return false;
-}
-
 void Logger::write_info()
 {
-    if(file_exists(ofname_info))
+    if(std::filesystem::exists(ofname_info))
     {
         size_t fsize = ofname_info.size();
         std::string last = ofname_info.substr(fsize-1, fsize);
@@ -144,7 +134,7 @@ void Logger::write_info()
 
         std::string newname = ofname_info + ".old";
 
-        while(file_exists(newname))
+        while(std::filesystem::exists(newname))
         {
             // Check
             try

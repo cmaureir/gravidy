@@ -35,7 +35,7 @@ Maureira-Fredes, C and Amaro-Seoane, P. ["GraviDy, a GPU modular, parallel direc
 
 Software               | Version            | Description
 -----------------------|--------------------|----------------------
-GCC                    | v7 or greater      | Compiler, the code is C++17
+GCC                    | v9 or greater      | Compiler, C++17 and std::filesystem
 boost::program_options |	v1.52.0 or greater |	command-line options
 OpenMPI 	              | v1.8.8 or greater 	| MPI implementation
 CUDA 	                 | v11 or greater 	   | GPU implementation, first one with C++17

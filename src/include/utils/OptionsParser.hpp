@@ -37,7 +37,6 @@
 #define OPTIONSPARSER_HPP
 #include "../common.hpp"
 #include <boost/program_options.hpp>
-#include <sys/stat.h>
 
 namespace po = boost::program_options;
 
@@ -69,7 +68,6 @@ class OptionsParser {
         po::variables_map vm;
         po::options_description desc;
 
-        bool file_exists(std::string filename);
         bool check_options();
 
     private:

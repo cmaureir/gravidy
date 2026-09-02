@@ -95,15 +95,6 @@ OptionsParser::~OptionsParser()
 }
 
 /** Method that check if a file exist on the system */
-bool OptionsParser::file_exists(std::string filename)
-{
-    struct stat buffer;
-    if (stat(filename.c_str(), &buffer) != -1)
-    {
-        return true;
-    }
-    return false;
-}
 
 /** Method in charge to verify all the command-line arguments that where
  * used for the current run
@@ -126,7 +117,7 @@ bool OptionsParser::check_options()
         resume = true;
 
 
-        if(!file_exists(resume_filename))
+        if(!std::filesystem::exists(resume_filename))
         {
             std::cerr << "gravidy: cannot access "
                       << resume_filename
@@ -306,7 +297,7 @@ bool OptionsParser::check_options()
             s << std::setw(4) << std::setfill('0') << snapshot_number;
             std::string snap_name = OutputFilename + ".snapshot_" + s.str();
 
-            if (!file_exists(snap_name))
+            if (!std::filesystem::exists(snap_name))
             {
                 std::cerr << "gravidy: cannot access "
                           << snap_name
@@ -330,7 +321,7 @@ bool OptionsParser::check_options()
         {
             input_filename = vm["input"].as<std::string>();
 
-            if(!file_exists(input_filename))
+            if(!std::filesystem::exists(input_filename))
             {
                 std::cerr << "gravidy: cannot access "
                           << input_filename
