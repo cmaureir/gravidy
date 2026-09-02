@@ -70,7 +70,7 @@ class Logger {
 
         std::string get_timestamp();
         void print_info();
-        void add_info(std::string key, std::string value);
+        void add_info(std::string_view key, std::string_view value);
         void write_info();
         void write_snapshot(unsigned int snapshot_number, double ITIME);
         void print_all(double ITIME, unsigned int snapshot_number);
@@ -80,11 +80,11 @@ class Logger {
         void print_lagrange_radii(double ITIME, std::vector<double> lagrange_radii);
 
 
-        void log(int type,  std::string msg);
-        void log_error(std::string msg);
-        void log_warning(std::string msg);
-        void log_success(std::string msg);
-        void log_info(std::string msg);
+        void log(int type, std::string_view msg);
+        void log_error(std::string_view msg);
+        void log_warning(std::string_view msg);
+        void log_success(std::string_view msg);
+        void log_info(std::string_view msg);
 };
 
 #endif // LOGGER_HPP

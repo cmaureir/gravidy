@@ -574,7 +574,7 @@ void Hermite4GPU::gpu_timer_start(){
 
 /** Method that ends the device timer
  */
-float Hermite4GPU::gpu_timer_stop(std::string f){
+float Hermite4GPU::gpu_timer_stop(std::string_view f){
     cudaEventRecord(stop);
     cudaEventSynchronize(stop);
     float msec = 0;

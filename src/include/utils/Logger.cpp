@@ -110,7 +110,7 @@ void Logger::write_snapshot(unsigned int snapshot_number, double ITIME)
     out_file.close();
 }
 
-void Logger::add_info(std::string key, std::string value)
+void Logger::add_info(std::string_view key, std::string_view value)
 {
     info_file.open(ofname_info.c_str(), std::ios_base::app);
 
@@ -362,7 +362,7 @@ void Logger::print_energy_log(double ITIME, unsigned int iterations, long long i
     }
 }
 
-void Logger::log(int type,  std::string msg)
+void Logger::log(int type, std::string_view msg)
 {
     // Error
     if (COLOR_OUTPUT)
@@ -411,22 +411,22 @@ void Logger::log(int type,  std::string msg)
     }
 }
 
-void Logger::log_error(std::string msg)
+void Logger::log_error(std::string_view msg)
 {
     log(0, msg);
 }
 
-void Logger::log_warning(std::string msg)
+void Logger::log_warning(std::string_view msg)
 {
     log(1, msg);
 }
 
-void Logger::log_success(std::string msg)
+void Logger::log_success(std::string_view msg)
 {
     log(2, msg);
 }
 
-void Logger::log_info(std::string msg)
+void Logger::log_info(std::string_view msg)
 {
     log(3, msg);
 }

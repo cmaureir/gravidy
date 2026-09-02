@@ -142,7 +142,7 @@ class Hermite4GPU : public Hermite4 {
 
         void get_kernel_error();
         void gpu_timer_start();
-        float  gpu_timer_stop(std::string f);
+        float  gpu_timer_stop(std::string_view f);
 
         double get_energy_gpu();
 

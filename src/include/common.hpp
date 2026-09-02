@@ -51,6 +51,7 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <string_view>
 #include <filesystem>
 #include <stdexcept>
 #include <algorithm>
