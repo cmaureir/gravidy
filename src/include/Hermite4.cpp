@@ -152,7 +152,6 @@ void Hermite4::save_old_acc_jrk(unsigned int nact)
  */
 void Hermite4::init_data()
 {
-    Double3 empty = {0.0, 0.0, 0.0};
     ns->m_g = 0.0;
     for (unsigned int i = 0; i < ns->n; i++)
     {
@@ -167,30 +166,6 @@ void Hermite4::init_data()
         ns->h_p[i].v[0] = ns->h_v[i].x;
         ns->h_p[i].v[1] = ns->h_v[i].y;
         ns->h_p[i].v[2] = ns->h_v[i].z;
-
-        ns->h_f[i].a[0] = 0.0;
-        ns->h_f[i].a[1] = 0.0;
-        ns->h_f[i].a[2] = 0.0;
-
-        ns->h_f[i].a1[0] = 0.0;
-        ns->h_f[i].a1[1] = 0.0;
-        ns->h_f[i].a1[2] = 0.0;
-
-        ns->h_a2[i] = empty;
-        ns->h_a3[i] = empty;
-
-        ns->h_old[i].a[0] = 0.0;
-        ns->h_old[i].a[1] = 0.0;
-        ns->h_old[i].a[2] = 0.0;
-
-        ns->h_old[i].a1[0] = 0.0;
-        ns->h_old[i].a1[1] = 0.0;
-        ns->h_old[i].a1[2] = 0.0;
-
-        ns->h_t[i] = 0.0;
-        ns->h_dt[i] = 0.0;
-
-        ns->h_move[i] = 0;
 
         // Heaviest star
         if (mass > ns->m_g)

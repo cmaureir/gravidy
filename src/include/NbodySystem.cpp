@@ -74,11 +74,6 @@ NbodySystem::NbodySystem(OptionsParser op)
     gpus               = op.gpus;
     resume             = op.resume;
 
-    en.ini = 0.0;
-    en.end = 0.0;
-    en.tmp = 0.0;
-    gtime = {};
-
     r_cl = 0.0;
     dt_cl = 0.0;
     m_g = 0.0;

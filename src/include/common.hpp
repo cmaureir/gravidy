@@ -208,8 +208,8 @@ inline constexpr double D_TIME_MAX = 0.125;
  */
 struct Distance
 {
-    int index;
-    double value;
+    int index = 0;
+    double value = 0.0;
     bool operator<(const Distance& a) const
     {
         return value < a.value;
@@ -238,11 +238,11 @@ struct Distance
  *  */
 struct Energy
 {
-    double ini;
-    double end;
-    double tmp;
-    double kinetic;
-    double potential;
+    double ini = 0.0;
+    double end = 0.0;
+    double tmp = 0.0;
+    double kinetic = 0.0;
+    double potential = 0.0;
 };
 
 /** @struct options
@@ -263,9 +263,9 @@ struct Energy
  */
 struct options
 {
-    bool print_screen;
-    bool print_all;
-    bool print_lagrange;
+    bool print_screen = false;
+    bool print_all = false;
+    bool print_lagrange = false;
 };
 
 /** @struct Predictor
@@ -280,9 +280,9 @@ struct options
  *  */
 struct Predictor
 {
-    double r[3];
-    double v[3];
-    float  m;
+    double r[3] = {0.0, 0.0, 0.0};
+    double v[3] = {0.0, 0.0, 0.0};
+    float  m = 0.0f;
 };
 
 /** @struct Forces
@@ -296,8 +296,8 @@ struct Predictor
  *  */
 struct Forces
 {
-    double a[3];
-    double a1[3];
+    double a[3] = {0.0, 0.0, 0.0};
+    double a1[3] = {0.0, 0.0, 0.0};
 };
 
 /** @struct Gtime
@@ -356,28 +356,28 @@ struct Forces
  *  */
 struct Gtime
 {
-    float integration_ini;
-    float integration_end;
+    float integration_ini = 0.0f;
+    float integration_end = 0.0f;
 
-    float prediction_ini;
-    float prediction_end;
+    float prediction_ini = 0.0f;
+    float prediction_end = 0.0f;
 
-    float update_ini;
-    float update_end;
+    float update_ini = 0.0f;
+    float update_end = 0.0f;
 
-    float correction_ini;
-    float correction_end;
+    float correction_ini = 0.0f;
+    float correction_end = 0.0f;
 
-    float grav_ini;
-    float grav_end;
+    float grav_ini = 0.0f;
+    float grav_end = 0.0f;
 
-    float reduce_ini;
-    float reduce_end;
+    float reduce_ini = 0.0f;
+    float reduce_end = 0.0f;
 
-    float reduce_forces_ini;
-    float reduce_forces_end;
+    float reduce_forces_ini = 0.0f;
+    float reduce_forces_end = 0.0f;
 
-    float gflops;
+    float gflops = 0.0f;
 };
 
 /** @struct file_data
@@ -393,10 +393,10 @@ struct Gtime
  *  */
 struct file_data
 {
-    int id;
-    float m;
-    double r[3];
-    double v[3];
+    int id = 0;
+    float m = 0.0f;
+    double r[3] = {0.0, 0.0, 0.0};
+    double v[3] = {0.0, 0.0, 0.0};
 };
 
 inline constexpr double KERNEL_GFLOP = 48e-9; // 60e-9
