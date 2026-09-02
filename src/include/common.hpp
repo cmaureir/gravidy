@@ -52,6 +52,7 @@
 #include <vector>
 #include <string>
 #include <filesystem>
+#include <stdexcept>
 
 
 #if defined(_MPI)
@@ -105,6 +106,40 @@ static_assert(sizeof(Double4) == 32 && alignof(Double4) == 16,
               "Double4 no longer has the layout of the double4 of CUDA");
 static_assert(sizeof(Double3) == 24 && alignof(Double3) == 8,
               "Double3 no longer has the layout of the double3 of CUDA");
+
+/** Turns a text into a number, and says whether the whole of the text was
+ * one.  The functions of C that were used before, atoi and strtod, gave a
+ * zero for a text that is not a number and had no way of telling that zero
+ * apart from a real one. */
+inline bool to_number(const std::string &text, double &value)
+{
+    try
+    {
+        size_t end = 0;
+        double parsed = std::stod(text, &end);
+        if (end != text.size())
+            return false;
+
+        value = parsed;
+        return true;
+    }
+    catch (const std::logic_error &)
+    {
+        // Neither a number (invalid_argument) nor one that fits (out_of_range)
+        return false;
+    }
+}
+
+/** The same, for the values that count things */
+inline bool to_number(const std::string &text, unsigned int &value)
+{
+    double parsed = 0.0;
+    if (!to_number(text, parsed) || parsed < 0.0)
+        return false;
+
+    value = (unsigned int)parsed;
+    return true;
+}
 
 /** Gravitational constant. Since we are working in N-body units we
  * set G as one. */

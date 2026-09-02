@@ -35,6 +35,24 @@
  */
 #include "OptionsParser.hpp"
 
+/** Reads one of the values of the info file of a simulation that is being
+ * resumed.  A value that is not a number used to be taken as a zero. */
+template <typename T>
+static bool info_number(const std::string &key, const std::string &text,
+                        T &value)
+{
+    if (to_number(text, value))
+        return true;
+
+    std::cerr << "gravidy: the value of "
+              << key
+              << " in the info file is not a number: "
+              << text
+              << std::endl;
+
+    return false;
+}
+
 /** Constructor which includes the options and requirements for the
  * command line interface
  */
@@ -208,7 +226,9 @@ bool OptionsParser::check_options()
             if (vm.count("time"))
             {
                 integration_time = vm["time"].as<float>();
-                config_time = strtod(config_param["IntegrationTime"].c_str(), NULL);
+                if (!info_number("IntegrationTime",
+                                 config_param["IntegrationTime"], config_time))
+                    return false;
                 if (config_time >= integration_time)
                 {
                     std::cerr << "gravidy: option requires an argument -- 'time'"
@@ -233,7 +253,11 @@ bool OptionsParser::check_options()
             }
 
             // Checking softening
-            softening = strtod(config_param["Softening"].c_str(), NULL);
+            double config_softening = 0.0;
+            if (!info_number("Softening", config_param["Softening"],
+                             config_softening))
+                return false;
+            softening = config_softening;
             if (vm.count("softening"))
             {
                 float tmp = vm["softening"].as<float>();
@@ -249,7 +273,11 @@ bool OptionsParser::check_options()
             }
 
             // Checking eta
-            eta = strtod(config_param["EtaTimestep"].c_str(), NULL);
+            double config_eta = 0.0;
+            if (!info_number("EtaTimestep", config_param["EtaTimestep"],
+                             config_eta))
+                return false;
+            eta = config_eta;
             if (vm.count("eta"))
             {
                 float tmp = vm["eta"].as<float>();
@@ -266,8 +294,11 @@ bool OptionsParser::check_options()
 
 
             // Checking PrintScreen
-            //ops.print_screen = std::stoi(config_param["PrintScreen"].c_str()); //C++11
-            ops.print_screen = std::atoi(config_param["PrintScreen"].c_str());
+            unsigned int config_screen = 0;
+            if (!info_number("PrintScreen", config_param["PrintScreen"],
+                             config_screen))
+                return false;
+            ops.print_screen = (config_screen != 0);
             if (vm.count("PrintScreen"))
             {
                 ops.print_screen=1;
@@ -290,8 +321,9 @@ bool OptionsParser::check_options()
             std::string OutputFilename = config_param["OutputFilename"];
 
             // Checking snapshot number
-            //snapshot_number = std::stoi(config_param["SnapshotNumber"].c_str()); // C++11
-            snapshot_number = std::atoi(config_param["SnapshotNumber"].c_str());
+            if (!info_number("SnapshotNumber",
+                             config_param["SnapshotNumber"], snapshot_number))
+                return false;
 
             std::ostringstream s;
             s << std::setw(4) << std::setfill('0') << snapshot_number;

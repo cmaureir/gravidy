@@ -35,6 +35,26 @@
  */
 #include "NbodySystem.hpp"
 
+/** Reads one of the numbers of a line of the input file.  A field that is
+ * not a number used to be taken as a zero, silently, which put a particle
+ * at the origin or gave it no mass. */
+static double input_number(const std::string &token,
+                           const std::string &filename)
+{
+    double value = 0.0;
+    if (!to_number(token, value))
+    {
+        std::cerr << "gravidy: wrong number in "
+                  << filename
+                  << ": "
+                  << token
+                  << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    return value;
+}
+
 /** Constructor */
 NbodySystem::NbodySystem(OptionsParser op)
 {
@@ -134,7 +154,8 @@ void NbodySystem::read_input_file()
                     {
                         if (ctokens[t] == "time" && (t+1 < (int)ctokens.size()))
                         {
-                            snapshot_time = strtod(ctokens[t+1].c_str(), NULL);
+                            snapshot_time = input_number(ctokens[t+1],
+                                                         input_filename);
                             got_time = true;
                     //        std::cout << "It's a snapshot" << std::endl;
                     //        getline(file, line);
@@ -170,14 +191,14 @@ void NbodySystem::read_input_file()
                 }
                 else
                 {
-                    tmp.id   = (unsigned int)std::atoi(tokens[0].c_str());
-                    tmp.m    = (float)strtod(tokens[1].c_str(), NULL);
-                    tmp.r[0] = strtod(tokens[2].c_str(), NULL);
-                    tmp.r[1] = strtod(tokens[3].c_str(), NULL);
-                    tmp.r[2] = strtod(tokens[4].c_str(), NULL);
-                    tmp.v[0] = strtod(tokens[5].c_str(), NULL);
-                    tmp.v[1] = strtod(tokens[6].c_str(), NULL);
-                    tmp.v[2] = strtod(tokens[7].c_str(), NULL);
+                    tmp.id   = (unsigned int)input_number(tokens[0], input_filename);
+                    tmp.m    = (float)input_number(tokens[1], input_filename);
+                    tmp.r[0] = input_number(tokens[2], input_filename);
+                    tmp.r[1] = input_number(tokens[3], input_filename);
+                    tmp.r[2] = input_number(tokens[4], input_filename);
+                    tmp.v[0] = input_number(tokens[5], input_filename);
+                    tmp.v[1] = input_number(tokens[6], input_filename);
+                    tmp.v[2] = input_number(tokens[7], input_filename);
 
                     if (tmp.m > max_mass)
                     {

@@ -127,31 +127,13 @@ void Logger::write_info()
 {
     if(std::filesystem::exists(ofname_info))
     {
-        size_t fsize = ofname_info.size();
-        std::string last = ofname_info.substr(fsize-1, fsize);
-        bool is_number;
         int ext = 0;
-
         std::string newname = ofname_info + ".old";
 
+        // .old, and then .old0, .old1, ... until one is free
         while(std::filesystem::exists(newname))
         {
-            // Check
-            try
-            {
-                is_number = isdigit(last[0]);
-            }
-            catch(int e)
-            {
-                is_number = false;
-            }
-
-            if (is_number)
-            {
-                ext = (int)std::atoi(last.c_str()) + 1;
-            }
-            //newname =  ofname_info + ".old" + std::to_string(ext);// C++11
-            newname =  ofname_info + ".old" + std::to_string(ext);
+            newname = ofname_info + ".old" + std::to_string(ext);
             ext++;
         }
 
