@@ -53,6 +53,7 @@
 #include <string>
 #include <filesystem>
 #include <stdexcept>
+#include <algorithm>
 
 
 #if defined(_MPI)

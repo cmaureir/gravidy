@@ -123,10 +123,7 @@ void Hermite4::init_dt(double &CTIME, float ETA, double ITIME)
         tmp_dt = pow(2,exp);
         //2 << (exp - 1);
 
-        if (tmp_dt < D_TIME_MIN)
-            tmp_dt = D_TIME_MIN;
-        else if (tmp_dt > D_TIME_MAX)
-            tmp_dt = D_TIME_MAX;
+        tmp_dt = std::clamp(tmp_dt, D_TIME_MIN, D_TIME_MAX);
 
         ns->h_dt[i] = tmp_dt;
         ns->h_t[i] = ITIME;

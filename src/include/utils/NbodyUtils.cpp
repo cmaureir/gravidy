@@ -412,16 +412,7 @@ double NbodyUtils::normalize_dt(double new_dt, double old_dt, double t, unsigned
         new_dt = old_dt;
     }
 
-    //if (new_dt <= D_TIME_MIN)
-    if (new_dt < D_TIME_MIN)
-    {
-        new_dt = D_TIME_MIN;
-    }
-    //else if (new_dt >= D_TIME_MAX)
-    else if (new_dt > D_TIME_MAX)
-    {
-        new_dt = D_TIME_MAX;
-    }
+    new_dt = std::clamp(new_dt, D_TIME_MIN, D_TIME_MAX);
 
     return new_dt;
 }
