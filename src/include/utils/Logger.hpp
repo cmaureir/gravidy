@@ -49,16 +49,6 @@ const std::string color_cyan    = "\033[0;36m";
 const std::string color_white   = "\033[0;37m";
 const std::string color_disable = "\033[m";
 
-/** Convert any streamable value to a std::string, using decimal notation
- * for the integer types. */
-template <typename T>
-inline std::string SSTR(const T &x)
-{
-    std::ostringstream ss;
-    ss << std::dec << x;
-    return ss.str();
-}
-
 /**
  * Class in charge of all the logging system in the code.
  * This class includes the methods to be able to report something on-screen

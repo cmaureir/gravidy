@@ -133,7 +133,7 @@ void Hermite4MPI::integration()
     {
         logger->write_snapshot(snap_number, ITIME);
         //logger->add_info(std::string("SnapshotNumber:"), std::to_string(snap_number));
-        logger->add_info(std::string("SnapshotNumber:"), std::string(SSTR(snap_number)));
+        logger->add_info(std::string("SnapshotNumber:"), std::to_string(snap_number));
     }
 
 }

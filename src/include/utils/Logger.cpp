@@ -151,7 +151,7 @@ void Logger::write_info()
                 ext = (int)std::atoi(last.c_str()) + 1;
             }
             //newname =  ofname_info + ".old" + std::to_string(ext);// C++11
-            newname =  ofname_info + ".old" + std::string(SSTR(ext));
+            newname =  ofname_info + ".old" + std::to_string(ext);
             ext++;
         }
 

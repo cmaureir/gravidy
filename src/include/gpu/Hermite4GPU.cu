@@ -62,19 +62,19 @@ Hermite4GPU::Hermite4GPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
     {
         std::string s = "";
         s += std::string("Not using all the available GPUs: ");
-        s += std::string(SSTR(gpus));
+        s += std::to_string(gpus);
         s += std::string(" of ");
-        s += std::string(SSTR(detected_gpus));
+        s += std::to_string(detected_gpus);
         logger->log_warning(s);
     }
 
-    logger->log_info(std::string("GPUs: ")+std::string(SSTR(gpus)));
+    logger->log_info(std::string("GPUs: ")+std::to_string(gpus));
 
     std::string ss = "";
     ss += std::string("Splitting ");
-    ss += std::string(SSTR(ns->n));
+    ss += std::to_string(ns->n);
     ss += std::string(" particles in ");
-    ss += std::string(SSTR(gpus));
+    ss += std::to_string(gpus);
     ss += std::string(" GPUs");
     logger->log_info(ss);
 
@@ -100,9 +100,9 @@ Hermite4GPU::Hermite4GPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu)
     {
         std::string sss = "";
         sss += std::string("GPU ");
-        sss += std::string(SSTR(g));
+        sss += std::to_string(g);
         sss += std::string(" particles: ");
-        sss += std::string(SSTR(n_part[g]));
+        sss += std::to_string(n_part[g]);
         logger->log_info(sss);
     }
 
@@ -584,10 +584,10 @@ float Hermite4GPU::gpu_timer_stop(std::string f){
     {
         std::string s = "";
         s += std::string("Kernel ");
-        s += std::string(SSTR(f));
+        s += f;
         s += std::string(" : ");
-        s += std::string(SSTR(msec));
-        logger->log_info(s)
+        s += std::to_string(msec);
+        logger->log_info(s);
     }
     #endif
     return msec;
