@@ -117,21 +117,22 @@ class NbodySystem {
         std::vector<Forces> h_fout_gpu[MAXGPUS]; // Temporary array for partial forces
 
         /******************************** Device Particles arrays */
+        /* Only the GPU version has them, and they free themselves */
 
-        unsigned int *d_id[MAXGPUS];
-        unsigned int *d_move[MAXGPUS];
-        double       *d_t[MAXGPUS];
-        double       *d_dt[MAXGPUS];
-        double       *d_ekin[MAXGPUS];
-        double       *d_epot[MAXGPUS];
-        Double4      *d_r[MAXGPUS];
-        Double4      *d_v[MAXGPUS];
-        Predictor    *d_p[MAXGPUS];
-        Predictor    *d_i[MAXGPUS];
-        Forces       *d_f[MAXGPUS];
-        Forces       *d_fout[MAXGPUS];
-        Forces       *d_fout_tmp[MAXGPUS];
-        Forces       *d_old[MAXGPUS];
+        #if defined(GPU)
+        DevicePtr<unsigned int> d_move[MAXGPUS];
+        DevicePtr<double>       d_t[MAXGPUS];
+        DevicePtr<double>       d_dt[MAXGPUS];
+        DevicePtr<double>       d_ekin[MAXGPUS];
+        DevicePtr<double>       d_epot[MAXGPUS];
+        DevicePtr<Double4>      d_r[MAXGPUS];
+        DevicePtr<Double4>      d_v[MAXGPUS];
+        DevicePtr<Predictor>    d_p[MAXGPUS];
+        DevicePtr<Predictor>    d_i[MAXGPUS];
+        DevicePtr<Forces>       d_f[MAXGPUS];
+        DevicePtr<Forces>       d_fout[MAXGPUS];
+        DevicePtr<Forces>       d_fout_tmp[MAXGPUS];
+        #endif
 
 
         /******************************** General functions of the system */

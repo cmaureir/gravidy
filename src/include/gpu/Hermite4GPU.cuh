@@ -97,6 +97,17 @@ inline __host__ __device__ void operator+=(Forces &a, Forces &b)
  *
  */
 
+/** Asks the device for an array of «bytes» bytes, already at zero, and
+ * gives back the pointer for a DevicePtr to hold */
+template <typename T>
+inline T *device_alloc(size_t bytes)
+{
+    void *pointer = NULL;
+    CSC(cudaMalloc(&pointer, bytes));
+    CSC(cudaMemset(pointer, 0, bytes));
+    return static_cast<T *>(pointer);
+}
+
 class Hermite4GPU : public Hermite4 {
     public:
         Hermite4GPU(NbodySystem *ns, Logger *logger, NbodyUtils *nu);

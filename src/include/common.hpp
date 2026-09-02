@@ -61,6 +61,18 @@
 /** If we are compiling the CUDA version, we add the runtime of the library
  * for the memory and the device functions */
 #include <cuda_runtime.h>
+#include <memory>
+
+/** Deleter of the memory of the device, so that the arrays that cudaMalloc
+ * gives can be held by a unique_ptr and freed on their own */
+struct CudaFree
+{
+    void operator()(void *pointer) const { cudaFree(pointer); }
+};
+
+/** An array on the device that frees itself */
+template <typename T>
+using DevicePtr = std::unique_ptr<T[], CudaFree>;
 #endif
 
 /** @struct Double4
