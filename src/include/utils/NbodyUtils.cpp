@@ -43,7 +43,7 @@ NbodyUtils::NbodyUtils(NbodySystem *ns)
     this->cod = tmp;
 
     this->radii.resize(this->ns->n);
-    this->layers_radii.resize(sizeof(LAGRANGE_RADII)/4.0);
+    this->layers_radii.resize(LAGRANGE_RADII.size());
 }
 
 /** Destructor */

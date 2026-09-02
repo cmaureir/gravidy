@@ -39,15 +39,15 @@
 #include "../NbodySystem.hpp"
 #include <cctype>
 
-const std::string color_black   = "\033[0;30m";
-const std::string color_red     = "\033[0;31m";
-const std::string color_green   = "\033[0;32m";
-const std::string color_yellow  = "\033[0;33m";
-const std::string color_blue    = "\033[0;34m";
-const std::string color_purple  = "\033[0;35m";
-const std::string color_cyan    = "\033[0;36m";
-const std::string color_white   = "\033[0;37m";
-const std::string color_disable = "\033[m";
+inline constexpr std::string_view color_black   = "\033[0;30m";
+inline constexpr std::string_view color_red     = "\033[0;31m";
+inline constexpr std::string_view color_green   = "\033[0;32m";
+inline constexpr std::string_view color_yellow  = "\033[0;33m";
+inline constexpr std::string_view color_blue    = "\033[0;34m";
+inline constexpr std::string_view color_purple  = "\033[0;35m";
+inline constexpr std::string_view color_cyan    = "\033[0;36m";
+inline constexpr std::string_view color_white   = "\033[0;37m";
+inline constexpr std::string_view color_disable = "\033[m";
 
 /**
  * Class in charge of all the logging system in the code.

@@ -226,7 +226,7 @@ void Logger::print_lagrange_radii(double ITIME, std::vector<double> lagrange_rad
     *gstream << ITIME << " ";
     gstream->precision(6);
 
-    size_t lr_size = sizeof(LAGRANGE_RADII)/4.0; // float in bytes is 4.0
+    size_t lr_size = LAGRANGE_RADII.size();
     for (unsigned int i = 0; i < lr_size; i++)
     {
         *gstream << std::setw(6) << std::right << lagrange_radii[i] << " ";

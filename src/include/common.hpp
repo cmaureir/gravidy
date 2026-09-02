@@ -52,6 +52,7 @@
 #include <vector>
 #include <string>
 #include <string_view>
+#include <array>
 #include <filesystem>
 #include <stdexcept>
 #include <algorithm>
@@ -145,7 +146,7 @@ inline bool to_number(const std::string &text, unsigned int &value)
 
 /** Gravitational constant. Since we are working in N-body units we
  * set G as one. */
-const int G = 1;
+inline constexpr int G = 1;
 
 
 /** Flag to enable the PN integration for two bodies. */
@@ -154,45 +155,46 @@ const int G = 1;
 #ifdef PN
 /** Speed of light in code units. This will vary with each simulation
  * scenario so it need to be changed to fit user needs */
-const float SPEED_OF_LIGHT = 3.8241467907228306;
+inline constexpr float SPEED_OF_LIGHT = 3.8241467907228306;
 #endif
 
 /** Amount of neighbours to calculate the center of density of the
  * system (Casertano & Hut 1985)*/
-const int J = 6;
+inline constexpr int J = 6;
 
 /** Color output */
-const int COLOR_OUTPUT = 1;
+inline constexpr int COLOR_OUTPUT = 1;
 
 /** Common mass percentage in the core of a globular cluster */
-const float CORE_MASS = 0.1;
+inline constexpr float CORE_MASS = 0.1;
 
-const float LAGRANGE_RADII[] = {0.01, 0.05, 0.1, 0.2, 0.5, 0.75};
+inline constexpr std::array<float, 6> LAGRANGE_RADII =
+    {0.01, 0.05, 0.1, 0.2, 0.5, 0.75};
 
 /** Softening parameter */
-const double E = 1e-4;
+inline constexpr double E = 1e-4;
 
 /** Softening parameter squared */
-const double E2 = 1e-8;
+inline constexpr double E2 = 1e-8;
 
 /** Initial ETA parameter to calculate the first timestep of all the
  * particles of the system. Based on Aarseth formula */
-const float ETA_S = 0.01;
+inline constexpr float ETA_S = 0.01;
 
 /** Iteration ETA parameter to calculate new timestep of all the
  * active particles of the system, in a certain integration time.
  * Based on Aarseth formula */
-const float ETA_N = 0.01;
+inline constexpr float ETA_N = 0.01;
 
 /** Lower boundary for the particles timesteps, \f$2^{-23}\f$ */
-const double D_TIME_MIN = 1.1920928955078125e-07;
+inline constexpr double D_TIME_MIN = 1.1920928955078125e-07;
 
 /** Lower boundary for the binary timesteps, \f$2^{-30}\f$ */
 //const double D_MTIME_MIN = 9.313225746154785e-10;
-const double D_MTIME_MIN = 7.450580596923828e-09; // 2^-27
+inline constexpr double D_MTIME_MIN = 7.450580596923828e-09; // 2^-27
 
 /** Upper boundary for the particles timesteps, \f$2^{-3}\f$ */
-const double D_TIME_MAX = 0.125;
+inline constexpr double D_TIME_MAX = 0.125;
 
 /** @struct Distance
  *  @brief Structure to handle the distance of the particles, to be
@@ -397,10 +399,10 @@ struct file_data
     double v[3];
 };
 
-const double KERNEL_GFLOP = 48e-9; // 60e-9
+inline constexpr double KERNEL_GFLOP = 48e-9; // 60e-9
 #if defined(GPU)
-const int BSIZE   = 32;
-const int NJBLOCK = 16;
+inline constexpr int BSIZE   = 32;
+inline constexpr int NJBLOCK = 16;
 //#define KERNEL_ERROR_DEBUG 1
 #endif
 
