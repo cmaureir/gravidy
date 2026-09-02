@@ -49,6 +49,16 @@ inline constexpr std::string_view color_cyan    = "\033[0;36m";
 inline constexpr std::string_view color_white   = "\033[0;37m";
 inline constexpr std::string_view color_disable = "\033[m";
 
+/** The kind of a message of the log, which decides its label and its
+ * colour */
+enum class LogLevel
+{
+    Error,
+    Warning,
+    Success,
+    Info
+};
+
 /**
  * Class in charge of all the logging system in the code.
  * This class includes the methods to be able to report something on-screen
@@ -80,7 +90,7 @@ class Logger {
         void print_lagrange_radii(double ITIME, std::vector<double> lagrange_radii);
 
 
-        void log(int type, std::string_view msg);
+        void log(LogLevel level, std::string_view msg);
         void log_error(std::string_view msg);
         void log_warning(std::string_view msg);
         void log_success(std::string_view msg);

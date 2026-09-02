@@ -362,71 +362,46 @@ void Logger::print_energy_log(double ITIME, unsigned int iterations, long long i
     }
 }
 
-void Logger::log(int type, std::string_view msg)
+void Logger::log(LogLevel level, std::string_view msg)
 {
-    // Error
+    std::string_view label;
+    std::string_view colour;
+
+    switch (level)
+    {
+        case LogLevel::Error:   label = " [ERROR] ";   colour = color_red;    break;
+        case LogLevel::Warning: label = " [WARNING] "; colour = color_yellow; break;
+        case LogLevel::Success: label = " [SUCCESS] "; colour = color_green;  break;
+        case LogLevel::Info:    label = " [INFO] ";    colour = color_cyan;   break;
+    }
+
     if (COLOR_OUTPUT)
     {
-        if (type == 0)
-        {
-            std::cerr << color_blue << get_timestamp() << color_red << " [ERROR] " << color_disable << msg << std::endl;
-        }
-        // Warning
-        else if (type == 1)
-        {
-            std::cerr << color_blue << get_timestamp() << color_yellow << " [WARNING] " << color_disable << msg << std::endl;
-        }
-        // Success
-        else if (type == 2)
-        {
-            std::cerr << color_blue << get_timestamp() << color_green <<" [SUCCESS] " << color_disable << msg << std::endl;
-        }
-        // Information
-        else if (type == 3)
-        {
-            std::cerr << color_blue << get_timestamp() << color_cyan << " [INFO] " << color_disable << msg << std::endl;
-        }
+        std::cerr << color_blue << get_timestamp() << colour << label
+                  << color_disable << msg << std::endl;
     }
     else
     {
-        if (type == 0)
-        {
-            std::cerr << get_timestamp() << " [ERROR] " << msg << std::endl;
-        }
-        // Warning
-        else if (type == 1)
-        {
-            std::cerr << get_timestamp() << " [WARNING] " << msg << std::endl;
-        }
-        // Success
-        else if (type == 2)
-        {
-            std::cerr << get_timestamp() << " [SUCCESS] " << msg << std::endl;
-        }
-        // Information
-        else if (type == 3)
-        {
-            std::cerr << get_timestamp() << " [INFO] " << msg << std::endl;
-        }
+        std::cerr << get_timestamp() << label << msg << std::endl;
     }
 }
 
 void Logger::log_error(std::string_view msg)
 {
-    log(0, msg);
+    log(LogLevel::Error, msg);
 }
 
 void Logger::log_warning(std::string_view msg)
 {
-    log(1, msg);
+    log(LogLevel::Warning, msg);
 }
 
 void Logger::log_success(std::string_view msg)
 {
-    log(2, msg);
+    log(LogLevel::Success, msg);
 }
 
 void Logger::log_info(std::string_view msg)
 {
-    log(3, msg);
+    log(LogLevel::Info, msg);
 }
